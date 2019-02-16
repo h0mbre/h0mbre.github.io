@@ -1,6 +1,6 @@
 ---
 layout: single
-title: Reverse Shell from Femitter FTP Directory Transversal on XP
+title: Exploiting Femitter FTP in a Post-Dropzone World
 date: 2019-2-16
 classes: wide
 header:
