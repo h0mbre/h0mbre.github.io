@@ -16,7 +16,7 @@ minimal_mistakes_skin    : "dark" # "air", "aqua", "contrast", "dark", "dirt", "
 
 # Site Settings
 locale                   : "en-US"
-title                    : "zenstate.github.io"
+title                    : "Doing things on the computer..."
 title_separator          : "-"
 name                     : "zenstate"
 description              : "Blogposts from an infosec wannabe"
