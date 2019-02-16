@@ -26,6 +26,6 @@ tags:
 ### Quest for RCE
   By default, Femitter will allow anonymous authentication and will drop an authenticated user into the C:/Program Files/Femitter/Shared directory which is not writable. After changing to the 'Upload' directory, which is writable we are able to place files onto the remote box. Let's first test the well-documented directory transversal vulnerability which can be found on Exploit DB [here](https://www.exploit-db.com/exploits/15445). 
 
-![](/assets/images/Femitter/fem_dirTransverse)
+![](/assets/images/Femitter/fem_dirTransverse.png)
 
   
