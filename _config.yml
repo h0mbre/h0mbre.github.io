@@ -106,7 +106,7 @@ analytics:
 
 # Site Author
 author:
-  name             : "Zen State"
+  name             : "zenstate"
   avatar           : "/assets/images/avatar.jpg" # path of avatar image, e.g. "/assets/images/bio-photo.jpg"
   bio              : "OSCP | Noob | Idiot"
   location         : "American East Coast"
