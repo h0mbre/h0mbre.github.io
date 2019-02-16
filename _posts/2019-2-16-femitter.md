@@ -28,6 +28,12 @@ tags:
 
 ![](/assets/images/Femitter/fem_dirTransverse.png)
 
-  Ok awesome, the exploit from nearly 10 years ago still works, this is ground breaking stuff here ;). After trying a bunch of different ways to directly upload files to directories of interest, I was only able to find 2 ways with the Linux FTP client. The first stipulation I found was that your working directory on the FTP server has to be writable. You cannot, for instance put a file and specify a destination path like `../../../../windows/system32/example.exe` without first making sure the working directory is writable. As long as the CWD is writable there are at least a couple of ways to get the files where we want them. The first way is to PUT the file and then specify the destination path like I already said.
+  Ok awesome, the exploit from nearly 10 years ago still works, this is ground breaking stuff here ;). After trying a bunch of different ways to directly upload files to directories of interest, I was only able to find 2 ways with the Linux FTP client. The first stipulation I found was that your working directory on the FTP server has to be writable. You cannot, for instance PUT a file and specify a destination path like `../../../../windows/system32/example.exe` without first making sure the working directory is writable. As long as the is writable there are at least a couple of ways to get the files where we want them. The first way is to PUT the file and then specify the destination path like I already said.
 
 ![](/assets/images/Femitter/putSystem32.png)
+
+  The second way, is to PUT the file and then rename the file specifying it's full path. 
+
+![](/assets/images/Femitter/putRename.png)
+
+  
