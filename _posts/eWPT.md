@@ -1,0 +1,83 @@
+---
+layout: single
+title: eLearnSecurity's Web Application Penetration Testing (WAPT/eWPT)
+date: 2019-4-15
+classes: wide
+header:
+  teaser: /assets/images/eLS/logo.png
+tags:
+  - eLearnSecurity
+  - eWPT
+  - WAPT
+  - Penetration Testing
+--- 
+![](/assets/images/eLS/logo.png)
+
+## Managing Expectations
+I enrolled in WAPT because, beyond the narrow exposure to web app testing you get in PWK/OSCP, I had little to no experience. I have done ~30 machines on HackTheBox and found a lot of the skills I gained from HackTheBox and watching Ippsec walkthroughs to be very helpful during the course and exam. I really wanted to learn more about some of the client side type attacks that don't typically come up during CTF type activities. 
+
+Prior to the course I read about half of the Web Application Hacker's Handbook and found the material to be outstanding, I actually referenced it a lot during the eWPT exam. I took my time during the course to make sure I was really grasping the concepts and not just rushing to add a certification to my CV. All in all I probably spent around 70 hours in the various labs and way less than that reading through the material. I think the course is set up perfectly for those with little to no web app testing experience looking to get a solid grasp of the fundamentals. It really helped me get a better understanding of Cross-Site Scripting and SQL Injection in particular. The chapters on Session Security and Web Services were also great. I definitely recommend this course to anyone who can afford it and is interested in learning the web testing fundamentals.   
+
+If you're interested in the course or enrolled and have questions, please reach out to me on Twitter, HackTheBox, or NetSecFocus. I’d love to hear from you. 
+
+## Prerequisites 
+The eLearnSecurity syllabus recommends the following student prerequisites:
++	Basic understanding of HTML, HTTP, and JavaScript
++ Reading and understanding PHP code will help although it is not mandatory
++ No web development skills required
+
+For the most part, I found these prerequisites to be accurate. I didn't really have a good understanding of HTML or JavaScript coming into the course (still don't have a good understanding of JavaScript, what the hell even is JavaScript) and was totally fine. The only time I wished I knew more JavaScript was during the chapters on HTML5 CORS misconfigurations as some of the exploit vectors require an actor to create a malicious webpage with a JavaScript payload. You don't do much PHP code reading or writing during the course. If you want to go the overkill route, you can take the Intro to JavaScript course on Codeacademy and read the Web Application Hacker's Handbook before the course. I also recommend downloading and playing with the bWAPP VM, the practical experience of the VM is very similar to the WAPT labs. Basic knowledge of the Linux command line is also a prerequisite that I feel you must have to get the most out of the class. I would also work to get some prerequisite knowledge of Burp Suite before taking the course. 
+
+## Materials
+The WAPT materials are pretty great. Depending on what version of the course you buy, you get a PDF/Slides of all the written material, videos demonstrating the concepts taught in the material, and then labs which correspond to each lesson in the material.
+
+Most of the material was written/composed from 2013-2015. I believe the 2nd Edition of the Web Application Hacker's Handbook was published in 2011 so it makes really good supplemental learning material. 
+
+The labs come in a few different flavors. All modules will have 'Lab Excercises' and most will also have 'Challenges.' The Lab Exercises come with solutions that you can reference when you get stuck, the Challenges do not and are meant to push the student into self-study territory and thinking outside of the box. I highly highly recommend doing all the Challenges. Usually if you get stuck on a Challenge, you can search the forums for previous students getting stuck at the same point and read those threads. You can also leverage the community and ask people in whatever online forum you're a part of. The Lab Excercises will only cover the bare minimum required for you to understand the concepts at a high-level so I wouldn't recommend only doing the Lab Excercises. 
+
+Some of the modules also come with lab access to the web applications that are demo'd in the instructional videos. For instance, if the instructor in the video is going against FooSite.com, you will sometimes have access to FooSite.com in the lab environment. This is good for those who like to watch and play along with the instructor in the video. 
+
+One of the unique things about the material is that eLS takes some time to explain to you why vulnerabilites exist and how to mitigate them. I found this part of the material to be really interesting. eLS also explains how/why vulnerabilities exist and delves somewhat into ambiguous topics related to pentesting such as who's responsibility it is to mitigate certain classes of vulnerabilities. There are several instances where there is clearly a victim of an attack but not a clear responsible party. 
+
+## Going Through The Course
+I found that the order of the modules was perfectly fine, it never felt like they were out of order or that one module late in the course would've helped with an earlier module had the order been different. I recommend reading through all the material for a module first before going to the lab exercises which correspond to the material. 
+
+When it comes to the lab exercises, I would try your best to avoid the spoilers in the back of the PDF explaining the solutions. The lab excercises should not be difficult if you truly grasped the concept from the materials. If you get stuck on a lab exercise, just head back to the course material and see if you can find the solution there, usually you can. Typically there isn't a large disconnect between the examples in the materials and the environments in the lab. 
+
+I found the Challenges to be much tougher than the lab exercises, as you would expect. Don't fret if you find yourself getting owned by the Challenges, they're supposed to be harder. Just take your time, consult outside resources, try to google for help, and look for the Challenge title in the Student Forums if all else fails. To get the most out of the course I definitely recommend doing the Challenges. 
+
+## The Exam
+The exam is structured as follows: 7 days of VPN access to the test environment followed by 7 days to compose your penetration test report. 
+
+The exam guidance is careful to emphasize that the exam is not a CTF, it is a simulated penetration test. There is a 'required but not sufficient' goal which you must reach. If you leverage X, Y, and Z vulnerabilities to get to the required goal, but do not document the existence of A, B, C vulnerabilities in your report, you will fail. So even if you do not leverage a vulnerability during the engagement, make sure you document its existence in your report.
+
+Your report has to be robust and include mitigation strategies as well as exploitation proofs. Definitely familiarize yourself with the eLS reporting guide before clicking 'Start' on your certification exam. 
+
+## Resources
++ [Technical Tips from @m0nk3h](https://h4ck.co/oscp-journey-exam-lab-prep-tips/)
++ [Tulpa OSCP Review](https://tulpa-security.com/2016/09/11/review-oscp-and-pwk/)
++ [Scund00r OSCP Guide](https://scund00r.com/all/oscp/2018/02/25/passing-oscp.html)
++ [Abatchy OSCP Guide](https://www.abatchy.com/2017/03/how-to-prepare-for-pwkoscp-noob)
++ [Thunderson's OSCP Guide](https://www.secjuice.com/oscp-prep-guidance/)
++ [OSCP HTB Walkthrough Playlist by @TJNull and @Ippsec](https://www.youtube.com/playlist?list=PLidcsTyj9JXK-fnabFLVEvHinQ14Jy5tf)
++ [OSCP Goldmine of Resources](http://0xc0ffee.io/blog/OSCP-Goldmine)
++ [Georgia Weidman – ‘Penetration Testing’](https://www.amazon.com/Penetration-Testing-Hands-Introduction-Hacking-ebook/dp/B00KME7GN8)
++ [Metasploit Unleashed](https://www.offensive-security.com/metasploit-unleashed/)
++ [Wireshark Display Filters](https://wiki.wireshark.org/DisplayFilters)
++ [OverTheWire – Bandit Wargames](https://overthewire.org/wargames/bandit/)
++ [Code Academy – Bash](https://www.codecademy.com/catalog/language/bash)
++ [g0tmi1k Linux Privesc Guide](https://blog.g0tmi1k.com/2011/08/basic-linux-privilege-escalation/)
++ [Fuzzy Windows Privesc Guide](http://www.fuzzysecurity.com/tutorials/16.html)
++ [Attacking WordPress](https://forum.top-hat-sec.com/index.php?topic=5758.0)
++ [Unix Binaries for Security Bypass](https://gtfobins.github.io/#)
++ [Windows Binaries for Security Bypass](https://lolbas-project.github.io/#)
++ [Linux Kernel Exploits](https://github.com/lucyoa/kernel-exploits)
++ [Path Traversal Cheat Sheet](https://www.gracefulsecurity.com/path-traversal-cheat-sheet-windows/)
++ [Reverse Shell Cheat Sheet](http://pentestmonkey.net/cheat-sheet/shells/reverse-shell-cheat-sheet)
++ [0xdf’s Blog, look for posts tagged ‘pwk’](https://0xdf.gitlab.io/)
++ [NetSecFocus](https://mm.netsecfocus.com/join/)
++ [Buffer Overflow](https://github.com/justinsteven/dostackbufferoverflowgood)
++ [File Transfers](https://www.exploit-db.com/docs/english/46515-file-transfer-skills-in-the-red-team-post-penetration-test.pdf)
++ [Post Exploitation Windows File Transfers](https://blog.ropnop.com/transferring-files-from-kali-to-windows/)
+
+
