@@ -16,7 +16,7 @@ tags:
 ## Managing Expectations
 I enrolled in WAPT because, beyond the narrow exposure to web app testing you get in PWK/OSCP, I had little to no experience. I have done ~30 machines on HackTheBox and found a lot of the skills I gained from HackTheBox and watching Ippsec walkthroughs to be very helpful during the course and exam. I really wanted to learn more about some of the client side type attacks that don't typically come up during CTF type activities. 
 
-Prior to the course I read about half of the Web Application Hacker's Handbook and found the material to be outstanding, I actually referenced it a lot during the eWPT exam. I took my time during the course to make sure I was really grasping the concepts and not just rushing to add a certification to my CV. All in all I probably spent around 70 hours in the various labs and way less than that reading through the material. I think the course is set up perfectly for those with little to no web app testing experience looking to get a solid grasp of the fundamentals. It really helped me get a better understanding of Cross-Site Scripting and SQL Injection in particular. The chapters on Session Security and Web Services were also great. 
+Prior to the course I read about half of the Web Application Hacker's Handbook and found the material to be outstanding, I actually referenced it a lot during the eWPT exam. I took my time during the course to make sure I was really grasping the concepts and not just rushing to add a certification to my CV. All in all, I probably spent around 70 hours in the various labs and way less than that reading through the material. I think the course is set up perfectly for those with little to no web app testing experience looking to get a solid grasp of the fundamentals. It really helped me get a better understanding of Cross-Site Scripting and SQL Injection in particular. The chapters on Session Security and Web Services were also great. 
 
 I definitely recommend this course to anyone who can afford it and is interested in learning the web app testing fundamentals.   
 
@@ -59,11 +59,20 @@ The exam guidance is careful to emphasize that the exam is not a CTF, it is a si
 
 Your report has to be robust and include mitigation strategies as well as exploitation proofs. Definitely familiarize yourself with the eLS reporting guide before clicking 'Start' on your certification exam. 
 
+The exam had me stuck at a particular spot for a couple of days, it was very frustrating. But, as it usually turns out, I had overlooked a small detail and the solution was not overly complex in any way, I had simply not been thorough enough in my testing methodology. You have plenty of time for the testing performance, so be thorough. I had reached the final goal of the test by the 4th day, but you could conceivably do everything in a single day or two if you're well prepared. If you get stuck do not worry, just take your time and refer back to the course materials if needed. If you think a particular exploit technique should be working, but it's not, see if you can find an analogous example in the course materials or online. Security Stack Exchange often has good questions and answers. 
+
+## Conclusion
+I think this course is perfect for the inexperienced/aspiring web app tester. The fact that the materials are semi-dated (~2015ish for most) doesn't seem like an issue to me as these vulnerabilities still exist. Professional bug bounty hunters have been publicly plugging the Wep App Pentesters Handbook as late as 2019, so I don't think the age of the materials is a huge demerit. I think you could reasonably take this course before any other practical pentesting course (like PTP/eCPPT or PWK/OSCP) and be fine. I was happy to close some of the gaps in my knowledge with this course. Some of the material was indeed a review, but even then, I still learned some things in those modules (File/Resource Attacks comes to mind). 
+
 ## Resources
 + [Web Application Hacker's Handbook (2nd Edition](https://www.amazon.com/Web-Application-Hackers-Handbook-Exploiting/dp/1118026470)
 + [bWAPP Vulnerable Web Application VM](http://www.itsecgames.com/)
-+ [Bugcrowd University Introduction to Burp Suite](https://www.youtube.com/watch?v=h2duGBZLEek&list=PLIK9nm3mu-S4K4jMHwtplbrE1JMg0jyN-&index=3)
++ [bWAPP Walkthroughs](https://www.scribd.com/document/385323969/bWAPP#fullscreen&from_embed)
++ [Bugcrowd University Introduction to Burp Suite](https://www.youtube.com/watch?v=h2duGBZLEek)
 + [Bugcrowd University XSS](https://www.youtube.com/watch?v=gkMl1suyj3M)
-+ 
++ [Bugcrowd Universty Broken Access Controls](https://www.youtube.com/watch?v=94-tlOCApOc)
++ [Intro to JavaScript -- Codeacademy](https://www.codecademy.com/learn/introduction-to-javascript)
++ [Portswigger Web Security Academy](https://portswigger.net/web-security)
+
 
 
