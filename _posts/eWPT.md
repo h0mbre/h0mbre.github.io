@@ -16,7 +16,9 @@ tags:
 ## Managing Expectations
 I enrolled in WAPT because, beyond the narrow exposure to web app testing you get in PWK/OSCP, I had little to no experience. I have done ~30 machines on HackTheBox and found a lot of the skills I gained from HackTheBox and watching Ippsec walkthroughs to be very helpful during the course and exam. I really wanted to learn more about some of the client side type attacks that don't typically come up during CTF type activities. 
 
-Prior to the course I read about half of the Web Application Hacker's Handbook and found the material to be outstanding, I actually referenced it a lot during the eWPT exam. I took my time during the course to make sure I was really grasping the concepts and not just rushing to add a certification to my CV. All in all I probably spent around 70 hours in the various labs and way less than that reading through the material. I think the course is set up perfectly for those with little to no web app testing experience looking to get a solid grasp of the fundamentals. It really helped me get a better understanding of Cross-Site Scripting and SQL Injection in particular. The chapters on Session Security and Web Services were also great. I definitely recommend this course to anyone who can afford it and is interested in learning the web testing fundamentals.   
+Prior to the course I read about half of the Web Application Hacker's Handbook and found the material to be outstanding, I actually referenced it a lot during the eWPT exam. I took my time during the course to make sure I was really grasping the concepts and not just rushing to add a certification to my CV. All in all I probably spent around 70 hours in the various labs and way less than that reading through the material. I think the course is set up perfectly for those with little to no web app testing experience looking to get a solid grasp of the fundamentals. It really helped me get a better understanding of Cross-Site Scripting and SQL Injection in particular. The chapters on Session Security and Web Services were also great. 
+
+I definitely recommend this course to anyone who can afford it and is interested in learning the web app testing fundamentals.   
 
 If you're interested in the course or enrolled and have questions, please reach out to me on Twitter, HackTheBox, or NetSecFocus. I’d love to hear from you. 
 
@@ -26,7 +28,11 @@ The eLearnSecurity syllabus recommends the following student prerequisites:
 + Reading and understanding PHP code will help although it is not mandatory
 + No web development skills required
 
-For the most part, I found these prerequisites to be accurate. I didn't really have a good understanding of HTML or JavaScript coming into the course (still don't have a good understanding of JavaScript, what the hell even is JavaScript) and was totally fine. The only time I wished I knew more JavaScript was during the chapters on HTML5 CORS misconfigurations as some of the exploit vectors require an actor to create a malicious webpage with a JavaScript payload. You don't do much PHP code reading or writing during the course. If you want to go the overkill route, you can take the Intro to JavaScript course on Codeacademy and read the Web Application Hacker's Handbook before the course. I also recommend downloading and playing with the bWAPP VM, the practical experience of the VM is very similar to the WAPT labs. Basic knowledge of the Linux command line is also a prerequisite that I feel you must have to get the most out of the class. I would also work to get some prerequisite knowledge of Burp Suite before taking the course. 
+For the most part, I found these prerequisites to be accurate. I didn't really have a good understanding of HTML or JavaScript coming into the course (still don't have a good understanding of JavaScript, what the hell even is JavaScript) and was totally fine. The only time I wished I knew more JavaScript was during the chapters on HTML5 CORS misconfigurations as some of the exploit vectors require an actor to create a malicious webpage with a JavaScript payload. You don't do much PHP code reading or writing during the course. 
+
+If you want to go the overkill route, you can take the Intro to JavaScript course on Codeacademy and read the Web Application Hacker's Handbook before the course. I also recommend downloading and playing with the bWAPP VM, the practical experience of the VM is very similar to the WAPT labs. Basic knowledge of the Linux command line is also a prerequisite that I feel you must have to get the most out of the class. I would also work to get some prerequisite knowledge of Burp Suite before taking the course.
+
+**If you have limited Burp Suite experience, watch the 'Introduction to Burp Suite' Bugcrowd Univerity YouTube video linked below in 'Resources.'**
 
 ## Materials
 The WAPT materials are pretty great. Depending on what version of the course you buy, you get a PDF/Slides of all the written material, videos demonstrating the concepts taught in the material, and then labs which correspond to each lesson in the material.
@@ -54,30 +60,10 @@ The exam guidance is careful to emphasize that the exam is not a CTF, it is a si
 Your report has to be robust and include mitigation strategies as well as exploitation proofs. Definitely familiarize yourself with the eLS reporting guide before clicking 'Start' on your certification exam. 
 
 ## Resources
-+ [Technical Tips from @m0nk3h](https://h4ck.co/oscp-journey-exam-lab-prep-tips/)
-+ [Tulpa OSCP Review](https://tulpa-security.com/2016/09/11/review-oscp-and-pwk/)
-+ [Scund00r OSCP Guide](https://scund00r.com/all/oscp/2018/02/25/passing-oscp.html)
-+ [Abatchy OSCP Guide](https://www.abatchy.com/2017/03/how-to-prepare-for-pwkoscp-noob)
-+ [Thunderson's OSCP Guide](https://www.secjuice.com/oscp-prep-guidance/)
-+ [OSCP HTB Walkthrough Playlist by @TJNull and @Ippsec](https://www.youtube.com/playlist?list=PLidcsTyj9JXK-fnabFLVEvHinQ14Jy5tf)
-+ [OSCP Goldmine of Resources](http://0xc0ffee.io/blog/OSCP-Goldmine)
-+ [Georgia Weidman – ‘Penetration Testing’](https://www.amazon.com/Penetration-Testing-Hands-Introduction-Hacking-ebook/dp/B00KME7GN8)
-+ [Metasploit Unleashed](https://www.offensive-security.com/metasploit-unleashed/)
-+ [Wireshark Display Filters](https://wiki.wireshark.org/DisplayFilters)
-+ [OverTheWire – Bandit Wargames](https://overthewire.org/wargames/bandit/)
-+ [Code Academy – Bash](https://www.codecademy.com/catalog/language/bash)
-+ [g0tmi1k Linux Privesc Guide](https://blog.g0tmi1k.com/2011/08/basic-linux-privilege-escalation/)
-+ [Fuzzy Windows Privesc Guide](http://www.fuzzysecurity.com/tutorials/16.html)
-+ [Attacking WordPress](https://forum.top-hat-sec.com/index.php?topic=5758.0)
-+ [Unix Binaries for Security Bypass](https://gtfobins.github.io/#)
-+ [Windows Binaries for Security Bypass](https://lolbas-project.github.io/#)
-+ [Linux Kernel Exploits](https://github.com/lucyoa/kernel-exploits)
-+ [Path Traversal Cheat Sheet](https://www.gracefulsecurity.com/path-traversal-cheat-sheet-windows/)
-+ [Reverse Shell Cheat Sheet](http://pentestmonkey.net/cheat-sheet/shells/reverse-shell-cheat-sheet)
-+ [0xdf’s Blog, look for posts tagged ‘pwk’](https://0xdf.gitlab.io/)
-+ [NetSecFocus](https://mm.netsecfocus.com/join/)
-+ [Buffer Overflow](https://github.com/justinsteven/dostackbufferoverflowgood)
-+ [File Transfers](https://www.exploit-db.com/docs/english/46515-file-transfer-skills-in-the-red-team-post-penetration-test.pdf)
-+ [Post Exploitation Windows File Transfers](https://blog.ropnop.com/transferring-files-from-kali-to-windows/)
++ [Web Application Hacker's Handbook (2nd Edition](https://www.amazon.com/Web-Application-Hackers-Handbook-Exploiting/dp/1118026470)
++ [bWAPP Vulnerable Web Application VM](http://www.itsecgames.com/)
++ [Bugcrowd University Introduction to Burp Suite](https://www.youtube.com/watch?v=h2duGBZLEek&list=PLIK9nm3mu-S4K4jMHwtplbrE1JMg0jyN-&index=3)
++ [Bugcrowd University XSS](https://www.youtube.com/watch?v=gkMl1suyj3M)
++ 
 
 
