@@ -75,7 +75,7 @@ global_start
 section .txt
 _start:
 ```
-The first thing we want to do is to clear out the registers we're going to use immediately. How do we know what registers we want to use? You can think of your syscall as something like an *arg[0]* in a command line program. So that's always going to correspond with the first register, EAX. Subsequent arguments will follow sequentially: *arg[1]* will correspond to EBX, *arg[2]* will correspond to ECX, etc.
+The first thing we want to do is to clear out the registers we're going to use immediately. How do we know what registers we want to use? You can think of your syscall as something like an arg[0] in a command line program. So that's always going to correspond with the first register, EAX. Subsequent arguments will follow sequentially: arg[1] will correspond to EBX, arg[2] will correspond to ECX, etc.
 
 If we consult `man 2 socket` for our first syscall, socket, we see that it takes 3 arguments in the following fashion:`int socket(int domain, int type, int protocol);`
 
@@ -101,7 +101,7 @@ Let's now figure out what we're going to put into EAX to call socket. We can do 
     mov al, 0x167
 ```
 
-Now let's start with the arguments. `man 2 socket` tells us that the first argument is `int domain` which we see in the man page is `AF_INET` for IPv4. Let's just google 'value for AF_INET' and see what value we should use in the argument. Our first [result](http://students.mimuw.edu.pl/SO/Linux/Kod/include/linux/socket.h.html) is a university webpage which looks to be a header file explaining not only the value of `AF_INET` but also of `SOCK_STREAM` which is going to be our second value to satisfy the `int type` argument. According to the file, `AF_INET` is 2 and `SOCK_STREAM` is 1 (0x02 and 0x01) respectively. The last argument value for `int protocol` is going to be '0' according to the man page. So we need the following register and value combinations:
+Now let's start with the arguments. `man 2 socket` tells us that the first argument is `int domain` which we see in the man page is `AF_INET` for IPv4. Let's just google 'value for AF_INET' and see what value we should use in the argument. Our first [result](http://students.mimuw.edu.pl/SO/Linux/Kod/include/linux/socket.h.html) is a university webpage which looks to be a header file explaining not only the value of `AF_INET` but also of `SOCK_STREAM` which is going to be our second value to satisfy the `int type` argument. According to the file, `AF_INET` is 2 and `SOCK_STREAM` is 1 (`0x02` and `0x01`) respectively. The last argument value for `int protocol` is going to be '0' according to the man page. So we need the following register and value combinations:
 + EBX == 0x02
 + ECX == 0x01
 + EDX == 0
@@ -125,9 +125,63 @@ Lastly, before moving on, we will need a way to identify this socket we've just 
     mov edi, eax
 ```
 
+## Bind Syscall
+
+First thing we want to do here is clear out EAX so that we can put the value of our bind call into the lower part of the register as we did above with socket. `cat /usr/include/i386-linux-gnu/asm/unistd_32.h | grep socket` gives us a value of 361 which is `0x169`
+
+Let's make these changes to our code
+
+```nasm
+    xor eax, eax
+    mov al, 0x169
+```
+
+Now we need to consult `man 2 bind` to figure out the structure of the arguments this syscall requires. The result is `int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);`
+
+These arguments can be summarized at a high-level as follows: 
++ `int sockfd` -- this is a reference to the socket we just created, this is why we moved EAX into EDI 
++ `const struct sockaddr *addr` -- this is a pointer to the location on the stack of the sockaddr struct we are going to create
++ `socklen_t addrlen` -- this is the length of the address which the `/usr/include/linux/in.h` file tells us is 16
+
+Let's start with satisfying the `int sockfd` argument. 
+
+```nasm
+    mov ebx, edi
+```
+
+Now, let's start creating our sockaddr struct on the stack. A [sockets programming tutorial](http://home.iitk.ac.in/~chebrolu/scourse/slides/sockets-tutorial.pdf) tells us that the sockaddr_in struct for the bind syscall consists of the following 4 components:
++ AF_INET
++ Port Number
++ Internet address
++ 0
+
+Let's start moving these values into the registers. Our port number will be 5555 and our internet address will be 0.0.0.0
+
+Because the stack grows from High to Low, we will have to place these arguments onto the stack in reverse order. We will also have to put our port number in Little Endian format, so instead of 0x1563, we will place 0xb315 onto the stack.
+
+```nasm
+    push 0
+    push 0
+    push word 0xb315
+    push word 0x02
+```
+
+Boom! Struct completed. Let's put the pointer to this entity into the ECX register so that we can satisfy our `const struct sockaddr *addr` argument. We'll also put 16 into the low part of the EDX register and call the interrupt again while we're here since that's easy enough. 
+
+```nasm 
+    mov ecx, esp
+    mov dl, 16
+    int 0x80
+```
+
+##
 
 
 
 
 
+## Resources
 
+https://stackoverflow.com/questions/1817577/what-does-int-0x80-mean-in-assembly-code
+https://resources.infosecinstitute.com/icmp-reverse-shell/#gref
+http://home.iitk.ac.in/~chebrolu/scourse/slides/sockets-tutorial.pdf
