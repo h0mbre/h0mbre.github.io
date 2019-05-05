@@ -127,7 +127,7 @@ Lastly, before moving on, we will need a way to identify this socket we've just 
 
 ## Bind Syscall
 
-First thing we want to do here is clear out EAX so that we can put the value of our bind call into the lower part of the register as we did above with socket. `cat /usr/include/i386-linux-gnu/asm/unistd_32.h | grep socket` gives us a value of 361 which is `0x169`
+Now we need to bind a 'name' to our newly created socket. First thing we want to do here is clear out EAX so that we can put the value of our bind call into the lower part of the register as we did above with socket. `cat /usr/include/i386-linux-gnu/asm/unistd_32.h | grep socket` gives us a value of 361 which is `0x169`
 
 Let's make these changes to our code
 
@@ -174,11 +174,54 @@ Boom! Struct completed. Let's put the pointer to this entity into the ECX regist
     int 0x80
 ```
 
-##
+## Listen Syscall
 
+Now we have to condition our bound socket to listen for incoming connections. `cat /usr/include/i386-linux-gnu/asm/unistd_32.h | grep listen` nets us the code 363 for listen (`0x16b`). 
 
+```nasm
+    xor eax, eax
+    mov ax, 0x16b
+```
 
+`man 2 listen` tells us that the argument structure for the syscall is `int listen(int sockfd, int backlog)`
 
+`int sockfd` is again, just a reference to the socket we created that we took out of EAX and stored off to the side in EDI initially. From what I understand after reading about it, `int backlog` is just a reference to how many connections you want to queue if your socket is not immediately accepting connections. The way our code works, we want to immediately accept the first incoming connection, so this value can be 0 for us. With EBX and ECX figured out, we can now call interrupt and move on. 
+
+```nasm
+    mov ebx, edi
+    xor ecx, ecx
+    int 0x80
+```
+
+# Accept Syscall
+
+We have our socket created, bound to an interface and port, and listening for connections. Next, we need to make it accept incoming connections. `cat /usr/include/i386-linux-gnu/asm/unistd_32.h | grep accept` gives us the code for 'accept4()' which is 364 (`0x16c`).
+
+```nasm
+    xor eax, eax
+    mov ax, 0x16c
+```
+
+`man 2 accept4` gives us an argument structure of `accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen, int flags)`
+
+The mang page also states that the arguments after `int sockfd` (which we still have stored in EDI), can be given as NULL, NULL, 0 respectively. This is easy to pull off. So after we put EDI into EBX, we can just XOR the next 3 registers against themselves and call interrupt.
+
+```nasm
+    mov ebx, edi
+    xor ecx, ecx
+    xor edx, edx
+    xor esi, esi
+    int 0x80
+```
+
+If you read the accept4 man page carefully, the RETURN VALUE section states that after this syscall, we will receive a new `int sockfd` that we will need to use in subsequent syscalls. The original `int sockfd` was stored off to the side in EDI, so we'll do that with the new one as well. 
+
+```nasm
+    xor edi, edi
+    mov edi, eax
+```
+
+## Dup2 Syscall 
 
 ## Resources
 
