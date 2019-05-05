@@ -17,7 +17,7 @@ tags:
 
 The first SLAE assignment is to develop shellcode for a bind TCP shell. What is a bind TCP shell? According to [Infosec Institute](https://resources.infosecinstitute.com/icmp-reverse-shell/#gref), a bind shell is "a type of shell in which the target machine opens up a communication port or a listener on the victim machine and waits for an incoming connection. The attacker then connects to the victim machine’s listener which then leads to code or command execution on the server."
 
-I found that while not an easy subject, the actual assembly code construction was not very difficult. The learning curve from this assignment really came from trying to wrap my head around 'socket programming' fundamentals. The hardest part for me was trying to parse man page information about the various syscalls and trying to understand how to format the arguments required for each syscall. ***I am not a professional programmer, I apologize for any socket programming concepts I butchered in my explanations***
+I found that while not an easy subject, the actual assembly code construction was not very difficult. The learning curve from this assignment really came from trying to wrap my head around 'socket programming' fundamentals. The hardest part for me was trying to parse man page information about the various syscalls and trying to understand how to format the arguments required for each syscall. ***I am not a professional programmer, I apologize for any socket programming concepts I butchered in my explanations.***
 
 ## Prototype
 
