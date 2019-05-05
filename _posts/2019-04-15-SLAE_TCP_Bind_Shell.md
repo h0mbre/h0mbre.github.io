@@ -55,16 +55,25 @@ int main(void) {
 }
 ```
 Now that that's settled, it's become apparent we need to execute 6 syscalls in our assembly code:
-+ socket()
-+ bind()
-+ listen()
-+ accept()
-+ dup2()
-+ execve()
++ socket
++ bind
++ listen
++ accept
++ dup2
++ execve
+
+Let's get started with our skeleton.nasm file
+
+```nasm
+global_start
+
+section .txt
+_start:
+```
 
 
-## Resources
-+ [Technical Tips from @m0nk3h](https://h4ck.co/oscp-journey-exam-lab-prep-tips/)
+
+
 
 
 
