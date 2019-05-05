@@ -25,8 +25,6 @@ The first thing we want to do, in order to see the syscalls required to support 
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#define PORT 1234
-
 int main(void) {
 
     // This is our first syscall, the socket() call. 
@@ -36,7 +34,7 @@ int main(void) {
     struct sockaddr_in server_addr;
     server_addr.sin_family = AF_INET;           // IPv4
     server_addr.sin_addr.s_addr = INADDR_ANY;   // All interfaces (0.0.0.0)
-    server_addr.sin_port = htons(PORT);         // Port #
+    server_addr.sin_port = htons(5555);         // Port #
 
     // Our second syscall, and perhaps the most complicated: bind() 
     bind(listen_sock, (struct sockaddr *)&server_addr, sizeof(server_addr));
