@@ -75,7 +75,7 @@ global_start
 section .txt
 _start:
 ```
-The first thing we want to do is to clear out the registers we're going to use immediately. How do we know what registers we want to use? You can think of your syscall as something like an arg[0] in a command line program. So that's always going to correspond with the first register, EAX. Subsequent arguments will follow sequentially: arg[1] will correspond to EBX, arg[2] will correspond to ECX, etc.
+The first thing we want to do is to clear out the registers we're going to use immediately. How do we know what registers we want to use? You can think of your syscall as something like an argv[0] in a command line program. So that's always going to correspond with the first register, EAX. Subsequent arguments will follow sequentially: argv[1] will correspond to EBX, argv[2] will correspond to ECX, etc.
 
 If we consult `man 2 socket` for our first syscall, socket, we see that it takes 3 arguments in the following fashion:`int socket(int domain, int type, int protocol);`
 
