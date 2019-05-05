@@ -482,10 +482,12 @@ Compile the shellcode.c program with `gcc -fno-stack-protector -z execstack -m32
 
 Results: 
 Terminal 1
+
 `SLAE@ubuntu:~/SLAE/Exam$ ./bind_shell
 Shellcode Length:  116`
 
 Terminal 2
+
 `SLAE@ubuntu:~/SLAE/Exam$ nc localhost 1234
 whoami
 SLAE
