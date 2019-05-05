@@ -478,9 +478,10 @@ main()
 }
 ```
 
-Compile the shellcode.c program with `gcc -fno-stack-protector -z execstack -m32 shellcode.c -o bind_shell` and run `./bind_shell`
+## Final Testing
 
-Results: 
+Compile the shellcode.c program with `gcc -fno-stack-protector -z execstack -m32 shellcode.c -o bind_shell` and run `./bind_shell`
+ 
 Terminal 1
 
 ```terminal_session
@@ -503,9 +504,3 @@ Linux ubuntu 4.13.0-36-generic #40~16.04.1-Ubuntu SMP Fri Feb 16 23:26:51 UTC 20
 It works!!
 
 
-
-## Resources
-
-https://stackoverflow.com/questions/1817577/what-does-int-0x80-mean-in-assembly-code
-https://resources.infosecinstitute.com/icmp-reverse-shell/#gref
-http://home.iitk.ac.in/~chebrolu/scourse/slides/sockets-tutorial.pdf
