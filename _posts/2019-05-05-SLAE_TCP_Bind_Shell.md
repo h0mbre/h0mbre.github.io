@@ -15,9 +15,9 @@ tags:
 
 ## Prototype
 
-The first SLAE assignment is to develop shellcode for a bind TCP shell. What is a bind TCP shell? According to [Infosec Institute](https://resources.infosecinstitute.com/icmp-reverse-shell/#gref), a bind shell is "a type of shell in which the target machine opens up a communication port or a listener on the victim machine and waits for an incoming connection. The attacker then connects to the victim machine’s listener which then leads to code or command execution on the server."
+<p>The first SLAE assignment is to develop shellcode for a bind TCP shell. What is a bind TCP shell? According to [Infosec Institute](https://resources.infosecinstitute.com/icmp-reverse-shell/#gref), a bind shell is "a type of shell in which the target machine opens up a communication port or a listener on the victim machine and waits for an incoming connection. The attacker then connects to the victim machine’s listener which then leads to code or command execution on the server."</p>
 
-The first thing we want to do, in order to see the syscalls required to support the creation of a bind shell, is find the simplest implementation of a bind shell in a language higher than assembly. After a bit of googling, the simplest version of a bind shell in C that I could find is the following, with my comments added:
+<p>The first thing we want to do, in order to see the syscalls required to support the creation of a bind shell, is find the simplest implementation of a bind shell in a language higher than assembly. After a bit of googling, the simplest version of a bind shell in C that I could find is the following, with my comments added:</p>
 
 ```c
 #include <stdio.h>
@@ -62,7 +62,7 @@ Now that that's settled, it's become apparent we need to execute 6 syscalls in o
 + dup2
 + execve
 
-Let's get started with our skeleton.nasm file
+## Building Our Assembly Code
 
 ```nasm
 global_start
@@ -70,9 +70,9 @@ global_start
 section .txt
 _start:
 ```
-The first thing we want to do is to clear out the registers we're going to use immediately. How do we know what registers we want to use? You can think of your syscall as something like an 'arg[0]' in a command line program. So that's always going to correspond with the first register, EAX. Subsequent arguments will follow sequentially: 'arg[1]' will correspond to EBX, 'arg[2]' will correspond to ECX, etc. 
+<p>The first thing we want to do is to clear out the registers we're going to use immediately. How do we know what registers we want to use? You can think of your syscall as something like an *arg[0]* in a command line program. So that's always going to correspond with the first register, EAX. Subsequent arguments will follow sequentially: *arg[1]* will correspond to EBX, *arg[2]* will correspond to ECX, etc.</p>
 
-If we consult the 'man 2' page for our first syscall, socket(), we see that it takes 3 arguments: 
+<p>If we consult `man 2 socket` for our first syscall, socket(), we see that it takes 3 arguments: 
 
 
 
