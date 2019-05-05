@@ -157,7 +157,7 @@ Now, let's start creating our sockaddr struct on the stack. A [sockets programmi
 
 Let's start moving these values into the registers. Our port number will be 5555 and our internet address will be 0.0.0.0
 
-Because the stack grows from High to Low, we will have to place these arguments onto the stack in reverse order. We will also have to put our port number in Little Endian format, so instead of `0x1563`, we will place `0xb315` onto the stack.
+Because the stack grows from High to Low, we will have to place these arguments onto the stack in reverse order. We will also have to put our port number in Little Endian format, so instead of `0x15b3`, we will place `0xb315` onto the stack.
 
 ```nasm
     xor ecx, ecx
