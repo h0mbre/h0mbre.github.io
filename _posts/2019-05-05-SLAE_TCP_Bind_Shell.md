@@ -439,10 +439,7 @@ else:
 
 		shell = shell1 + combined + shell2
 
-		print portNumber
-		print portNum1
-		print portNum2
-		print combined
+	
 		print shell
 
 	except:
