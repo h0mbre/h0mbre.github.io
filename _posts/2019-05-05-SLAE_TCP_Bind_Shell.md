@@ -497,7 +497,7 @@ SLAE@ubuntu:~/SLAE/Exam$ nc localhost 1234
 whoami
 SLAE
 id
-uid=1000(SLAE) gid=1000(SLAE) groups=1000(caz),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),113(lpadmin),128(sambashare)
+uid=1000(SLAE) gid=1000(SLAE) groups=1000(SLAE),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),113(lpadmin),128(sambashare)
 uname -a
 Linux ubuntu 4.13.0-36-generic #40~16.04.1-Ubuntu SMP Fri Feb 16 23:26:51 UTC 2018 i686 i686 i686 GNU/Linux
 ```
