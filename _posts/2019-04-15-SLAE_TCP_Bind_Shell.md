@@ -56,7 +56,13 @@ int main(void) {
     execve("/bin/sh", NULL, NULL);
 }
 ```
-
+Now that that's settled, it's become apparent we need to execute 6 syscalls in our assembly code:
++ socket()
++ bind()
++ listen()
++ accept()
++ dup2()
++ execve()
 
 
 ## Resources
