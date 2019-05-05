@@ -506,6 +506,6 @@ It works!!
 
 ## Github Repo 
 
-You can find all of the code used in this blog post [here](https://github.com/h0mbre/SLAE/tree/master/Assignment1)
+You can find all of the code used in this blog post [here.](https://github.com/h0mbre/SLAE/tree/master/Assignment1)
 
 
