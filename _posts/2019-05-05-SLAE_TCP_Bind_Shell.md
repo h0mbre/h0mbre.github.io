@@ -68,6 +68,7 @@ Now that that's settled, it's become apparent we need to execute 6 syscalls in o
 
 ## Building Our Assembly Code
 
+### Assembly Skeleton Code
 ```nasm
 global_start
 
@@ -89,9 +90,40 @@ _start:
     xor eax, eax
     xor ebx, ebx
     xor ecx, ecx
-	  xor edx, edx```
+    xor edx, edx
+```
 
-Let's now figure out what we're going to put into EAX to call socket. We can do this with a `cat /usr/include/i386-linux-gnu/asm/unistd_32.h | grep socket` which tells us that the code for socket is 359. Popping 359 as decimal into a hex converter tells us that the hex equivalent is `0x167`
+## Socket Syscall
+
+Let's now figure out what we're going to put into EAX to call socket. We can do this with a `cat /usr/include/i386-linux-gnu/asm/unistd_32.h | grep socket` which tells us that the code for socket is 359. Popping 359 as decimal into a hex converter tells us that the hex equivalent is `0x167`, so let's place that in the low space of EAX so as to not introduce any NULL BYTEs with padding. 
+
+```nasm
+    mov al, 0x167
+```
+
+Now let's start with the arguments. `man 2 socket` tells us that the first argument is `int domain` which we see in the man page is `AF_INET` for IPv4. Let's just google 'value for AF_INET' and see what value we should use in the argument. Our first [result](http://students.mimuw.edu.pl/SO/Linux/Kod/include/linux/socket.h.html) is a university webpage which looks to be a header file explaining not only the value of `AF_INET` but also of `SOCK_STREAM` which is going to be our second value to satisfy the `int type` argument. According to the file, `AF_INET` is 2 and `SOCK_STREAM` is 1 (0x02 and 0x01) respectively. The last argument value for `int protocol` is going to be '0' according to the man page. So we need the following register and value combinations:
++ EBX == 0x02
++ ECX == 0x01
++ EDX == 0
+
+Let's make these changes to our assembly code. If you remember, we already cleared EDX, so our zero value is already accounted for, so need to mess with that register at all. 
+
+```nasm
+    mov bl, 0x02
+    mov cl, 0x01
+```
+
+Next we need to pass control to the [interrupt vector](https://stackoverflow.com/questions/1817577/what-does-int-0x80-mean-in-assembly-code) in order to handle our syscall (socket). 
+
+```nasm
+    int 0x80
+```
+
+Lastly, before moving on, we will need a way to identify this socket we've just created to subsequent systemcalls. We can do this by storing the value of EAX off to the side so that we can reference it later and still use EAX in our subsequent systemcalls. I chose to store this value in EDI as EDI is pretty far down our list of registers we'd fill arguments with, no idea if this makes sense, but it worked!
+
+```nasm
+    mov edi, eax
+```
 
 
 
