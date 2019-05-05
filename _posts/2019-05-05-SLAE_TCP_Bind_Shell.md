@@ -232,6 +232,7 @@ All that dup2 requires for an argument is the `int sockfd` which was newly creat
 
 ```nasm
     mov cl, 0x3     ; putting 3 in the counter
+    
     loop_dup2:      
     xor eax, eax   
     mov al, 0x3f    ; putting the syscall code into the lower part of eax
