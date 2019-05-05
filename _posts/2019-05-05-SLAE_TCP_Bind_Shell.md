@@ -193,7 +193,7 @@ Now we have to condition our bound socket to listen for incoming connections. `c
     int 0x80
 ```
 
-# Accept Syscall
+## Accept Syscall
 
 We have our socket created, bound to an interface and port, and listening for connections. Next, we need to make it accept incoming connections. `cat /usr/include/i386-linux-gnu/asm/unistd_32.h | grep accept` gives us the code for 'accept4()' which is 364 (`0x16c`).
 
