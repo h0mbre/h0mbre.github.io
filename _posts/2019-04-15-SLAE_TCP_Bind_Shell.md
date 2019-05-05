@@ -1,6 +1,6 @@
 ---
 layout: single
-title: SLAE Assignment #1 -- TCP Bind Shell
+title: SLAE Assignment 1 -- TCP Bind Shell
 date: 2019-5-4
 classes: wide
 header:
