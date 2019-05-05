@@ -79,7 +79,7 @@ The first thing we want to do is to clear out the registers we're going to use i
 
 If we consult `man 2 socket` for our first syscall, socket, we see that it takes 3 arguments in the following fashion:`int socket(int domain, int type, int protocol);`
 
-So counting the syscall itself and its 3 arguments, we need to clear the first 4 registers so that we can work with those. Let's clear them by XOR'ing them with themselves so that we clear them in a way that does not introduct NULL BYTEs into our shellcode.
+So counting the syscall itself and its 3 arguments, we need to clear the first 4 registers so that we can work with those. Let's clear them by XOR'ing them with themselves so that we clear them in a way that does not introduce NULL BYTEs into our shellcode.
 
 ```nasm
 global_start
