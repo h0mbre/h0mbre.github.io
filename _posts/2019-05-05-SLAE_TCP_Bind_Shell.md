@@ -486,15 +486,11 @@ main()
 ## Final Testing
 
 Compile the shellcode.c program with `gcc -fno-stack-protector -z execstack -m32 shellcode.c -o bind_shell` and run `./bind_shell`
- 
-Terminal 1
 
 ```terminal_session
 SLAE@ubuntu:~/SLAE/Exam$ ./bind_shell
 Shellcode Length:  116
 ```
-
-Terminal 2
 
 ```terminal_session
 SLAE@ubuntu:~/SLAE/Exam$ nc localhost 1234
