@@ -4,14 +4,14 @@ title: SLAE Assignment 1 -- TCP Bind Shell
 date: 2019-5-4
 classes: wide
 header:
-  teaser: /assets/images/SLAE/SLAE.jpeg
+  teaser: /assets/images/SLAE/SLAE.jpg
 tags:
   - SLAE
   - Linux
   - x86
   - Shellcoding
 --- 
-![](/assets/images/SLAE/SLAE.jpeg)
+![](/assets/images/SLAE/SLAE.jpg)
 
 ## Introduction
 
