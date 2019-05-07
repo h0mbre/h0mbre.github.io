@@ -131,7 +131,7 @@ Let's make these changes to our code
     mov al, 0x16a
 ```
 
-Now we need to consult `man 2 connect` to figure out the structure of the arguments this syscall requires. The result is `int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);`
+Now we need to consult `man 2 connect` to figure out the structure of the arguments this syscall requires. The result is `int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);`
 
 These arguments can be summarized at a high-level as follows: 
 + `int sockfd` -- this is a reference to the socket we just created, this is why we moved EAX into EDI 
