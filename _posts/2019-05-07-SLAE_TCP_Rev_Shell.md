@@ -321,7 +321,7 @@ _start:
 	
 	jnz loop_dup2
 
-	; SYSCALL #6 = execve()
+	; SYSCALL #4 = execve()
  
   	xor eax, eax
 	push eax
