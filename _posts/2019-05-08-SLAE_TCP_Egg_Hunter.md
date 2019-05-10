@@ -136,6 +136,8 @@ We will then satisfy the `const char *pathname` argument for the access syscall 
 
 `cat /usr/include/i386-linux-gnu/asm/unistd_32.h | grep accept` tells us that the syscall code is 33 (`0x21`), so we'll load that into `al` and call the interrupt vector. 
 
+The `[edx]` is new for us, I believe. The brackets just mean to go to that address in memory. In our code, we're going to the location in memory of `edx` then moving forward 4 additional bytes, and then loading that address into `ebx` with the [`lea` opcode](https://c9x.me/x86/html/file_module_x86_id_153.html).  
+
 ```nasm
     address_check:
     inc edx
