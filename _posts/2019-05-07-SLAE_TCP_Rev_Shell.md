@@ -60,7 +60,6 @@ After confirming that the code does indeed work by setting the REMOTE_ADDR to "1
 + connect
 + ***dup2***
 + ***execve***
-+ ***execve***
 
 The syscalls I've highlighted, we already have code for from Assignment #1. Connect actually behaves very similarly to bind, with pretty much the only difference being we won't be specifying a local interface IP address but rather a remote IP address so it's unlikely to be `0.0.0.0` in our reverse shell code. 
 
