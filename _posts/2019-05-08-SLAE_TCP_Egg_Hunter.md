@@ -43,8 +43,8 @@ Skape has found a very clever way to determine whether or not a page of memory i
 
 The argument structure given in the `man 2 access` page is `int access(const char *pathname, int mode);`
 
-+const char \*pathname = a location in memory to check `(ebx)`
-+int mode = F_OK which has a value of 0 `(ecx)`
++ const char \*pathname = a location in memory to check `(ebx)`
++ int mode = F_OK which has a value of 0 `(ecx)`
 
 Since syscalls store their exit codes in portions of the `eax` register, and the exit code for inaccessible memory (EFAULT) is given as [14](http://www-numi.fnal.gov/offline_software/srt_public_context/WebDocs/Errors/unix_system_errors.html), we can check the low byte value for `0xf2`. If our low-byte `al` when compared to `0xf2` matches, the zero flag will be set and we can create control flow to skip to the next page. 
 
