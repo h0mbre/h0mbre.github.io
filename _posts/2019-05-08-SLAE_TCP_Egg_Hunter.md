@@ -43,8 +43,8 @@ Skape has found a very clever way to determine whether or not a page of memory i
 
 The argument structure given in the `man 2 access` page is `int access(const char *pathname, int mode);`
 
-+ const char \*pathname = a location in memory to check `(ebx)`
-+ int mode = F_OK which has a value of 0 `(ecx)`
++ `const char *pathname` = a location in memory to check `(ebx)`
++ `int mode` = `F_OK` which has a value of 0 `(ecx)`
 
 Since syscalls store their exit codes in portions of the `eax` register, and the exit code for inaccessible memory (EFAULT) is given as [14](http://www-numi.fnal.gov/offline_software/srt_public_context/WebDocs/Errors/unix_system_errors.html), we can check the low byte value for `0xf2`. If our low-byte `al` when compared to `0xf2` matches, the zero flag will be set and we can create control flow to skip to the next page. 
 
@@ -56,7 +56,7 @@ Since our egg-hunter will contain exactly one reference to our egg, we will not 
 
 #### Thanks
 
-Many thanks to Skape, Fuzzy Security, and others who have published egg-hunter reference material so that it's consumable to the noob trying to learn.
+Many thanks to Skape, Fuzzy Security, Abatchy and others who have published egg-hunter reference material so that it's consumable to the noob trying to learn.
 
 ## Building Our Assembly Code
 
@@ -68,7 +68,7 @@ global_start
 section .txt
 _start:
 ```
-The first thing we want to do is store our 4 byte 'egg' in a register. 
+The first thing we want to do is store our 'egg' in a register. 
 
 ```nasm
 global_start
@@ -79,7 +79,7 @@ _start:
     mov ebx, 0x50905090
 ```
 
-Next we will clear the `ecx`, `eax`, and `edx` registers. The opcode `mul` will multiply its operand against the `eax` register and store the result in `eax` and `edx`, so in this case it's being multiplied by 0 and storing 0 in both `eax` and `edx`. This saves us a line of code. Shout out to @epi052 for explaining to me how `mul` works. 
+Next we will clear the `ecx`, `eax`, and `edx` registers. The opcode `mul` will multiply its operand against the `eax` register and store the result in `eax` and `edx`, so in this case it's being multiplied by 0 and storing 0 in both `eax` and `edx`. This saves us a line of code. Shout out to @epi052 for explaining to me [how `mul` works.](https://c9x.me/x86/html/file_module_x86_id_210.html) 
 
 ```nasm
     xor ecx, ecx
