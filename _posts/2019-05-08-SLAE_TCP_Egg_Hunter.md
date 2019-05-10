@@ -29,7 +29,7 @@ A 2004 paper by Skape entitled "[Safely Searching Process Virtual Address Space]
 
 Before we jump into the code, let's go through some of the things that are important to understand Skape's egg-hunter. 
 
-#### x86 Linux Memory Pages
+### x86 Linux Memory Pages
 
 According to [manybutfinite.com](https://manybutfinite.com/post/how-the-kernel-manages-your-memory/), "x86 processors in 32-bit mode support page sizes of 4KB, 2MB, and 4MB. Both Linux and Windows map the user portion of the virtual address space using 4KB pages. Bytes 0-4095 fall in page 0, bytes 4096-8191 fall in page 1, and so on."
 
@@ -37,7 +37,7 @@ This is an important concept because our egg-hunter will be iterating through pa
 
 Imagine you were reading a book with 50 chapters, each chapter was written in a different language, and each chapter had 10 pages. If you opened Chapter 1 and found that it was written in a language you do not understand, it would not make sense to continue to page 2 and continue reading. The entirety of Chapter 1 is inaccessible to us as we do not speak this language. We would skip to Chapter 2 and see if it is written in a language we understand. 
 
-#### The Access Syscall
+### The Access Syscall
 
 Skape has found a very clever way to determine whether or not a page of memory is accessible to the egg-hunter searching for its beloved egg which is to utilize the access syscall. According to the `man 2 access` page, access checks whether the calling process (our egg-hunter) can access the file pathname. 
 
@@ -50,11 +50,11 @@ Since syscalls store their exit codes in portions of the `eax` register, and the
 
 If the access syscall returns any other value, we can keep searching the page as its accessible to us. 
 
-#### Double Egg
+### Double Egg
 
 Since our egg-hunter will contain exactly one reference to our egg, we will not want to search for just one instance of the egg or the egg-hunter could possibly find itself and call it a day. To work around this contingency, we can prepend our egg to our real shellcode twice so that the structure of our real shellcode would look like this: egg + egg + shellcode.
 
-#### Thanks
+### Thanks
 
 Many thanks to Skape, Fuzzy Security, Abatchy and others who have published egg-hunter reference material so that it's consumable to the noob trying to learn.
 
@@ -85,7 +85,7 @@ Next we will clear the `ecx`, `eax`, and `edx` registers. The opcode `mul` will 
     xor ecx, ecx
     mul ecx
 ```
-#### First Function, `page_forward:`
+### First Function, `page_forward:`
 
 The first function we build into the code will be to increment 1 page in the event that we hit a page that is inaccessible to us (`al` = `0xf2`). 
 
@@ -128,7 +128,7 @@ As you can see, if we're inside the first 4095 bytes in `dx`, then our logical `
     or dx, 0xfff
 ```
 
-#### Second Function, `address_check:`
+### Second Function, `address_check:`
 
 Next we need to increment `edx` by one to get us to a nice multiple of 4096. We will also push our register values onto the stack with `pushad` in order to preserve them as we make syscalls. 
 
@@ -278,7 +278,7 @@ Linux kali 4.17.0-kali1-686 #1 SMP Debian 4.17.8-1kali1 (2018-07-24) i686 GNU/Li
 
 It works!!
 
-##Github
+## Github
 
 This blog post has been created for completing the requirements of the SecurityTube Linux Assembly Expert certification:
 <http://securitytube-training.com/online-courses/securitytube-linux-assembly-expert/>
