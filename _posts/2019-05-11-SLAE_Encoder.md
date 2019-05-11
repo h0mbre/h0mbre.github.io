@@ -20,9 +20,11 @@ Assignment 4 is create a custom encoder and decoder for some shellcode. For this
 "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x89\xe2\x53\x89\xe1\xb0\x0b\xcd\x80"
 ```
 
-## Encoder
+## Encoder Fundamentals
 
 We need to encode the aforementioned shellcode and an easy way to accomplish this is with a higher level language such as python. I haven't really done much python with bytearrays so let's see how it works step by step.
+
+### Working with Python
 
 The first thing we want to do is introduce our pristine shellcode to our python script (note that we are using python3 for this).
 
@@ -123,6 +125,8 @@ S
 
 As you can see (or not!), it's printing our hex encoded segments as their Unicode counterparts, we can't work with this. Hopefully now we have a better grasp on how python is handling our `byte object`.
 
+### Bitwise Operators
+
 According to [tutorialspoint,](https://www.tutorialspoint.com/python/bitwise_operators_example.htm) we can use the following bitwise operators in python:
 
 | Operator                 | Description                                                                                  |
@@ -151,6 +155,10 @@ Starting on each number's right and moving left:
 `1` **AND** `1` = `1`
 
 At this point we know fundamentally how python is working and what a bitwise logical operation entails. We can research the other operators and figure out how they do their operations. Now we can begin encoding our shellcode. 
+
+## Encoder
+
+
 
 ## Github
 
