@@ -123,7 +123,7 @@ S
 
 As you can see (or not!), it's printing our hex encoded segments as their Unicode counterparts, we can't work with this. Hopefully now we have a better grasp on how python is handling our `byte object`.
 
-According to , we can use the following bitwise operators in python:
+According to [tutorialspoint,](https://www.tutorialspoint.com/python/bitwise_operators_example.htm) we can use the following bitwise operators in python:
 
 | Operator                 | Description                                                                                  |
 |--------------------------|----------------------------------------------------------------------------------------------|
@@ -133,6 +133,21 @@ According to , we can use the following bitwise operators in python:
 | ~ Binary Ones Complement | It is unary and has the effect of 'flipping' bits.                                           |
 | << Binary Left Shift     | The left operands value is moved left by the number of bits specified by the right operand.  |
 | >> Binary Right Shift    | The left operands value is moved right by the number of bits specified by the right operand. |
+
+A bitwise operation is when you convert your two operands into their binary representation and then starting from the right (least significant bit) begin to do a logical operation between each binary digit. 
+
+For example, take the operands 12 and 10 and then perform a bitwise `AND` on them:
+
+`1100` **AND** `1010` would = `1000` which would be 8. 
+
+Starting on each number's right and moving left:
+
+`0` **AND** `0` = `0`
+`0` **AND** `1` = `0`
+`1` **AND** `0` = `0`
+`1` **AND** `1` = `1`
+
+At this point we know fundamentally how python is working and what a bitwise logical operation entails. We can research the other operators and figure out how they do their operations. Now we can begin encoding our shellcode. 
 
 ## Github
 
