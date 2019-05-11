@@ -30,7 +30,7 @@ The first thing we want to do is introduce our pristine shellcode to our python 
 execve = (b"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x89\xe2\x53\x89\xe1\xb0\x0b\xcd\x80")
 ```
 
-According to this [stackoverflow entry,](https://stackoverflow.com/questions/2592764/what-does-a-b-prefix-before-a-python-string-mean), the lower-case `b` in our variable definition makes the string that follows a bytes string literal. What does this mean? Basically, the expression establishes a `byte object` instead of a `Unicode str object` like we're accustomed to. So even though this entity has all of the superficial features or a regular string, it's actually a bytes object. Let's do some comparisons so that we can solidify this difference in our minds.
+According to this [stackoverflow entry](https://stackoverflow.com/questions/2592764/what-does-a-b-prefix-before-a-python-string-mean), the lower-case `b` in our variable definition makes the string that follows a bytes string literal. What does this mean? Basically, the expression establishes a `byte object` instead of a `Unicode str object` like we're accustomed to. So even though this entity has all of the superficial features or a regular string, it's actually a bytes object. Let's do some comparisons so that we can solidify this difference in our minds.
 
 ```python
 byteObject = (b"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x89\xe2\x53\x89\xe1\xb0\x0b\xcd\x80")
