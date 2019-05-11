@@ -136,15 +136,18 @@ According to [tutorialspoint,](https://www.tutorialspoint.com/python/bitwise_ope
 
 A bitwise operation is when you convert your two operands into their binary representation and then starting from the right (least significant bit) begin to do a logical operation between each binary digit. 
 
-For example, take the operands 12 and 10 and then perform a bitwise `AND` on them:
+For example, take the operands 12 and 10 and then perform a bitwise `AND` on them to get 8:
 
-`1100` **AND** `1010` would = `1000` which would be 8. 
+`1100` **AND** `1010` = `1000` 
 
 Starting on each number's right and moving left:
 
 `0` **AND** `0` = `0`
+
 `0` **AND** `1` = `0`
+
 `1` **AND** `0` = `0`
+
 `1` **AND** `1` = `1`
 
 At this point we know fundamentally how python is working and what a bitwise logical operation entails. We can research the other operators and figure out how they do their operations. Now we can begin encoding our shellcode. 
