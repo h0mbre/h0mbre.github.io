@@ -154,6 +154,8 @@ Starting on each number's right and moving left:
 
 `1` **AND** `1` = `1`
 
+For more practice, play with this [calculator](https://www.rapidtables.com/calc/math/binary-calculator.html). 
+
 At this point we know fundamentally how python is working and what a bitwise logical operation entails. We can research the other operators and figure out how they do their operations. Now we can begin encoding our shellcode. 
 
 ## Encoder
@@ -166,7 +168,9 @@ Our decoder will perform the inverse of these operations. It will:
 + delete the random bytes
 + shift all shifted bytes back to their original position. 
 
-In order to mark which bytes we are shifting we will append a `0xFF` to them so that later when we decode, we know which ones were shifted. 
+### Step 1 -- Bit Shift
+
+In order to mark which bytes we are shifting we will append a `0xff` to them so that later when we decode, we know which ones were shifted. And AV is too dumb to realize how smart we are. We are cyber gods. 
 
 
 ## Github
