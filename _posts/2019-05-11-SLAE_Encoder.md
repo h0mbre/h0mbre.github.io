@@ -196,8 +196,8 @@ Looks like we ended up with 14 of the bytes shifted. That's pretty cool!
 ### Step 2 -- Random Byte Injection
 
 Now we import the `random` module and use it to inject a random byte during each iteration of the loop. In other words, our encoder will now shift bytes lower than `128`, prepend those bytes with `0xff`, and then finally append that byte with a random byte. So in practice we can have the following pseudo bytes sequences:
-+Unshifted + Random
-+0xff + Shifted + Random
++ Unshifted + Random
++ 0xff + Shifted + Random
 
 Lastly, we'll want to print to terminal our shellcode formatted in a way that we can use it in our assembly, annotated here as the 'For NASM:' output.
 
