@@ -158,6 +158,15 @@ At this point we know fundamentally how python is working and what a bitwise log
 
 ## Encoder
 
+For our encoder, let's keep things relatively simple. Our encoding process will do the following:
++ if the decimal equivalent of our hex segment is less than `128`, we will shift its bits to the left one slot. As you can probably figure out, if we were to do this with a value of `128` or higher, shifting its bits to the left even one spot would increase its value to a minimum of `256` which breaks our scheme. 
++ lastly, we will inject some random bytes into our code at a known interval so that we can later delete those same bytes since the interval is known. In simpler terms: if I know every other byte is fake, I'll make my decoder delete every other byte. 
+
+Our decoder will perform the inverse of these operations. It will:
++ delete the random bytes
++ shift all shifted bytes back to their original position. 
+
+In order to mark which bytes we are shifting we will append a `0xFF` to them so that later when we decode, we know which ones were shifted. 
 
 
 ## Github
