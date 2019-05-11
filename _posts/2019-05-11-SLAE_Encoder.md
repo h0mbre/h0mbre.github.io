@@ -123,6 +123,16 @@ S
 
 As you can see (or not!), it's printing our hex encoded segments as their Unicode counterparts, we can't work with this. Hopefully now we have a better grasp on how python is handling our `byte object`.
 
+According to , we can use the following bitwise operators in python:
+
+Operator					Description	Example
+& Binary AND				Operator copies a bit to the result if it exists in both operands.
+| Binary OR					It copies a bit if it exists in either operand.
+^ Binary XOR				It copies the bit if it is set in one operand but not both.
+~ Binary Ones Complement	It is unary and has the effect of 'flipping' bits.	
+<< Binary Left Shift		The left operands value is moved left by the number of bits specified by the right operand.
+>> Binary Right Shift		The left operands value is moved right by the number of bits specified by the right operand.
+
 ## Github
 
 This blog post has been created for completing the requirements of the SecurityTube Linux Assembly Expert certification:
