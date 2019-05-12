@@ -144,7 +144,7 @@ int 0x80
 
 Let's break this down and see how it differs from our bind shell that we wrote. 
 
-The first thing we'll notice is repeated use of the same syscall `socketcall()` instead of 6 separate syscalls like we did. `sockecall()` works by storing a `SYS_CALL` value in `ebx`, creating the arguments on the stack for the subordinate syscall (like bind or listen for example), and then having `ecx` point to `esp` where the beginning of the arguments are located. It's a much more uniform and in my opinion clean way of executing the shellcode. 
+The first thing we'll notice is repeated use of the same syscall `socketcall()` instead of 4 separate syscalls like we did. `sockecall()` works by storing a `SYS_CALL` value in `ebx`, creating the arguments on the stack for the subordinate syscall (like bind or listen for example), and then having `ecx` point to `esp` where the beginning of the arguments are located. It's a much more uniform and in my opinion clean way of executing the shellcode. 
 
 #### Syscall 1 `socketcall()` with `SYS_SOCKET`
 
@@ -206,7 +206,7 @@ mov al,0x66       ; calling socketcall()
 int 0x80 
 ```
 
-### Syscall 4 `socketcall()` with `SYS_ACCEPT`
+#### Syscall 4 `socketcall()` with `SYS_ACCEPT`
 
 The unique thing about `accept()` is that it will generate a new `sockfd` for us instead of the one we've been using that we'll need to store and reference. 
 
@@ -218,7 +218,7 @@ int 0x80
 
 Again, `ecx` already points to the beginning of the arguments so we're good to go. 
 
-### Syscall 5 `dup2()`
+#### Syscall 5 `dup2()`
 
 `dup2()` is going to take a `sockfd` created from our `accept()` call and then duplicate the 0, 1, and 2 file descriptors in the `ecx` registers which correspond to stdin, stdout, stderr respectively in order to make the shell interactive. Let's see how they implement this. 
 
@@ -238,7 +238,7 @@ Lesson learned here, the original ndisasm output told us that `0x32` was a refer
 
 So now we know if that condition is not meant, this is where we loop back to. Very cool way of constructing the loop.
 
-### Syscall 6 `execve()`
+#### Syscall 6 `execve()`
 
 This syscall is one of the most standardized syscalls you can make in assembly so I doubt there will be much variance here. 
 
