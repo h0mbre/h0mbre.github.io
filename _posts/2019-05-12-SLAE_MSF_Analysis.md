@@ -379,7 +379,7 @@ int 0x80
 
 This is all pretty familiar to the code we analyzed for the MSF bind payload. 
 
-#### Syscall 3 `execve()`
+#### Syscall 4 `execve()`
 
 This is similar to the MSF bind payload we analyzed, but not identical. 
 
