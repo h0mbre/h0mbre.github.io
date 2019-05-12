@@ -326,11 +326,11 @@ To break down the `add al, 3` portion further, we had this structure `0xff,0x62,
 Let's see what happens in the rest of the `sniffer` function when we get to a good byte like `0xc0`. 
 
 ```nasm
-mov bl, byte [esi + eax]	; since we know its a good byte, move it into $bl
-	mov byte [edi], bl	; move it into $edi who's keeping track of our decoded shell-code
-	inc edi			; this $edi position has been filled with a good byte, let's move to the next empty one
-	add al, 2		; we know the byte after this will be garbage, so we lets skip it
-	jmp short sniffer	; start this loop over
+	mov bl, byte [esi + eax]	; since we know its a good byte, move it into $bl
+	mov byte [edi], bl		; move it into $edi who's keeping track of our decoded shell-code
+	inc edi				; this $edi position has been filled with a good byte, let's move to the next empty one
+	add al, 2			; we know the byte after this will be garbage, so we lets skip it
+	jmp short sniffer		; start this loop over
 ```
 
 Let's test it!
