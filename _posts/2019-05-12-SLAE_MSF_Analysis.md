@@ -344,7 +344,7 @@ xchg eax,ebx        ; storing the sockfd in ebx
 
 We are getting good at this! Most of this makes sense to us at this point and matches up nicely with our bind shell analysis. 
 
-### Syscall 2 `dup2()`
+#### Syscall 2 `dup2()`
 
 This is interesting, it looks like this code calls `dup2()` before `connect()` which is different from our code. 
 
@@ -360,7 +360,7 @@ This is a similar set-up to our `dup2()` loop in the MSF bind shell that we eval
 00000011  B03F              mov al,0x3f
 ```
 
-### Syscall 3 `socketcall()` with `connect()`
+#### Syscall 3 `socketcall()` with `SYS_CONNECT`
 
 `connect()` behaves very similarly to `bind()` so keep in mind the argument structure for both, particularly the struct portion: `int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)`.
 
@@ -379,7 +379,7 @@ int 0x80
 
 This is all pretty familiar to the code we analyzed for the MSF bind payload. 
 
-### Syscall 3 `execve()`
+#### Syscall 3 `execve()`
 
 This is similar to the MSF bind payload we analyzed, but not identical. 
 
