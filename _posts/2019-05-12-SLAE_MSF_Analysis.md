@@ -146,7 +146,7 @@ Let's break this down and see how it differs from our bind shell that we wrote.
 
 The first thing we'll notice is repeated use of the same syscall `socketcall()` instead of 4 separate syscalls like we did. `sockecall()` works by storing a `SYS_CALL` value in `ebx`, creating the arguments on the stack for the subordinate syscall (like bind or listen for example), and then having `ecx` point to `esp` where the beginning of the arguments are located. It's a much more uniform and in my opinion clean way of executing the shellcode. 
 
-#### Syscall 1 `socketcall()` with `SYS_SOCKET`
+### Syscall 1 `socketcall()` with `SYS_SOCKET`
 
 First, let's look at the argument structure of `socketcall()`. The [man page](http://man7.org/linux/man-pages/man2/socketcall.2.html) gives the argument structure as `int socketcall(int call, unsigned long *args);`. `call` can be satisfied with a reference to what socket function you want to use, in thise case we'll want to use `SYS_SOCKET` which has a value of `1`, and then we'll input arguments to satisfy the `SYS_SOCKET` call as we're familiar with from our code. 
 
@@ -170,7 +170,7 @@ Next they increment `ebx` so that it will equal `0x1` and satisfy the `SYS_SOCKE
 
 Lastly, `ecx` is given the address of `esp` so that it references our arguments that we just created on the stack and then the interrupt is called. Also, let's not forget that the `sockfd` will be needed later and that's stored in `eax` by default.
 
-#### Syscall 2 `socketcall()` with `SYS_BIND`
+### Syscall 2 `socketcall()` with `SYS_BIND`
 
 This is the structure from the man page on `bind()`: `int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);` As we know already, building this struct in reverse order on the stack is the most difficult part of the entire shellcode. 
 + `int sockfd` is taken care of, thats stored in `eax`.
@@ -195,7 +195,7 @@ int 0x80
 
 Awesome, not too many unique things there, though I will say for the most part they make more use of pushing values onto the stack and then popping them into register than I have. 
 
-#### Syscall 3 `socketcall()` with `SYS_LISTEN`
+### Syscall 3 `socketcall()` with `SYS_LISTEN`
 
 If you don't remember, the argument structure for `listen()` is `listen(sockfd, queueLimit)`. This part of the code is pretty self-explanatory. `ecx` will point to the args by default because it's not touched in this code segement and is still referencing `esp` from previous code segment.
 
@@ -206,7 +206,7 @@ mov al,0x66       ; calling socketcall()
 int 0x80 
 ```
 
-#### Syscall 4 `socketcall()` with `SYS_ACCEPT`
+### Syscall 4 `socketcall()` with `SYS_ACCEPT`
 
 The unique thing about `accept()` is that it will generate a new `sockfd` for us instead of the one we've been using that we'll need to store and reference. 
 
@@ -218,7 +218,7 @@ int 0x80
 
 Again, `ecx` already points to the beginning of the arguments so we're good to go. 
 
-#### Syscall 5 `dup2()`
+### Syscall 5 `dup2()`
 
 `dup2()` is going to take a `sockfd` created from our `accept()` call and then duplicate the 0, 1, and 2 file descriptors in the `ecx` registers which correspond to stdin, stdout, stderr respectively in order to make the shell interactive. Let's see how they implement this. 
 
@@ -238,7 +238,7 @@ Lesson learned here, the original ndisasm output told us that `0x32` was a refer
 
 So now we know if that condition is not meant, this is where we loop back to. Very cool way of constructing the loop.
 
-#### Syscall 6 `execve()`
+### Syscall 6 `execve()`
 
 This syscall is one of the most standardized syscalls you can make in assembly so I doubt there will be much variance here. 
 
@@ -325,7 +325,7 @@ Output:
 
 Alright, let's analyze this code. As you have probably already figured out, they're using `socketcall()` again. This should be familiar territory for us at this point. 
 
-#### Syscall 1 `socketcall()` with `SYS_SOCKET`
+### Syscall 1 `socketcall()` with `SYS_SOCKET`
 
 Let's keep in mind the argument structure for `SYS_SOCKET`: `socket(PF_INET (2), SOCK_STREAM (1), IPPROTO_IP (0))`
 
@@ -344,7 +344,7 @@ xchg eax,ebx        ; storing the sockfd in ebx
 
 We are getting good at this! Most of this makes sense to us at this point and matches up nicely with our bind shell analysis. 
 
-#### Syscall 2 `dup2()`
+### Syscall 2 `dup2()`
 
 This is interesting, it looks like this code calls `dup2()` before `connect()` which is different from our code. 
 
@@ -360,7 +360,7 @@ This is a similar set-up to our `dup2()` loop in the MSF bind shell that we eval
 00000011  B03F              mov al,0x3f
 ```
 
-#### Syscall 3 `socketcall()` with `SYS_CONNECT`
+### Syscall 3 `socketcall()` with `SYS_CONNECT`
 
 `connect()` behaves very similarly to `bind()` so keep in mind the argument structure for both, particularly the struct portion: `int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)`.
 
@@ -379,7 +379,7 @@ int 0x80
 
 This is all pretty familiar to the code we analyzed for the MSF bind payload. 
 
-#### Syscall 4 `execve()`
+### Syscall 4 `execve()`
 
 This is similar to the MSF bind payload we analyzed, but not identical. 
 
