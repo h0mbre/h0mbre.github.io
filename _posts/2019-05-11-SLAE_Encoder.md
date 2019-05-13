@@ -22,7 +22,7 @@ Assignment 4 is create a custom encoder and decoder for some shellcode. For this
 
 ## Encoder Fundamentals
 
-We need to encode the aforementioned shellcode and an easy way to accomplish this is with a higher level language such as python. I haven't really done much python with bytearrays so let's see how it works step by step.
+We need to encode the aforementioned shellcode and an easy way to accomplish this is with python. I haven't really done much python with bytearrays so let's see how it works step by step.
 
 ### Working with Python
 
