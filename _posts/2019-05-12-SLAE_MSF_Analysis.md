@@ -525,7 +525,7 @@ jnc 0x20
 ```
 
 `insb` and `jnc 0x20` are very interesting. Let's examine the value stored there from our ndisasm ouput:
-+ `0000001D  6C                insb
++ `0000001D  6C                insb`
 + `0000001E  7300              jnc 0x20`
 
 A hex converter will tell us that `6C` is `l` while `73` is `s`. So this is how the program get's `ls` onto the stack followed by the `00` terminator. A `call` opcode will store the address of the next command onto the stack, so we've successfully placed the address of our command onto the stack. This is a very cool trick we can begin to incorporate into our shellcode. 
