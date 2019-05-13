@@ -20,7 +20,7 @@ tags:
 The 5th assignment for SLAE is to analyze 3 msfvenom payloads. For this excercise, I thought I would revisit some semi-familiar code in the:
 + `linux/x86/shell_bind_tcp`,
 + `linux/x86/shell_reverse_tcp`, and
-+ and `linux/x86/exec` payloads. 
++ `linux/x86/exec` payloads. 
 
 My primary reason for doing this is because we've written similar code already and I want to see how the pros do it when contributing to Metasploit and see if we can pick up some new tricks/efficiencies. 
 
