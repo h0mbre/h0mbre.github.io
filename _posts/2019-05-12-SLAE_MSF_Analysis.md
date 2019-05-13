@@ -543,6 +543,8 @@ int 0x80
 
 Using a call to store instruction addresses on the stack is a very cool trick that we were familiar with from writing `JMP CALL POP` shellcode, but I needed reminding that it is valuable outside of decoder stub construction!
 
+Another thing was that `linux/x86/shell_reverse_tcp` and `linux/x86/exec` shellcode had several NULL BYTEs. This is a great reminder to specify bad characters when generating payloads with `msfvenom`. 
+
 This was a great excercise and it was very fun to look at how the shellcode we use everyday generated from `msfvenom` actually works. 
 
 ## Github
