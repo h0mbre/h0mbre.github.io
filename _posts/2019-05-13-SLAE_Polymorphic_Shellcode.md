@@ -25,7 +25,7 @@ The format of these posts will be me posting the assembly of the original shellc
 
 ## Shellcode 1 `chmod(/etc/shadow, 0666) & exit()`
 
-This shellcode was written by ka0x, and is located [here](http://shell-storm.org/shellcode/files/shellcode-556.php).
+This shellcode was written by ka0x, and is located [here](http://shell-storm.org/shellcode/files/shellcode-556.php). This shellcode will change file permissions on `/etc/shadow` to `rw` for everyone and then call `exit()`.
 
 Size: 33 Bytes
 
