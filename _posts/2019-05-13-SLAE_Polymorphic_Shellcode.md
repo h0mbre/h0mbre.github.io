@@ -27,7 +27,7 @@ The format of these posts will be me posting the assembly of the original shellc
 
 This shellcode was written by ka0x, and is located [here](http://shell-storm.org/shellcode/files/shellcode-556.php). This shellcode will change file permissions on `/etc/shadow` to `rw` for everyone and then call `exit()`.
 
-Size: 33 Bytes
+**Size: 33 Bytes**
 
 ```c
 #include <stdio.h>
@@ -136,8 +136,9 @@ root@kali:/etc# ls -lah | grep shadow
 -rw-rw-rw-   1 root    shadow  1.8K Jan 21 00:36 shadow
 ```
 
-Size: 40 bytes
-Increase: 21%
+**Size: 40 bytes**
+
+**Increase: 21%**
 
 The shadow file has `666` permissions, our code was a success! 
 
@@ -145,7 +146,7 @@ The shadow file has `666` permissions, our code was a success!
 
 This shellcode was written by Geyslan G. Bem, and is located [here](http://shell-storm.org/shellcode/files/shellcode-842.php). This shellcode will read an arbitrary file, we will be using `/etc/passwd`.
 
-Size: 51 bytes 
+**Size: 51 bytes** 
 
 ```c
 #include <stdio.h>
@@ -260,7 +261,7 @@ _start:
 	pop ebx				; Step 4, we just replaced a simple xchg opcode with 4 lines of push/pops 
 ```
 
-As you can see from the comments, we had to add some nonsense since the original code was pretty clean. I **did** find a line that wasn't needed which I deleted so that was somewhat gratifying to increase the code's efficiency in at least some way. 
+As you can see from the comments, we had to add some nonsense since the original code was pretty clean. I **did** find a line that wasn't needed that I deleted, so we did improve efficiency in at least one instance. 
 
 Let's assemble and link our code:
 ```terminal_session
@@ -310,8 +311,9 @@ sys:x:3:3:sys:/dev:/usr/sbin/nologin
 sync:x:4:65534:sync:/bin:/bin/sync
 -----snip-----
 ```
-Size: 61 bytes
-Increase: 22%
+**Size: 61 bytes**
+
+**Increase: 22%**
 
 We were able to read `/etc/passwd`, it works!
 
