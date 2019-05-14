@@ -317,6 +317,39 @@ sync:x:4:65534:sync:/bin:/bin/sync
 
 We were able to read `/etc/passwd`, it works!
 
+## Shellcode 3 `sys_exit(0)`
+
+This shell code was written by gunslinger_ and is located [here](http://shell-storm.org/shellcode/files/shellcode-623.php). This shellcode simply calls exit, let's see if we can shorten it.
+
+**Size: 8 bytes**
+
+Original assembly:
+```nasm
+xor eax, eax
+mov al, 0x1
+xor ebx, ebx
+int 0x80
+```
+
+Our assembly:
+```nasm
+xor eax, eax
+inc eax			; this should save us a byte
+xor ebx, ebx
+int 0x80
+```
+
+If we assemble, link it, and dump the shellcode, we can see its only 7 bytes. 
+```terminal_session
+root@kali:~# nasm -f elf32 mkdir.nasm && ld -m elf_i386 mkdir.o -o mkdir_test
+root@kali:~# objdump -d ./mkdir_test|grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
+"\x31\xc0\x40\x31\xdb\xcd\x80"
+```
+
+**Size: 7 bytes**
+
+**Decrease: 12.5%**
+
 ## Github
 
 This blog post has been created for completing the requirements of the SecurityTube Linux Assembly Expert certification:
@@ -325,6 +358,3 @@ This blog post has been created for completing the requirements of the SecurityT
 Student ID: SLAE-1458
 
 You can find all of the code used in this blog post [here.](https://github.com/h0mbre/SLAE/tree/master/Assignment6)
-
-
-
