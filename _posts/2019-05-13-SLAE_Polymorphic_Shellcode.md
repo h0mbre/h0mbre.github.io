@@ -298,7 +298,7 @@ main()
 
 Finally, let's compile and run it!
 ```terminal_session
-root@kali:~# gcc -fno-stack-protector -z execstack -m32 shellcode.c -o read2
+root@kali:~# gcc -fno-stack-protector -z execstack -m32 shellcode.c -o read
 shellcode.c:9:1: warning: return type defaults to ‘int’ [-Wimplicit-int]
  main()
  ^~~~
