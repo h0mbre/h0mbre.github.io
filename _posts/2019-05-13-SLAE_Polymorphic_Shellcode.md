@@ -333,10 +333,16 @@ int 0x80
 
 Our assembly:
 ```nasm
-xor eax, eax
-inc eax			; this should save us a byte
-xor ebx, ebx
-int 0x80
+global _start
+
+
+section .text
+
+_start:
+	xor eax, eax
+	inc eax			; this should save us a byte
+	xor ebx, ebx
+	int 0x80
 ```
 
 If we assemble, link it, and dump the shellcode, we can see its only 7 bytes. 
