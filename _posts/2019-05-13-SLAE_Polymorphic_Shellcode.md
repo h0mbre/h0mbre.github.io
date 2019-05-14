@@ -17,7 +17,7 @@ tags:
 
 ## Introduction
 
-Assignment 6 is to create polymorphic versions of three separate shellcodes from [shell-storm](http://shell-storm.org/shellcode/). According to the [Polymorphic code](https://en.wikipedia.org/wiki/Polymorphic_code) Wikipedia entry, polymorphic code is "code that uses a polymorphic engine to mutate while keeping the original algorithm intact. That is, the code changes itself each time it runs, but the function of the code (its semantics) will not change at all. For example, 1+3 and 6-2 both achieve the same result while using different values and operations." However, the polymorphic engine in this case will be us manually changing the shellcode. 
+Assignment 6 is to create polymorphic versions of three separate shellcodes from [shell-storm](http://shell-storm.org/shellcode/). According to the [Polymorphic code](https://en.wikipedia.org/wiki/Polymorphic_code) Wikipedia entry, polymorphic code is "code that uses a polymorphic engine to mutate while keeping the original algorithm intact. That is, the code changes itself each time it runs, but the function of the code (its semantics) will not change at all. For example, 1+3 and 6-2 both achieve the same result while using different values and operations." We will not be using a polymorphic engine, and will instead be changing the shellcode manually. 
 
 Our goal is to not increase the size of the shellcode by more than 50%.
 
@@ -324,7 +324,7 @@ This blog post has been created for completing the requirements of the SecurityT
 
 Student ID: SLAE-1458
 
-You can find all of the code used in this blog post [here.](https://github.com/h0mbre/SLAE/tree/master/Assignment5)
+You can find all of the code used in this blog post [here.](https://github.com/h0mbre/SLAE/tree/master/Assignment6)
 
 
 
