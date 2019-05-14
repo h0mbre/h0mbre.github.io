@@ -347,8 +347,8 @@ _start:
 
 If we assemble, link it, and dump the shellcode, we can see its only 7 bytes. 
 ```terminal_session
-root@kali:~# nasm -f elf32 mkdir.nasm && ld -m elf_i386 mkdir.o -o mkdir_test
-root@kali:~# objdump -d ./mkdir_test|grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
+root@kali:~# nasm -f elf32 exit.nasm && ld -m elf_i386 exit.o -o exit_test
+root@kali:~# objdump -d ./exit_test|grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\x/g'|paste -d '' -s |sed 's/^/"/'|sed 's/$/"/g'
 "\x31\xc0\x40\x31\xdb\xcd\x80"
 ```
 
