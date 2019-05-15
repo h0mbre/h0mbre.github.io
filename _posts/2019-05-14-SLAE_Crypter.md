@@ -1,6 +1,6 @@
 ---
 layout: single
-title: SLAE Assignment 6 -- Custom Crypter
+title: SLAE Assignment 7 -- Custom Crypter
 date: 2019-5-15
 classes: wide
 header:
