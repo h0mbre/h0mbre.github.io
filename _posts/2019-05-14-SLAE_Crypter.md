@@ -45,7 +45,7 @@ For execution, the script just appends a `shellcode.c` writing process onto the 
 
 ## Usage
 
-#### Encryption
+### Encryption
 
 `python crypter.py --encrypt (-e) <shellcode>`:
 ```terminal_session
@@ -54,7 +54,7 @@ root@kali:~/petprojects/SLAE# python crypter.py -e \\x31\\xc0\\x50\\x68\\x2f\\x2
 [+] Encrypted Shellcode: \\x2f\\x84\\x39\\x62\\x4b\\x98\\x06\\x9b\\x8f\\xb4\\x3d\\xdc\\x5e\\x65\\x60\\xbf\\x7b\\x96\\xc6\\x52\\x9a\\x4b\\x2c\\xf8\\x5d\\x55\\x12\\x7b\\x37\\x8e\\x56\\x69
 ```
 
-#### Decryption
+### Decryption
 
 `python crypter.py --decrypt (-d) <shellcode>`:
 ```terminal_session
@@ -64,7 +64,7 @@ root@kali:~/petprojects/SLAE# python crypter.py -d \\x2f\\x84\\x39\\x62\\x4b\\x9
 [+] Decrypted Shellcode: \\x31\\xc0\\x50\\x68\\x2f\\x2f\\x73\\x68\\x68\\x2f\\x62\\x69\\x6e\\x89\\xe3\\x50\\x89\\xe2\\x53\\x89\\xe1\\xb0\\x0b\\xcd\\x80
 ```
 
-#### Execution
+### Execution
 
 `python crypter.py --execute (-x) <shellcode>`:
 ```terminal_session
