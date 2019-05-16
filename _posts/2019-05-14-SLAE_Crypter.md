@@ -108,7 +108,6 @@ shellcode = inp.decode("hex")
 iv = "1337" * 4
 
 #this is where we generate our key space, a little over 1.4 million keys
-#Hackers(1995), Mr.Robot(2015), Wargames(1983), Blackhat(2015), Swordfish(2001)
 nameList = ["Kate Libby_", "Ramon Sanch", "Paul Cook__", "Eugene Belf", "Dade Murphy", "Joey Pardel", "Em Goldstei", "Elliot Alde", "Darlene____", "Tyrell Well", "White Rose_", "Falken_____", "David______", "Nick Hathaw", "Chen Lien__", "Stanley____"]
 
 numGen = list(range(10000,100000))
