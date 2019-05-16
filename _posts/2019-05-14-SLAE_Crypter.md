@@ -25,6 +25,10 @@ For this excercise we'll be using a 25 byte long `execve` shellcode in the follo
 \\x31\\xc0\\x50\\x68\\x2f\\x2f\\x73\\x68\\x68\\x2f\\x62\\x69\\x6e\\x89\\xe3\\x50\\x89\\xe2\\x53\\x89\\xe1\\xb0\\x0b\\xcd\\x80
 ```
 
+For an encryption scheme I used AES with imports from the `Crypto.Cipher`package. 
+
+***Note: we are NOT using Python3***
+
 ## Encryption Process
 
 My encryption scheme uses some fictional hacker lore as seed terms to generate a keyspace that ends up being a little over 1.4 million keys. I was shocked by how fast a computer running a poorly written python script can iterate through that many keys! At a high-level, the encryption function does the following:
