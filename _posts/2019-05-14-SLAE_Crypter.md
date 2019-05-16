@@ -62,11 +62,18 @@ root@kali:~/petprojects/SLAE# python crypter.py -d \\x2f\\x84\\x39\\x62\\x4b\\x9
 #### Execution
 
 `python crypter.py --execute (-x) <shellcode>`:
+```terminal_session
+root@kali:~# python crypter.py -x \\x2f\\x84\\x39\\x62\\x4b\\x98\\x06\\x9b\\x8f\\xb4\\x3d\\xdc\\x5e\\x65\\x60\\xbf\\x7b\\x96\\xc6\\x52\\x9a\\x4b\\x2c\\xf8\\x5d\\x55\\x12\\x7b\\x37\\x8e\\x56\\x69
+Shellcode Length:  25
+# id
+uid=0(root) gid=0(root) groups=0(root)
+# uname -a
+Linux kali 4.17.0-kali1-686 #1 SMP Debian 4.17.8-1kali1 (2018-07-24) i686 GNU/Linux
+```
 
+The script successfully encrypts, decrypts, and executes shellcode. Success!
 
-
-
-## Crypter!!!
+## Crypter
 
 ```python
 from Crypto.Cipher import AES
