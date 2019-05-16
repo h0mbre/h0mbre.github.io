@@ -73,6 +73,8 @@ Linux kali 4.17.0-kali1-686 #1 SMP Debian 4.17.8-1kali1 (2018-07-24) i686 GNU/Li
 
 The script successfully encrypts, decrypts, and executes shellcode. Success!
 
+You can find the code below, it is pretty heavily commented to help those who are not used to reading ugly python. 
+
 ## Crypter
 
 ```python
@@ -239,3 +241,12 @@ elif args.decrypt:
 elif args.execute:
 	execute()
 ```
+
+## Github
+
+This blog post has been created for completing the requirements of the SecurityTube Linux Assembly Expert certification:
+<http://securitytube-training.com/online-courses/securitytube-linux-assembly-expert/>
+
+Student ID: SLAE-1458
+
+You can find all of the code used in this blog post [here.](https://github.com/h0mbre/SLAE/tree/master/Assignment7)
