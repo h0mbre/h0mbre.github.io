@@ -38,8 +38,6 @@ import random
 import sys
 import os
 
-#just setting up a custom help message
-
 #doing argument parsing
 parser = argparse.ArgumentParser(add_help=True)
 parser.add_argument("inp", type=str, help="shellcode to encrypt/decrypt/execute")
