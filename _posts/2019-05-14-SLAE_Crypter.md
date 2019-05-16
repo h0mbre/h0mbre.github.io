@@ -41,7 +41,7 @@ My encryption scheme uses some fictional hacker lore as seed terms to generate a
 
 ## Decryption Process
 
-The decryption scheme is straightforward. The script iterates through the entire keyspace decrypting the input shellcode with each key until it spots our `\\xff` padding and then it knows it has found the right key and prints the output. I picked this concept up from the SLAE coursework itself, it was awesome to apply it to python.
+The decryption scheme is straightforward. The script iterates through the entire keyspace decrypting the input shellcode with each key until it spots our `\\xff` padding and then it knows it has found the right key and prints the output. I picked this concept up from the SLAE coursework itself, and it was awesome to apply it to this python script.
 
 ## Execution Process
 
