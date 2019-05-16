@@ -32,7 +32,7 @@ For an encryption scheme I used AES with imports from the `Crypto.Cipher`package
 ## Encryption Process
 
 My encryption scheme uses some fictional hacker lore as seed terms to generate a keyspace that ends up being a little over 1.4 million keys. I was shocked by how fast a computer running a poorly written python script can iterate through that many keys! At a high-level, the encryption function does the following:
-+ takes shellcode input in the format of `\\xaa\\bb\\cc...`,
++ takes shellcode input in the format of `\\xaa\\xbb\\xcc...`,
 + pads the shellcode with `\\xff` bytes to get it to a multiple of `16` (AES requires key sizes of n\*16),
 + creates an `iv` (initilialization vector of `13371337133713371`),
 + generates a keyspace with seed character names from hacker movies,
