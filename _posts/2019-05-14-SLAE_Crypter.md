@@ -20,6 +20,11 @@ tags:
 
 The 7th and final assignment for SLAE was create a custom encryption/decryption scheme for our shellcode. For the purposes of this excercise I chose to work with python. This assignment was a blast. Since its the last assignment, I decided to have some fun with it and went for novelty over strong encryption. I wanted a decryption scheme that only required shellcode input, so I designed the decryption function to brute force its own key!
 
+For this excercise we'll be using a 25 byte long `execve` shellcode in the following format:
+```terminal_session
+\\x31\\xc0\\x50\\x68\\x2f\\x2f\\x73\\x68\\x68\\x2f\\x62\\x69\\x6e\\x89\\xe3\\x50\\x89\\xe2\\x53\\x89\\xe1\\xb0\\x0b\\xcd\\x80
+```
+
 ## Encryption Process
 
 My encryption scheme uses some fictional hacker lore as seed terms to generate a keyspace that ends up being a little over 1.4 million keys. I was shocked by how fast a computer running a poorly written python script can iterate through that many keys! At a high-level, the encryption function does the following:
