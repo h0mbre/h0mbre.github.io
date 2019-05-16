@@ -16,7 +16,19 @@ tags:
 --- 
 ![](/assets/images/SLAE/SLAE.jpg)
 
-## Coming Soon!
+## Introduction
+
+The 7th and final assignment for SLAE was create a custom encryption/decryption scheme for our shellcode. For the purposes of this excercise I chose to work with python. This assignment was a blast. Since its the last assignment, I decided to have some fun with it and went for novelty over strong encryption. 
+
+## Encryption Process
+
+My encryption scheme uses some fictional hacker lore as seed terms to generate a keyspace that ends up being a little over 1.4 million keys. I was shocked by how fast a computer running a poorly written python script can iterate through that many keys! At a high-level, the encryption function does the following:
++ takes shellcode input in the format of `\\xaa\\bb\\cc...`,
++ pads the shellcode to get it to a multiple of `16` (AES requires key sizes of n\*16),
++ creates an `iv` (initilialization vector of `13371337133713371),
++ generates a keyspace with seed character names from hacker movies,
++ encrypts `input + padding` with randomly chosen `key` and `iv`, and
++ prints shellcode in format thats compatible with the decryption process.
 
 ```python
 from Crypto.Cipher import AES
