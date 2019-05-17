@@ -20,9 +20,9 @@ tags:
 
 I recently completed the final assignment for the [x86 Assembly Language and Shellcoding on Linux](https://www.pentesteracademy.com/course?id=3) course from Pentester Academy. I'm currently awaiting to hear back on the result of my exam, but I couldn't wait to share my experience with the course. 
 
-The course, as of the time of this post, is $149. This is a pretty cheap price compared to other certification courses, and I found the materials and course structure to be well worth the money. 
+At the time of this writing, the course costs $149. This is a pretty cheap price compared to other certification courses, and I found the materials and course structure to be well worth the money. 
 
-The course advertises the domains of knowledge covered by the course on the linked page above, but at a very high-level the course covered:
+At a very high-level the course covered:
 + CPU architecture fundamentals,
 + GNU Debugger, 
 + IA-32 Assembly language,
@@ -45,7 +45,7 @@ That's really it. If you can script Python, or can work with Python comfortably 
 
 ## Managing Expectations
 
-I found the course to be fairly straightforward as far as picking up the concepts as they were taught. I only had to rewatch 2-3 videos multiple times to understand them thoroughly and I am not supremely talented in this stuff by any means. However, I found the certification assignments to be **MUCH** more difficult than the course material. Things went from a `4/10` in difficulty during the course to often an `7 or a 8/10` during the exam assignments (at least for me personally, maybe you will find it easier). 
+I found the course to be fairly straightforward as far as picking up the concepts as they were taught. I only had to rewatch 2-3 videos multiple times to understand them thoroughly and I am not supremely talented in this stuff by any means. However, I found the certification assignments to be **MUCH** more difficult than the course material. Things went from a `4/10` in difficulty during the course to often an `8 or a 9/10` during the exam assignments (at least for me personally, maybe you will find it easier). At one point, I spent ~3 hours stuck with something because I had rendered my shellcode format as `\xff` instead of `\\xff` :cry_face:
 
 You will have to do some homework on your own and Google concepts that are giving you a hard time. Vivek expects you to know the previous video's concepts well when you begin a new video, there is little review. Definitely follow along with him during his videos and do exactly as he's doing as he does it. 
 
@@ -54,8 +54,6 @@ You will have to do some homework on your own and Google concepts that are givin
 ## Materials
 
 The course comes in 3 separate download links sent via email and contains several zip files. There are around 25 videos and a bunch of code examples included in the courseware. The quality of the materials is great, they are recorded seemingly on Vivek's laptop webcam and have a lot of charm to them. 
-
-The course also contains large portions, perhaps even the entirety (??), of a separate Pentester Academy course entitled GNU Debugger Megaprimer. This is a huge win for the price. 
 
 ## Knowledge Domains
 
@@ -99,7 +97,7 @@ I felt like the course taught you a new language and then gave you a set of logi
 
 ### Python Scripting
 
-I feel like a good working knowledge of Python is definitely a pre-requisite for this class. If you can program in C, even better. I was surprised how much Python the course included and I wasn't mentally prepared for that. Luckily, I had just spent a lot of time the previous month writing Python scripts and that knowledge definitely came in handy. 
+I feel like a good working knowledge of Python is definitely a pre-requisite for this class. If you can program in C, even better. I was surprised how much Python the course included. Luckily, I had just spent a lot of time the previous month writing Python scripts and that knowledge definitely came in handy. 
 
 You will primarily be using Python on the exam assignments to write your shellcode encoder and crypter. 
 
