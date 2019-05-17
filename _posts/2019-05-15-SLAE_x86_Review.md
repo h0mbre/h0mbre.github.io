@@ -53,7 +53,7 @@ You will have to do some homework on your own and Google concepts that are givin
 
 ## Materials
 
-The course comes in 3 separate download links sent via email and contains several zip files. There are around 25 videos and a bunch of code examples included in the courseware. The quality of the materials is great, they are recorded seemingly on Vivek's laptop webcam and have a lot of charm to them. 
+The course comes in 3 separate download links sent via email and contains several zip files. There are around 25 videos and a bunch of code examples included in the courseware. The quality of the materials is great, they are seemingly recorded on Vivek's laptop webcam and have a lot of charm to them. 
 
 ## Knowledge Domains
 
