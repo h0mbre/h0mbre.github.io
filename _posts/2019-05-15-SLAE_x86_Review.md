@@ -139,12 +139,12 @@ Thanks to `@epi052` and `@AnubisOnSec` for their help!
 
 #### SLAE Assignments
 
-[Assignment 1:](https://h0mbre.github.io/SLAE_TCP_Bind_Shell/)
-[Assignment 2:](https://h0mbre.github.io/SLAE_TCP_Rev_Shell/)
-[Assignment 3:](https://h0mbre.github.io/SLAE_Egg_Hunter/)
-[Assignment 4:](https://h0mbre.github.io/SLAE_Encoder/)
-[Assignment 5:](https://h0mbre.github.io/SLAE_MSF_Analysis/)
-[Assignment 6:](https://h0mbre.github.io/SLAE_Polymorphic_Shellcode/)
-[Assignment 7:](https://h0mbre.github.io/SLAE_Crypter/)
++ [Assignment 1](https://h0mbre.github.io/SLAE_TCP_Bind_Shell/)
++ [Assignment 2](https://h0mbre.github.io/SLAE_TCP_Rev_Shell/)
++ [Assignment 3](https://h0mbre.github.io/SLAE_Egg_Hunter/)
++ [Assignment 4](https://h0mbre.github.io/SLAE_Encoder/)
++ [Assignment 5](https://h0mbre.github.io/SLAE_MSF_Analysis/)
++ [Assignment 6](https://h0mbre.github.io/SLAE_Polymorphic_Shellcode/)
++ [Assignment 7](https://h0mbre.github.io/SLAE_Crypter/)
 
 
