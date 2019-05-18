@@ -16,7 +16,7 @@ minimal_mistakes_skin    : "contrast" # "air", "aqua", "contrast", "dark", "dirt
 
 # Site Settings
 locale                   : "en-US"
-title                    : "Doing things on the computer..."
+title                    : "The Human Machine Interface"
 title_separator          : "-"
 name                     : "h0mbre"
 description              : "a noob trying to level-up"
