@@ -89,7 +89,7 @@ Learning GDB is a bit like learning to walk, it's a simple yet effective tool fo
 
 ### IA-32 Assembly
 
-This is the meat and potatoes of the course. You will not become an Assembly expert in my opion, but you will definitely learn some great fundamentals and at least be positioned to write some really cool Assembly code. You will kind of be shocked how fast your skills progress in this area! 
+This is the meat and potatoes of the course. You will not become an Assembly expert in my opinion, but you will definitely learn some great fundamentals and at least be positioned to write some really cool Assembly code. You will kind of be shocked how fast your skills progress in this area! 
 
 I'm just a noob and not extremely experienced in information security yet, so I honestly can't say whether or not I will ever use the Assembly I learned in the course going forward outside of OSCE. But I can tell you this: programming these Assembly assignments in the course were some of the most challenging, fun, and rewarding things that I've done yet. I had an absolute blast with these assignments. This is probably my favorite certification course that I've taken.
 
