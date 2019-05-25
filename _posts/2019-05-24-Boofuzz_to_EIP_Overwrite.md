@@ -78,7 +78,11 @@ Immediately we see that the connection is made and that the server is offering u
 
 ![](/assets/images/CTP/netcat.JPG)
 
-This should net us something like the following
+Seeing that the valid argument structure for each command is roughly `<command>[space]<command_value>` we can send something like `TRUN hello` as a test and see if it's accepted. 
+
+![](/assets/images/CTP/trun.JPG)
+
+Now that we have confirmed the structure of a command and its arguments, we can start fuzzing this command to see if we can get the program to crash when submitting various argument values to the `TRUN` command. 
 
 ## Using Boofuzz
 Working off of a very detailed and helpful working aid from [zeroaptitude.com](https://zeroaptitude.com/zerodetail/fuzzing-with-boofuzz/), we learn that the first element of any `boofuzz` fuzzing script is the 'session.' We can create our basic 
