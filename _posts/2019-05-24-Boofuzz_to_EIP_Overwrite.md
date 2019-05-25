@@ -183,5 +183,8 @@ Well, we know at this point that we can affect the value of `EIP`, but what we d
 
 ![](/assets/images/CTP/results.JPG)
 
+In entry 15, we see our familiar string `TRUN /.:` and the entry above it, 14, states that `boofuzz` sent 5011 bytes
+
+![](/assets/images/CTP/5011.JPG)
 
 
