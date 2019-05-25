@@ -127,7 +127,11 @@ if __name__ == "__main__":
     main()
 ```
 
-
+Excellent, we have the first crucial piece to our `boofuzz` puzzle. Now we just need to add a couple lines to join our session with our actual fuzzing functions, we can accomplish this by appending the following two lines to our code:
+```python
+session.connect(s_get("TRUN"))		#having our 'session' variable connect following the guidelines we established in "TRUN"
+    	session.fuzz()				#calling this function actually performs the fuzzing
+```
 
 
 
