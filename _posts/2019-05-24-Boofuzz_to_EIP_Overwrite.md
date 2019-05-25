@@ -238,6 +238,7 @@ s.close()
 
 Running this python script with vulnserver attached in Immunity nets us the same `Registers (FPU)` panel, excellent. So we know for certain that we can overwrite `EIP`. The next step is to determine how far into our string of 5011 `A` the overwrite occurs. 
 
+### Determining the Offset
 To determine this, we can leverage Mona's ability to create a "cyclical" string of data which never repeats any patterns. This string of data will overwrite `EIP` and provide us with an exact location of where in our string the overwrite occurred since we'll have a reference point to a unique set of 4 hex characters. 
 
 To make Mona create our string, we use the following command in the white bar at the bottom of the Immunity GUI:
@@ -317,6 +318,7 @@ s.close()
 
 Running this exploit against our Immunity-attached vulnserver should net us an `EIP` value of `42424242` since we should be overwriting the value with our `B`'s. 
 
+![](/assets/images/CTP/42EIP.JPG)
 
 
 --To Be Continued--
