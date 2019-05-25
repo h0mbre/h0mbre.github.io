@@ -33,7 +33,9 @@ In this particular post, we will become acquainted with the `boofuzz` fuzzer and
 For this excercise we will need to procure:
 + Windows 7 VM,
 + boofuzz,
-+ vulnserver, and
++ vulnserver, 
++ Immunity Debugger,
++ Mona, and
 + a remote attacker box (I'll be using Kali).
 
 For my lab setup, I downloaded an x86 Windows 7 image for Virtualbox [directly from Microsoft](https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/) and took a snapshot so that in 90 days, if I still want the VM I won't have to start the process of installing and configuring it from scratch! 
