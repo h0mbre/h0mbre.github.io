@@ -562,8 +562,6 @@ C:\Users\IEUser\Desktop>
 
 EIP overwrites like the ones explored in this post are largely review for us at this point but it's still a good warm-up to get back into the swing of things as we kick off our CTP/OSCE preparation series. Next post we will be looking to take on a new concept in the SEH Overwrite. Thanks for reading!
 
-I have posted a bunch of great resources below for further reading.
-
 ## Resources
 
 + [Do Buffer Overflow Good](https://github.com/justinsteven/dostackbufferoverflowgood)
