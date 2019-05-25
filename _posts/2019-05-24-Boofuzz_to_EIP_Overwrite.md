@@ -1,6 +1,6 @@
 ---
 layout: single
-title: Boofuzz to EIP Overwrite
+title: Using Boofuzz to Discover an EIP Overwrite Vulnerability in Vulnserver
 date: 2019-5-24
 classes: wide
 header:
