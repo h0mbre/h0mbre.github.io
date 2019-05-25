@@ -179,7 +179,10 @@ Essentially what we have discovered at this point is that, we are able to subver
 
 ## Exploiting the EIP Overwrite
 
-Well, we know at this point that we can affect the value of `EIP`, but what we don't know, is how far into our payload of `A` the `EIP` overwrite occurred. We don't even know how many bytes of data we sent to the application at this point, we kind of just hit a giant Fuzz Button and watched our application crash. Luckily, `boofuzz` stores some useful information for us in a sql-lite type db in the `boofuzz-results` directory after each session. Opening the relevant session in the gui as follows: 
+Well, we know at this point that we can affect the value of `EIP`, but what we don't know, is how far into our payload of `A` the `EIP` overwrite occurred. We don't even know how many bytes of data we sent to the application at this point, we kind of just hit a giant Fuzz Button and watched our application crash. 
+
+### Boofuzz Results
+Luckily, `boofuzz` stores some useful information for us in a SQLite type db file in the `boofuzz-results` directory after each session. Once you open the .db file, click on the `Browse Data` tab and change the `Table` drop down option from `cases` to `steps`. Opening the relevant session in the gui as described shows us the following: 
 
 ![](/assets/images/CTP/results.JPG)
 
