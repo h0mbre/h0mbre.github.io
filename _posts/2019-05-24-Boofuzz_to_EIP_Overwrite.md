@@ -414,8 +414,8 @@ Mona will fetch us what we need with a simple command of: `!mona jmp -r esp`
 We see that Mona found 9 addresses of `JMP ESP` calls within vulnserver and all of them happen to be in the `essfunc.dll` file with ASLR disabled (set to False). Let's use the second instance which is at the memory address:`0x625011bb`
 
 We can verify this in Immunity by finding this memory location and looking at the opcode for the address. 
-
-
++ In Immunity, click on the lowercase `e` at the top of the UI. This will show you the executable modules for the program.
++ We are interested in `essfunc.dll` since this is where our `JMP ESP` call lives. Double-click the `essfunc.dll` line. 
 
 
 
