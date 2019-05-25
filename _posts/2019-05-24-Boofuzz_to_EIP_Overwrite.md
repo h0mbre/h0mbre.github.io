@@ -278,6 +278,13 @@ Let's run vulnserver through Immunity once more and see how our exploit crashes 
 
 ![](/assets/images/CTP/overwrittenEIP.JPG)
 
+Excellent, we now have a location in our string where we know `EIP` is overwritten. We can feed this sequence of bytes to Mona and she will do the hard work for us of finding the exact offset where this sequence occurs in our `pattern.txt` file we pasted into our `exploit.py`. We can use the following command: `!mona po 6F43376F`
 
+Running this command with Mona yields the following result:
+`- Pattern o7Co (0x6F43376F) found in cyclic pattern at position 2002`
+
+So we now have our offset: 2002 bytes. The offset is essentially how far into our fuzzing string the `EIP` overwrite occurs. Our string that we submitted looks like this:
+<--------------------------------------------------------------------------------------------------->
+| 2002 bytes | EIP overwrite (4 bytes) | remainder of our string (5011 bytes - 4 bytes - 2002 bytes)|
 
 --To Be Continued--
