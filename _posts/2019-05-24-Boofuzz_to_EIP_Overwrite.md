@@ -571,4 +571,5 @@ EIP overwrites like the ones explored in this post are largely review for us at 
 + [Vulnserver LTER EIP Overwrite](https://www.doyler.net/security-not-included/vulnserver-lter-eip-overwrite)
 + [Mona Guide](https://www.corelan.be/index.php/2011/07/14/mona-py-the-manual/)
 + [Immunity Debugger Basics](https://hsploit.com/immunity-debugger-basics/)
++ [Wallpaper](https://imgur.com/0S9DVnQ)
 
