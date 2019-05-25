@@ -241,3 +241,5 @@ To make Mona create our string, we use the following command in the white bar at
 `!mona pc 5011` ('pc' is short for 'pattern-create' and there are multiple scripts and tools out there that will perform this for you, including Metasploit. I prefer using Mona since I'm already in Immunity. 
 
 ![](/assets/images/CTP/pc.JPG)
+
+Mona outputs this string (use the ASCII one) to a file called `pattern.txt` which is located in the `C:\Program Files\Immunity Inc\Immunity Debugger` directory. Make sure you copy the string from this file and not the pane in Immunity as the string in the pane might be truncated (especially at 5000 bytes). This string now becomes our buffer and we feed it back to a restarted vulnserver process in Immunity. 
