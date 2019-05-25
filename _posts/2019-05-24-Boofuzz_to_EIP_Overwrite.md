@@ -574,10 +574,3 @@ I have posted a bunch of great resources below for further reading.
 + [Mona Guide](https://www.corelan.be/index.php/2011/07/14/mona-py-the-manual/)
 + [Immunity Debugger Basics](https://hsploit.com/immunity-debugger-basics/)
 
-
-
-
-
-
-
---To Be Continued--
