@@ -18,5 +18,11 @@ tags:
 
 ## Introduction
 
-While I'm preparing for CTP/OSCE I thought I'd start blogging what I'm doing so that later on I can use thise blog as a reference. 
+While I'm preparing for CTP/OSCE, I thought I'd start blogging what I'm doing so that later on I can use thise blog as a reference. In this series of posts, I plan on hitting:
++ fuzzing,
++ vanilla EIP overwrite,
++ SEH overwrite, and
++ egghunters.
+
+Writing these entries will force me to become intimately familiar with these topics and hopefully you can get something out of them as well! 
 
