@@ -26,6 +26,14 @@ While I'm preparing for CTP/OSCE, I thought I'd start blogging what I'm doing so
 
 Writing these entries will force me to become intimately familiar with these topics and hopefully you can get something out of them as well! 
 
-## Boofuzz to EIP Overwrite
-
 In this particular post, we will become acquainted with the `boofuzz` fuzzer and use it to discover an EIP overwrite vulnerability in Vulnserver. 
+
+## Preparing our Environment
+
+For this excercise we will need to procure:
++ Windows 7 VM,
++ boofuzz,
++ vulnserver, and
++ a remote attacker box (I'll be using Kali).
+
+
