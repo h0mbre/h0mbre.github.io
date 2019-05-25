@@ -268,4 +268,8 @@ print s.recv(1024)
 s.close()
 ```
 
+(**FYI, if you want to learn about `socket()` and `connect()` function calls, see my SLAE x86 posts where we create bind and reverse TCP shells in Assembly:**
++ **[Bind TCP](https://h0mbre.github.io/SLAE_TCP_Bind_Shell/)**
++ **[Reverse TCP](https://h0mbre.github.io/SLAE_TCP_Rev_Shell/)**)
+
 --To Be Continued--
