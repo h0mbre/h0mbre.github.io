@@ -4,7 +4,7 @@ title: Boofuzzing Vulnserver for an EIP Overwrite
 date: 2019-5-24
 classes: wide
 header:
-  teaser: ![](/assets/images/CTP/string.JPG)
+  teaser: ![](/assets/images/CTP/immunity.jpg)
 tags:
   - buffer overflow
   - Windows
