@@ -82,10 +82,52 @@ Seeing that the valid argument structure for each command is roughly `<command>[
 
 ![](/assets/images/CTP/trun.JPG)
 
-Now that we have confirmed the structure of a command and its arguments, we can start fuzzing this command to see if we can get the program to crash when submitting various argument values to the `TRUN` command. 
+We can see that the command and argument executed successfully. Now that we have confirmed the structure of a command and its arguments, we can start fuzzing this command to see if we can get the program to crash when submitting various argument values to the `TRUN` command. 
 
 ## Using Boofuzz
-Working off of a very detailed and helpful working aid from [zeroaptitude.com](https://zeroaptitude.com/zerodetail/fuzzing-with-boofuzz/), we learn that the first element of any `boofuzz` fuzzing script is the 'session.' We can create our basic 
+Working off of a very detailed and helpful working aid from [zeroaptitude.com](https://zeroaptitude.com/zerodetail/fuzzing-with-boofuzz/), we learn that the first element of any `boofuzz` fuzzing script is the 'session.' (For this excercise I worked directly out of the `boofuzz` directory.)
+
+The purpose of the session is to establish a named entity which details: the host we want to connect to, the port we want to connect to, and the parameters we want to fuzz.
+
+Let's establish our `boofuzz` script skeleton:
+```python
+#!/usr/bin/python
+
+from boofuzz import *
+
+
+def main():
+ 
+        
+if __name__ == "__main__":
+    main()
+```
+
+This skeleton, once it includes a 'session', will be our template for all of our subsequent fuzzing scripts. The session will be defined in the `main()` function and will establish a variable named `session` which will comprise a few global variables, namely: `host` and `port` for this excercise. Let's see our code below:
+```python
+#!/usr/bin/python
+
+from boofuzz import *
+
+host = '192.168.1.201'	#windows VM
+port = 9999		#vulnserver port
+
+def main():
+	
+	session = Session(target = Target(connection = SocketConnection(host, port, proto='tcp')))
+	
+	s_initialize("TRUN")	#just giving our session a name, "TRUN"
+
+    	s_string("TRUN", fuzzable = False)	#these strings are fuzzable by default, so here instead of blank, we specify 'false'
+    	s_delim(" ", fuzzable = False)		#we don't want to fuzz the space between "TRUN" and our arg
+   	s_string("FUZZ")			#This value is arbitrary as we did not specify 'False' for fuzzable. Boofuzz will fuzz this string now.
+ 
+        
+if __name__ == "__main__":
+    main()
+```
+
+
 
 
 
