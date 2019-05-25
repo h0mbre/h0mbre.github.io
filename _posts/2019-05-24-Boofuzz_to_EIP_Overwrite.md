@@ -400,5 +400,20 @@ s.close()
 We are now presented with the following pane:
 ![](/assets/images/CTP/nobc.JPG)
 
+As you can see, our entire sequence is presented unbroken. We have determined that `\x00` is our only bad character. This will likely not be the case very often and you must rigorously check for bad characters by iterating through this process until all bad characters are eliminated. 
+
+### Finding a `JMP ESP` Call Within Vulnserver
+
+Our last use of Mona will be asking her to find a location within the vulnserver application where there is a memory address which holds the instruction `JMP ESP`. If we are able to place this memory location address into `EIP`, then the process will see that the address of the next instruction to execute is saying that the instruction is `JMP ESP` and our process will go to `ESP` and execute whatever instructions are located there, in this case our payload!
+
+But not only do we have to find a `JMP ESP` call, we have to find one that is within a module that does not have ASLR enabled. ASLR will randomize the instruction location each time so that these types of exploits are unfeasible. However, programs are not beholden to strictly use ASLR-enabled, Microsoft-approved modules and often include non-ASLR modules. 
+
+Mona will fetch us what we need with a simple command of: `!mona jmp -r esp`
+![](/assets/images/CTP/jmp.JPG)
+
+
+
+
+
 
 --To Be Continued--
