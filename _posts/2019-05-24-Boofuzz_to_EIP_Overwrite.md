@@ -166,3 +166,13 @@ One thing to know is that when you attach a process to Immunity in the way we ju
 Red 'play' triangle in lower right hand side of image:
 
 ![](/assets/images/CTP/triangle.JPG)
+
+If you notice, in the bottom right hand side of Immunity, there is a yellow and red message `Paused` indicating that the process is not running. After pressing the play symbol (alternatively, you can use the `F9` key to start the process), we need to run our python script from our attacker to begin fuzzing the application. 
+
+If we see at any point that Immunity gives us an `Access Violation` error message at the bottom, we know that the program has crashed due to our fuzzing and we can stop our fuzzer script on our attacker. 
+
+We see pretty quickly that our fuzzer has crashed the application. After stopping our script, we examine the `Registers (FPU)` pane in Immunity and see that several locations now hold references to our payload of `41` which is the hexidecimal representation of a capital `A`. This means that whenever we send our payload, it is written into these locations in memory on the victim. We notice that `EAX`, `ESP`, `EBP`, and `EIP` all contain references to our long string of `A`s with `EAX` also sporting a preprended `TRUN /.:/` string. 
+
+![](/assets/images/CTP/AAA.JPG)
+
+
