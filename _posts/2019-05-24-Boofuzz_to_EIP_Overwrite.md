@@ -175,4 +175,8 @@ We see pretty quickly that our fuzzer has crashed the application. After stoppin
 
 ![](/assets/images/CTP/aaa.JPG)
 
+Essentially what we have discovered at this point is that, we are able to subvert the expected application input in a way that allows to take control of the value of `EIP`. `EIP`'s job is to contain the address in memory of the next instruction to be executed. So if we can tell the process where to go, we can tell it what to execute. If we can tell it what to execute, there is a chance we can get it to execute a malicious payload. 
+
+## Exploiting the EIP Overwrite
+
 
