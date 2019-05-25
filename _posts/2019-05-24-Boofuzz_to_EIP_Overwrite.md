@@ -18,7 +18,7 @@ tags:
 
 ## Introduction
 
-This series of posts will focus on the concepts I'm learning/practicing in preparation for [CTP/OSCE](https://www.offensive-security.com/information-security-training/cracking-the-perimeter/) In this series of posts, I plan on exploring:
+This series of posts will focus on the concepts I'm learning/practicing in preparation for [CTP/OSCE](https://www.offensive-security.com/information-security-training/cracking-the-perimeter/). In this series of posts, I plan on exploring:
 + fuzzing,
 + vanilla EIP overwrite,
 + SEH overwrite, and
@@ -65,7 +65,7 @@ Mona is a very robust Python tool that can be used inside Immunity to perform a 
 We want `mona.py` to be saved in the following directory: `C:\Program Files\Immunity Inc\Immunity Debugger\PyCommands`. 
 
 ## Using Boofuzz
-
+Working off of a very detailed and helpful working aid from [zeroaptitude.com](https://zeroaptitude.com/zerodetail/fuzzing-with-boofuzz/), we learn that the first element of any `boofuzz` fuzzing script is the 'session.' We can create our basic 
 
 
 
