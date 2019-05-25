@@ -133,6 +133,30 @@ session.connect(s_get("TRUN"))		#having our 'session' variable connect following
 session.fuzz()				#calling this function actually performs the fuzzing
 ```
 
+Our complete code now looks like this: 
+```python
+#!/usr/bin/python
 
+from boofuzz import *
+
+host = '192.168.1.201'	#windows VM
+port = 9999		#vulnserver port
+
+def main():
+	
+	session = Session(target = Target(connection = SocketConnection(host, port, proto='tcp')))
+	
+	s_initialize("TRUN")	#just giving our session a name, "TRUN"
+
+    	s_string("TRUN", fuzzable = False)	#these strings are fuzzable by default, so here instead of blank, we specify 'false'
+    	s_delim(" ", fuzzable = False)		#we don't want to fuzz the space between "TRUN" and our arg
+   	s_string("FUZZ")			#This value is arbitrary as we did not specify 'False' for fuzzable. Boofuzz will fuzz this string now
+ 
+        session.connect(s_get("TRUN"))		#having our 'session' variable connect following the guidelines we established in "TRUN"
+    	session.fuzz()				#calling this function actually performs the fuzzing
+
+if __name__ == "__main__":
+    main()
+```
 
 
