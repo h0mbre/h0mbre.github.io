@@ -164,3 +164,4 @@ Since we want to determine how the application reacts to our fuzzing script, we 
 One thing to know is that when you attach a process to Immunity in the way we just described, the process is not actually running yet. We need to press the small red 'play' triangle to start the process as if we just double-clicked it on the desktop. Immunity even gives us a terminal prompt as if we were running vulnserver on it's own. 
 
 Red 'play' triangle in lower right hand side of image:
+![](/assets/images/CTP/triangle.JPG)
