@@ -14,7 +14,7 @@ tags:
   - assembly
   - python
 --- 
-![](/assets/images/CTP/1920x1080_Wallpaper.jpg)
+![](/assets/images/CTP/immunity.jpg)
 
 ## Introduction
 
