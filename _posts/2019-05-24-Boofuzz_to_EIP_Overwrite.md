@@ -66,7 +66,19 @@ We want `mona.py` to be saved in the following directory: `C:\Program Files\Immu
 
 ## Exploring Vulnserver
 The first thing we want to do is run vulnserver.exe and then interact with the application as a normal client to determine how the application works under normal circumstances. We don't need to run the process in Immunity just yet. Start the application and you should recieve the following Windows prompt:
+
 ![](/assets/images/CTP/vulnserver.JPG)
+
+Next, we want to interact with the listening service from our attacker and determine how the application is supposed to work. We can use `netcat` for this and we'll just make a simple TCP connection to the target with the following command: 
+```terminal_session
+nc <windows7 IP address> 9999
+```
+
+Immediately we see that the connection is made and that the server is offering us the `HELP` command to show us valid commands for the service. Once we send the `HELP` command we get the following output:
+
+![](/assets/images/CTP/netcat.JPG)
+
+This should net us something like the following
 
 ## Using Boofuzz
 Working off of a very detailed and helpful working aid from [zeroaptitude.com](https://zeroaptitude.com/zerodetail/fuzzing-with-boofuzz/), we learn that the first element of any `boofuzz` fuzzing script is the 'session.' We can create our basic 
