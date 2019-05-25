@@ -416,6 +416,10 @@ We see that Mona found 9 addresses of `JMP ESP` calls within vulnserver and all 
 We can verify this in Immunity by finding this memory location and looking at the opcode for the address. 
 + In Immunity, click on the lowercase `e` at the top of the UI. This will show you the executable modules for the program.
 + We are interested in `essfunc.dll` since this is where our `JMP ESP` call lives. Double-click the `essfunc.dll` line. 
++ Right-click in the top left panel, select `Search for`, select `Command`, input `jmp esp`, and press enter. 
+
+We are greeted with the following
+![](/assets/images/CTP/proof.JPG)
 
 
 
