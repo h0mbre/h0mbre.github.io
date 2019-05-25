@@ -360,4 +360,8 @@ print s.recv(1024)
 s.close()
 ```
 
+The tell-tale sign of a badcharacter will be that in the hex dump, the perfect sequence of characters is broken. When we run this exploit against vulnserver and the application crashes and you right-click `ESP` and select `Follow in Dump`, we are presented with the following pane:
+![](/assets/images/CTP/bc.JPG)
+
+
 --To Be Continued--
