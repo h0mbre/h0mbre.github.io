@@ -247,7 +247,7 @@ To make Mona create our string, we use the following command in the white bar at
 
 Mona outputs this string (use the ASCII one) to a file called `pattern.txt` which is located in the `C:\Program Files\Immunity Inc\Immunity Debugger` directory. Make sure you copy the string from this file and not the pane in Immunity as the string in the pane might be truncated (especially at 5000 bytes). This string now becomes our buffer and we feed it back to a restarted vulnserver process in Immunity. 
 
-So now our `exploit.py` looks like this:
+So now our `exploit.py` now looks like this:
 ```python
 #!/usr/bin/python
 
@@ -268,8 +268,16 @@ print s.recv(1024)
 s.close()
 ```
 
-(**FYI, if you want to learn about `socket()` and `connect()` function calls, see my SLAE x86 posts where we create bind and reverse TCP shells in Assembly:**
+(**FYI, if you want to learn about `socket()` and `connect()` function calls, see my SLAE x86 posts where we create bind and reverse TCP shells in Assembly:)**
 + **[Bind TCP](https://h0mbre.github.io/SLAE_TCP_Bind_Shell/)**
-+ **[Reverse TCP](https://h0mbre.github.io/SLAE_TCP_Rev_Shell/)**)
++ **[Reverse TCP](https://h0mbre.github.io/SLAE_TCP_Rev_Shell/)**
+
+Let's run vulnserver through Immunity once more and see how our exploit crashes the application. 
+
+![](/assets/images/CTP/violation.JPG)
+
+![](/assets/images/CTP/overwrittenEIP.JPG)
+
+
 
 --To Be Continued--
