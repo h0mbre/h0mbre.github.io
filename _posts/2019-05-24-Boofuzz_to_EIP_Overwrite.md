@@ -41,10 +41,10 @@ For this excercise we will need to procure:
 ### Windows 7 VM
 For my lab setup, I downloaded an x86 Windows 7 image for Virtualbox [directly from Microsoft](https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/) and took a snapshot so that in 90 days, if I still want the VM I won't have to start the process of installing and configuring it from scratch! 
 
-I found that when I downloaded and booted the 'VMware x86" images, they were in fact 64-bit, so beware of that possibility. 
+I found that when I downloaded and booted the 'VMware x86' images, they were in fact 64-bit, so beware of that possibility. 
 
 ### Boofuzz
-Next we will need to install `boofuzz` on our attacker box. If you are on a Debian-based Linux machine, you can run the following commands (assuming you don't need to `sudo` because you are a script-kiddie like me in perma-root on Kali):
+Next we will need to install `boofuzz` on our attacker box. If you are on a Debian-based Linux machine, you can run the following commands (if you do not have `pip` installed, first run `apt-get install python-pip`):
 1. `git clone https://github.com/jtpereyda/boofuzz`
 2. `cd boofuzz`
 3. `pip install .`
@@ -52,7 +52,21 @@ Next we will need to install `boofuzz` on our attacker box. If you are on a Debi
 You can read more about `boofuzz` installation and documentation [here](https://boofuzz.readthedocs.io/en/latest/user/install.html).
 
 ### Vulnserver
-Now we need our badly written application. 
+Now we need our badly written application. I downloaded and used the `.zip` hosted [here](http://sites.google.com/site/lupingreycorner/vulnserver.zip) from my Windows 7 VM, but feel free to download directly from the autor [here](https://github.com/stephenbradshaw/vulnserver). 
+
+The `.exe` will run as long as its companion `essfunc.dll` file is in the same location. I moved both to my desktop for ease of use in the Windows 7 VM. 
+
+### Immunity Debugger
+Next we will download our debugger which we will use to investigate how vulnserver is behaving under different circumstances. Access the [download link](https://debugger.immunityinc.com/ID_register.py) from your Windows 7 VM, and fill out the requisite information (I believe dummy data will suffice.) Once you start the installer, it will notice that you do not have Python installed and offer to install it for you. 
+
+### Mona
+Mona is a very robust Python tool that can be used inside Immunity to perform a broad range of analysis for us. To install Mona, I just visited the [Corelan Mona repo](https://github.com/corelan/mona/blob/master/mona.py) and copied the raw text to a txt document inside my Windows 7 VM and saved it as `mona.py`. 
+
+We want `mona.py` to be saved in the following directory: `C:\Program Files\Immunity Inc\Immunity Debugger\PyCommands`. 
+
+## Using Boofuzz
+
+
 
 
 
