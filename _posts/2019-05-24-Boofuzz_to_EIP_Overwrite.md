@@ -18,7 +18,7 @@ tags:
 
 ## Introduction
 
-While I'm preparing for CTP/OSCE, I thought I'd start blogging what I'm doing so that later on I can use thise blog as a reference. In this series of posts, I plan on hitting:
+While I'm preparing for CTP/OSCE, I thought I'd start blogging what I'm doing so that later on I can use this blog as a reference. In this series of posts, I plan on exploring:
 + fuzzing,
 + vanilla EIP overwrite,
 + SEH overwrite, and
