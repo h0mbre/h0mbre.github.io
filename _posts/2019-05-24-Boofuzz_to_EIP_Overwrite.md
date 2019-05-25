@@ -159,4 +159,8 @@ if __name__ == "__main__":
     main()
 ```
 
+Since we want to determine how the application reacts to our fuzzing script, we need to start the `vulnserver.exe` in Immunity. This is easily accomplished by dragging the `vulnserver.exe` icon on the desktop to the Immunity icon which will automatically open Immunity with the `vulnserver.exe` process attached. If you have never used Immunity before, do not worry, there are a ton of great guides online and I will be linking themn in the resources section. 
 
+One thing to know is that when you attach a process to Immunity in the way we just described, the process is not actually running yet. We need to press the small red 'play' triangle to start the process as if we just double-clicked it on the desktop. Immunity even gives us a terminal prompt as if we were running vulnserver on it's own. 
+
+Red 'play' triangle in lower right hand side of image:
