@@ -406,10 +406,14 @@ As you can see, our entire sequence is presented unbroken. We have determined th
 
 Our last use of Mona will be asking her to find a location within the vulnserver application where there is a memory address which holds the instruction `JMP ESP`. If we are able to place this memory location address into `EIP`, then the process will see that the address of the next instruction to execute is saying that the instruction is `JMP ESP` and our process will go to `ESP` and execute whatever instructions are located there, in this case our payload!
 
-But not only do we have to find a `JMP ESP` call, we have to find one that is within a module that does not have ASLR enabled. ASLR will randomize the instruction location each time so that these types of exploits are unfeasible. However, programs are not beholden to strictly use ASLR-enabled, Microsoft-approved modules and often include non-ASLR modules. 
+But not only do we have to find a `JMP ESP` call, we have to find one that is within a module that does not have ASLR enabled. ASLR will randomize the instruction location each time the computer reboots so that these types of exploits are unfeasible. However, programs are not beholden to strictly use ASLR-enabled, Microsoft-approved modules and often include non-ASLR modules. 
 
 Mona will fetch us what we need with a simple command of: `!mona jmp -r esp`
 ![](/assets/images/CTP/jmp.JPG)
+
+We see that Mona found 9 addresses of `JMP ESP` calls within vulnserver and all of them happen to be in the `essfunc.dll` file with ASLR disabled (set to False). Let's use the second instance which is at the memory address:`0x625011bb`
+
+We can verify this in Immunity by finding this memory location and looking at the opcode for the address. 
 
 
 
