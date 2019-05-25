@@ -173,6 +173,6 @@ If we see at any point that Immunity gives us an `Access Violation` error messag
 
 We see pretty quickly that our fuzzer has crashed the application. After stopping our script, we examine the `Registers (FPU)` pane in Immunity and see that several locations now hold references to our payload of `41` which is the hexidecimal representation of a capital `A`. This means that whenever we send our payload, it is written into these locations in memory on the victim. We notice that `EAX`, `ESP`, `EBP`, and `EIP` all contain references to our long string of `A`s with `EAX` also sporting a preprended `TRUN /.:/` string. 
 
-![](/assets/images/CTP/AAA.JPG)
+![](/assets/images/CTP/aaa.JPG)
 
 
