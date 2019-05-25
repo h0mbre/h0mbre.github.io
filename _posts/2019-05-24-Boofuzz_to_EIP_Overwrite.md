@@ -183,8 +183,31 @@ Well, we know at this point that we can affect the value of `EIP`, but what we d
 
 ![](/assets/images/CTP/results.JPG)
 
-In entry 15, we see our familiar string `TRUN /.:` and the entry above it, 14, states that `boofuzz` sent 5011 bytes
+In entry 15, we see our familiar string `TRUN /.:` and the entry above it, 14, states that `boofuzz` sent 5011 bytes:
 
 ![](/assets/images/CTP/5011.JPG)
 
+What we'll do now is, create our exploit skeleton in python and test to see if sending 5011 bytes worth of `A` results in us getting the same `41414141` value overwritten to `EIP`. 
 
+### exploitSkeleton.py
+
+We can craft up a skeleton exploit that we can stash away for later use and edit copies as we need them throughout this series. Our exploit skeleton will be the following:
+```python
+#!/usr/bin/python
+
+import socket
+import os
+import sys
+
+host = "<host IP>"
+port = <host PORT>
+
+buffer = "<string we want to send>"
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host,port))
+print s.recv(1024)
+s.send(buffer)
+print s.recv(1024)
+s.close()
+```
