@@ -1,0 +1,22 @@
+---
+layout: single
+title: Boofuzz to EIP Overwrite
+date: 2019-5-24
+classes: wide
+header:
+  teaser: /assets/images/SLAE/SLAE.jpg
+tags:
+  - buffer overflow
+  - Windows
+  - x86
+  - shellcoding
+  - exploit development
+  - assembly
+  - python
+--- 
+![](/assets/images/SLAE/SLAE.jpg)
+
+## Introduction
+
+While I'm preparing for CTP/OSCE I thought I'd start blogging what I'm doing so that later on I can use thise blog as a reference. 
+
