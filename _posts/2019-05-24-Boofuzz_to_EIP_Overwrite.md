@@ -243,3 +243,5 @@ To make Mona create our string, we use the following command in the white bar at
 ![](/assets/images/CTP/pc.JPG)
 
 Mona outputs this string (use the ASCII one) to a file called `pattern.txt` which is located in the `C:\Program Files\Immunity Inc\Immunity Debugger` directory. Make sure you copy the string from this file and not the pane in Immunity as the string in the pane might be truncated (especially at 5000 bytes). This string now becomes our buffer and we feed it back to a restarted vulnserver process in Immunity. 
+
+--To Be Continued--
