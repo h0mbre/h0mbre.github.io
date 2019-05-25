@@ -284,7 +284,8 @@ Running this command with Mona yields the following result:
 `- Pattern o7Co (0x6F43376F) found in cyclic pattern at position 2002`
 
 So we now have our offset: 2002 bytes. The offset is essentially how far into our fuzzing string the `EIP` overwrite occurs. Our string that we submitted looks like this:
-<--------------------------------------------------------------------------------------------------->
-| 2002 bytes | EIP overwrite (4 bytes) | remainder of our string (5011 bytes - 4 bytes - 2002 bytes)|
+
+![](/assets/images/CTP/string.JPG)
+
 
 --To Be Continued--
