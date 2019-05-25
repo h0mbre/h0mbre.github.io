@@ -38,14 +38,21 @@ For this excercise we will need to procure:
 + Mona, and
 + a remote attacker box (I'll be using Kali).
 
+### Windows 7 VM
 For my lab setup, I downloaded an x86 Windows 7 image for Virtualbox [directly from Microsoft](https://developer.microsoft.com/en-us/microsoft-edge/tools/vms/) and took a snapshot so that in 90 days, if I still want the VM I won't have to start the process of installing and configuring it from scratch! 
 
 I found that when I downloaded and booted the 'VMware x86" images, they were in fact 64-bit, so beware of that possibility. 
 
-Next we will need to install boofuzz on our attacker box. If you are on a Debian-based Linux machine, you can run the following commands (assuming you don't need to `sudo` because you are a script-kiddie like me in perma-root on Kali):
+### Boofuzz
+Next we will need to install `boofuzz` on our attacker box. If you are on a Debian-based Linux machine, you can run the following commands (assuming you don't need to `sudo` because you are a script-kiddie like me in perma-root on Kali):
 1. `git clone https://github.com/jtpereyda/boofuzz`
 2. `cd boofuzz`
 3. `pip install .`
+
+You can read more about `boofuzz` installation and documentation [here](https://boofuzz.readthedocs.io/en/latest/user/install.html).
+
+### Vulnserver
+Now we need our badly written application. 
 
 
 
