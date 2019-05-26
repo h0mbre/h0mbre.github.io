@@ -1,6 +1,6 @@
 ---
 layout: single
-title: CTP/OSCE -- Boofuzzing Vulnserver for an EIP Overwrite
+title: CTP/OSCE Prep -- Boofuzzing Vulnserver for EIP Overwrite
 date: 2019-5-24
 classes: wide
 header:
