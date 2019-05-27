@@ -132,7 +132,7 @@ So now we have a nice 32-byte egghunter to fit inside our `C` buffer.
 
 ## Putting It All Together
 
-Since we aren't jumping back to a random spot in the `A` buffer this time, we don't need to convert the `A` values to NOPs. This approach is more surgical in nature. The `A` values can remain. 
+Since we aren't haphazardly jumping back to a spot in the `A` buffer this time, we don't need to convert the `A` values to NOPs. This approach is more surgical in nature. The `A` values can remain. 
 
 All that's left for us to do is:
 + create an `egghunter` variable in our exploit script
