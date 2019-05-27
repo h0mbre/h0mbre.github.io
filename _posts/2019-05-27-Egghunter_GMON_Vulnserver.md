@@ -1,6 +1,6 @@
 ---
 layout: single
-title: CTP/OSCE Prep -- 'GMON' Egghunter Exploit SEH-Based Overflow in Vulnserver
+title: CTP/OSCE Prep -- 'GMON' Egghunter Exploit in Vulnserver
 date: 2019-5-27
 classes: wide
 header:
