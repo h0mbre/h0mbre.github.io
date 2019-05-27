@@ -137,7 +137,7 @@ Since we aren't haphazardly jumping back to a spot in the `A` buffer this time, 
 All that's left for us to do is:
 + create an `egghunter` variable in our exploit script
 + create an `egg` variable ('EGGH x2 so that the egghunter doesn't find itself!)
-+ complete our exploit so that it sends in order: `A` values | egg | shellcode | nSeh | Seh | egghunter | `C` values
++ complete our exploit so that it sends in order: `A` values \| egg \| shellcode \| nSeh \| Seh \| egghunter \| `C` values
 
 After doing so, we end up with the following exploit code:
 ```python
