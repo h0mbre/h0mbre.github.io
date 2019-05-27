@@ -38,7 +38,7 @@ If you have not already done so, please read the first post of this series so th
 
 ## Background
 
-If you have not done so, it's probably best that you read our first approach to exploiting the 'GMON' command in Vulnserver with an SEH_based exploit [here](https://h0mbre.github.io/SEH_Based_Exploit/#). 
+If you have not done so, it's probably best that you read our first approach to exploiting the 'GMON' command in Vulnserver with an SEH-based exploit [here](https://h0mbre.github.io/SEH_Based_Exploit/#). 
 
 In summary:
 Our exploit code looked like this:
