@@ -53,6 +53,12 @@ Next we will need to install `boofuzz` on our attacker box. If you are on a Debi
 
 You can read more about `boofuzz` installation and documentation [here](https://boofuzz.readthedocs.io/en/latest/user/install.html).
 
+***NOTICE:*** I had to change the line in `/usr/local/lib/python2.7/dist-packages/boofuzz/fuzz_logger_curses.py` from:
++ `backports.shutil_get_terminal_size import get_terminal_size as \_get_terminal_size`
+
+To: 
++ `from shutil_backports import get_terminal_size as _get_terminal_size`
+
 ### Vulnserver
 Now we need our badly written application. I downloaded and used the `.zip` hosted [here](http://sites.google.com/site/lupingreycorner/vulnserver.zip) from my Windows 7 VM, but feel free to download directly from the author [here](https://github.com/stephenbradshaw/vulnserver). 
 
