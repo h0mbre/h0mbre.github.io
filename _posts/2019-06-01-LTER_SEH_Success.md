@@ -162,10 +162,10 @@ Let's walkthrough the simplest example from the exploit so that we can solidify 
 
 For this walkthrough, we'll be using the short negative jump we encoded earlier: `\xeb\x80\x90\x90`
 
-The instances of `\x44` (`INC ESP` (`D`)) are on the stack because of our overflow.
+The instances of `\x44` (`INC ESP` OR '`D`' values in ASCII) are on the stack because of our overflow.
 
 ### Step #1
-Here is our starting point. As you can see, `ESP` is currently at `0196ECA4`. Once we execute that `PUSH EAX` instruction at `0196FFE8`, our decoded jump will be placed right below `ESP` and `0196ECA4` isn't even on our page or anywhere close to where our execution will be and we want to use it to jump before control is passed to something else.
+Here is our starting point. As you can see, `ESP` is currently at `0196ECA4`. Once we execute the `PUSH EAX` instruction at `0196FFE8`, our decoded jump will be placed right below `ESP` and `0196ECA4` isn't even on our page or anywhere close to where our execution will be and we want to use it to jump before control is passed to something else.
 
 ![](/assets/images/CTP/Step1.JPG)
 
@@ -211,7 +211,12 @@ Finally, we execute `PUSH EAX` which will push our payload `909008EB` right onto
 
 ## Building the Exploit
 
-Again, this exploit is largely the same as Doyler's as I leaned on his walkthrough heavily, but I still wanted to share it so that I could hopefully explain it in a way someone finds helpful. 
+Again, this exploit methodology is largely the same as Doyler's as I leaned on his walkthrough heavily, but I still wanted to share it to highlight the techniques it teaches. 
+
+We will pick up at the SEH overwrite which is where we left off in the last post. We know we're restricted to alphanumeric shellcode. Let's overflow the SEH components and then find our offsets with Mona. 
+
+![](/assets/images/CTP/LTERseh.JPG)
+
 
 -- TO BE CONTINUED... --
 
