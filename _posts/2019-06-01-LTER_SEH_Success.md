@@ -117,6 +117,58 @@ If we *DON'T* move `ESP`:
 
 ![](/assets/images/CTP/no1ESP.JPG)
 
+As you can see in our fake program, there's a lot of space between where the code execution is and where our decoded payload is. We want our decoded payload closer to our execution so that execution can pass into our shellcode. The mechanism we are going to use to do this is very simple. Let's break out the Assembly and demonstrate it. Let's say our current `ESP` is `0178ffe9` and we need it to be at `0178ff6a`. What we're going to do is:
+1. Find the difference between the two addresses (`0178ffe9` - `0178ff6a` = `7f`),
+2. Push the value inside `ESP` (`0178ffe9`) onto the top of the stack,
+3. Pop the value off of the top of the stack and into `EAX`,
+4. Subtract `7f` from `EAX`,
+5. Push `EAX` onto the stack,
+6. and finally, pop the value off the top of the stack (our adjusted value of `0178ff6a`) into `ESP`. 
+
+In Assembly:
+```nasm
+global_start
+
+section .txt
+_start:
+
+push esp
+pop eax
+sub al, 0x7f
+push eax
+pop esp
+```
+
+After dumping the hex:
+```terminal_session
+astrid:~/ # objdump -D ./test
+
+
+Disassembly of section .txt:
+
+08049000 <_start>:
+ 8049000:	54                   	push   %esp
+ 8049001:	58                   	pop    %eax
+ 8049002:	2c 7f                	sub    $0x7f,%al
+ 8049004:	50                   	push   %eax
+ 8049005:	5c                   	pop    %esp
+```
+
+Now `ESP` holds our desired value and is where we want it. We can now safely decode our payload have the decoded payload end up closer to our execution. 
+
+Let's walkthrough the simplest example from the exploit so that we can solidify this concept. Once we solidify the 'Move ESP --> Decode Payload --> Execute Decoded Payload' concept, we are ready for the exploit. 
+
+### Walking Through Negative Jump
+
+For this walkthrough, we'll be using the short negative jump we encoded earlier: `\xeb\x80\x90\x90`
+
+The instances of `\x44` (`INC ESP` (`D`)) are on the stack because of our overflow.
+
+Here is our starting point. As you can see, `ESP` is currently at `0196ECA4`. Once we execute that `PUSH EAX` instruction at `0196FFE8`, our decoded jump will be placed right below `ESP` and `0196ECA4` isn't even on our page or anywhere close to where our execution will be and we want to use it to jump before control is passed to something else.
+
+![](/assets/images/CTP/Step1.JPG)
+
+
 
 
 
