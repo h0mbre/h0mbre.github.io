@@ -441,6 +441,10 @@ Let's send this and do a before and after for our Encoded/Decoded payload. If it
 
 ![](/assets/images/CTP/LTERafter.JPG)
 
+It totally worked and now we will let execution pass down to our new `JMP` operation and we will jump backwards and land in our `A` buffer!!
+
+### Encoding a Second Jump Backwards
+
 
 
 
