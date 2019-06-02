@@ -209,6 +209,12 @@ Finally, we execute `PUSH EAX` which will push our payload `909008EB` right onto
 
 ![](/assets/images/CTP/Step9.JPG)
 
+## Building the Exploit
+
+Again, this exploit is largely the same as Doyler's as I leaned on his walkthrough heavily, but I still wanted to share it so that I could hopefully explain it in a way someone finds helpful. 
+
+-- TO BE CONTINUED... --
+
 ## Resources
 + [OffSec Alphanumeric Shellcode](https://www.offensive-security.com/metasploit-unleashed/alphanumeric-shellcode/)
 + [Corelan Mona Tutorial](https://www.corelan.be/index.php/2011/07/14/mona-py-the-manual/)
