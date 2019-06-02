@@ -79,7 +79,9 @@ At a high-level what we're going to accomplish with sub encoding and how we're g
 
 As VelloSec put it lightly, manual encoding each 4 byte string can be tedious (especially if at some point you have to encode an entire reverse shell payload). Luckily, @ihack4falafel (Hashim Jawad) has created an amazing encoder called [Slink](https://github.com/ihack4falafel/Slink) for us to use. His encoder uses more `ADD` instructions but abuses the same wrap around concept. 
 
+Let's show an example of how to use the tool with the test payload: `\xfe\xcf\xff\xe3`
 
+![](/assets/images/CTP/test1.gif)
 
 
 ## Resources
