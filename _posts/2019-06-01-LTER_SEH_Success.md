@@ -184,8 +184,12 @@ After adding `0x134b` to our `EAX`, it's now pointing to `017EFFEF` which we can
 
 ![](/assets/images/CTP/Step4.JPG)
 
+### Step #5
+We've now pushed `EAX` onto the stack.
 
+![](/assets/images/CTP/Step5.JPG)
 
+### Step #6
 
 
 
