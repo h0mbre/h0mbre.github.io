@@ -217,6 +217,10 @@ This is because as our encoded shellcode gets decoded, it is placed on top (visu
 
 ![](/assets/images/CTP/decodeexplainer.JPG)
 
+If we were to encode a payload like `\xaa\xaa\xaa\xaa\xff\xff\xff\xff`, Slink would encode the `\xff` bytes first so that as our payload is decoded those would be placed 'ontop' of `ESP` first and then the `\xaa` bytes would be placed 'ontop' of the `\xaa` bytes.
+
+So as we consider using encoded shellcode, we have to remember that not only do we need room in our buffer for the encoded payload, but also enough room for the decoded payload as it's growing 'upward'. If we do not have enough room, it's possible that as the decoded instructions build up to our encoded payload and they overwrite eachother. 
+
 ## Building the Exploit
 
 If you have no experience with SEH overwrite exploits, definitely check out the [first one we did](https://h0mbre.github.io/SEH_Based_Exploit/) in the series before going any further as we won't really spend much time reviewing the basic SEH overwrite techniques. 
@@ -453,7 +457,7 @@ It totally worked and now we will let execution pass down to our new `JMP` opera
 
 ### Encoding a Second Jump Backwards
 
-
+After executing our first jump, we are now sitting at `0177FF6D` as you can tell 
 
 
 
