@@ -209,6 +209,14 @@ Finally, we execute `PUSH EAX` which will push our payload `909008EB` right onto
 
 ![](/assets/images/CTP/Step9.JPG)
 
+### Summary
+
+To kind of summarize our concerns during this process of: adjusting `ESP`, sending encoded shellcode, and finally decoding it, we need to keep a few things in mind. If we have a buffer space thats say 100 bytes, we can place our `ESP` adjustment **code** starting at byte `0`, our encoded shellcode will go right after our `ESP` adjustment, and finally our `ESP` should be adjusted to point at the **bottom** of our buffer space (near byte 100).
+
+This is because as our encoded shellcode gets decoded, it is placed on top (visually) of `ESP` and so it is growing upwards into lower memory addresses. It is growing **towards** our encoded shellcode. 
+
+![](/assets/images/CTP/decodeexplainer.JPG)
+
 ## Building the Exploit
 
 If you have no experience with SEH overwrite exploits, definitely check out the [first one we did](https://h0mbre.github.io/SEH_Based_Exploit/) in the series before going any further as we won't really spend much time reviewing the basic SEH overwrite techniques. 
