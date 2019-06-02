@@ -164,9 +164,13 @@ For this walkthrough, we'll be using the short negative jump we encoded earlier:
 
 The instances of `\x44` (`INC ESP` (`D`)) are on the stack because of our overflow.
 
+### Step #1
 Here is our starting point. As you can see, `ESP` is currently at `0196ECA4`. Once we execute that `PUSH EAX` instruction at `0196FFE8`, our decoded jump will be placed right below `ESP` and `0196ECA4` isn't even on our page or anywhere close to where our execution will be and we want to use it to jump before control is passed to something else.
 
 ![](/assets/images/CTP/Step1.JPG)
+
+### Step #2
+After executing the `PUSH ESP` 
 
 
 
