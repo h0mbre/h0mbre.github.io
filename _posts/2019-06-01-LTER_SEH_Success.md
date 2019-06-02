@@ -268,6 +268,8 @@ And we can verify that we have overwritten SEH appropriately:
 
 ![](/assets/images/CTP/LTERsehoffset.JPG)
 
+And our stack looks great!
+
 
 
 ![](/assets/images/CTP/LTERseh.JPG)
