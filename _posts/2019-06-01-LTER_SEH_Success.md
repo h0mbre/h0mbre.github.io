@@ -199,8 +199,13 @@ Next, we'll `AND EAX` twice to zero the register out. If you need help understan
 
 ![](/assets/images/CTP/Step7.JPG)
 
+### Step #8
+After these two `ADD` instructions, `EAX` is now holding our payload `909008EB`. 
 
+![](/assets/images/CTP/Step8.JPG)
 
+### Step #9
+Finally, as we execute
 
 ## Resources
 + [OffSec Alphanumeric Shellcode](https://www.offensive-security.com/metasploit-unleashed/alphanumeric-shellcode/)
