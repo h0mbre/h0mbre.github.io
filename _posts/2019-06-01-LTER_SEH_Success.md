@@ -205,7 +205,9 @@ After these two `ADD` instructions, `EAX` is now holding our payload `909008EB`.
 ![](/assets/images/CTP/Step8.JPG)
 
 ### Step #9
-Finally, as we execute
+Finally, we execute `PUSH EAX` which will push our payload `909008EB` right ontop of `ESP` which is pointed at `017EFFEF`. Our red `JMP` command pops onto our stack and we are overjoyed that everything went as planned and that we will soon execute a jump backwards.
+
+![](/assets/images/CTP/Step9.JPG)
 
 ## Resources
 + [OffSec Alphanumeric Shellcode](https://www.offensive-security.com/metasploit-unleashed/alphanumeric-shellcode/)
