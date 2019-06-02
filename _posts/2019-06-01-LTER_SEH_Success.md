@@ -68,7 +68,7 @@ One thing you need to know is, if you subtract your 4 byte payload from `0`, the
 7. `FFFF FFFF FFFF FFFC‬` - `3` = `FFFF FFFF FFFF FFF9‬`
 8. `FFFF FFFF FFFF FFF9‬` - `2` = `FFFF FFFF FFFF FFF7`
 
-As you can see, we ended up back at our `F7` without ever using it! That fundamental concept will be what we use throughout this exploit. 
+As you can see, we ended up back at our `F7` without ever using it! That fundamental concept will be similar to what we use throughout this exploit. 
 
 ### Automating Encoding 
 At a high-level what we're going to accomplish with sub encoding and how we're going to use it in this exploit is: 
@@ -76,7 +76,7 @@ At a high-level what we're going to accomplish with sub encoding and how we're g
 2. We're going to manipulate the `EAX` register with `SUB` and `ADD` instructions so that it eventually holds the value of our intended 4 byte payload,
 3. We're going to push that value onto the stack so that `ESP` is pointing to it. 
 
-As VelloSec put it lightly, manual encoding each 4 byte string can be tedious (especially if at some point you have to encode an entire reverse shell payload). Luckily, @ihack4falafel (Hashim Jawad) has created an amazing encoder called [Slink](https://github.com/ihack4falafel/Slink) for us to use. His encoder uses more `ADD` instructions but abuses the same wrap around concept. 
+As VelloSec put it lightly, manual encoding each 4 byte string can be tedious (especially if at some point you have to encode an entire reverse shell payload). Luckily, @ihack4falafel (Hashim Jawad) has created an amazing encoder called [Slink](https://github.com/ihack4falafel/Slink) for us to use. His encoder uses more `ADD` instructions. 
 
 Let's show an example of how to use the tool with the test payload: `\xfe\xcf\xff\xe3`
 
@@ -539,6 +539,22 @@ Let's step through it all and see if at the end `ESP` points to `0177FFC3`.
 Success! 
 
 ### Encoding a Long Negative Jump
+
+Instead of a short jump like we previously did we need to long jump so that we have some actual space for some shellcode. As we already figured out, we have over 3000 bytes between our `espAdj2` code and the beginning of our `A` buffer. 
+
+To accomplish this, we'll push `ESP`, pop `ESP` into a register (`EBX`), subtract x-amount of bytes from it so that it ends up holding the address of the beginning of our `A` buffer `017DF20A`, and then finally jump to it with a `CALL` instruction. 
+
+`ESP` is currently `017DFFC3` so we subtract `017DF20A` and get a difference of `DB9`. Time for some Assembly!
+```terminal_session
+nasm > push esp
+00000000  54                push esp
+nasm > pop ebx
+00000000  5B                pop ebx
+nasm > sub ebx, 0xdb9
+00000000  81EBB90D0000      sub ebx,0xdb9
+nasm > call ebx
+00000000  FFD3              call ebx
+```
 
 
 
