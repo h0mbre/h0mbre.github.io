@@ -170,7 +170,10 @@ Here is our starting point. As you can see, `ESP` is currently at `0196ECA4`. On
 ![](/assets/images/CTP/Step1.JPG)
 
 ### Step #2
-After executing the `PUSH ESP` 
+After executing the `PUSH ESP` we have the following register values. 
+
+![](/assets/images/CTP/Step2.JPG)
+
 
 
 
