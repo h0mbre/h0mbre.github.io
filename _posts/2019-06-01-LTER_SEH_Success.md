@@ -190,6 +190,15 @@ We've now pushed `EAX` onto the stack.
 ![](/assets/images/CTP/Step5.JPG)
 
 ### Step #6
+Now that we've executed `POP ESP`, `ESP` is pointing to the address `017EFFEF`!
+
+![](/assets/images/CTP/Step6.JPG)
+
+### Step #7
+Next, we'll `AND EAX` twice to zero the register out. If you need help understanding this part, refer to the VelloSec post, which does a great job explaining it. As you can see `EAX` now has a value of `00000000`. 
+
+![](/assets/images/CTP/Step7.JPG)
+
 
 
 
