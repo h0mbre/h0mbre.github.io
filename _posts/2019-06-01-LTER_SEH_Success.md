@@ -270,6 +270,7 @@ And we can verify that we have overwritten SEH appropriately:
 
 And our stack looks great!
 
+![](/assets/images/CTP/LTERgoodstack.JPG)
 
 
 ![](/assets/images/CTP/LTERseh.JPG)
