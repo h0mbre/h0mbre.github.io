@@ -54,17 +54,30 @@ As we discovered in the [previous post](https://h0mbre.github.io/LTER_SEH_Exploi
 
 One way to overcome this limitation is to 'sub encode' your shellcode. As VelloSec explains in [CARVING SHELLCODE USING RESTRICTIVE CHARACTER SETS](http://vellosec.net/2018/08/carving-shellcode-using-restrictive-character-sets/), the manual process for sub encoding your payloads can be very tedious. I really recommend you read the VelloSec blog post. I probably had to read it through 4 times today. 
 
+
+### Wrap Around Concept
 One thing you need to know is, if you subtract your 4 byte payload from `0`, the value will wrap around. Let's use the Windows calculator to show this. To make things simple let's use a forbidden character of `\xf7` and show how we could get that somewhere on the stack without ever using it via sub encoding. 
 1. First, we subtract `f7` from `0`. 
 
 ![](/assets/images/CTP/calc3.JPG)
 
-2. We end up with `ffff ffff ffff ff09`. We can ignore the proceeding `f` chars. 
+2. We end up with `FFFF FFFF FFFF FF09`. We can ignore the proceeding `f` chars. 
+3. Now that we have our value `09`, we need to manipulate it so that it ends up equaling `f7` without us ever using a forbidden character. 
+4. Our next job is come up with 3 numbers that added together will equal our `09`. We'll use `04`, `03`, and `02`.
+5. If we then use **three** `SUB` instructions, we can reach our original `f7` value. 
+6. `0` - `4` = `FFFF FFFF FFFF FFFC‬`
+7. `FFFF FFFF FFFF FFFC‬` - `3` = `FFFF FFFF FFFF FFF9‬`
+8. `FFFF FFFF FFFF FFF9‬` - `2` = `FFFF FFFF FFFF FFF7`
 
+As you can see, we ended up back at our `F7` without ever using it! That fundamental concept will be what we use throughout this exploit. 
+
+### Automating Encoding 
 At a high-level what we're going to accomplish with sub encoding and how we're going to use it in this exploit is: 
 1. We're going to use `AND` operations to zero out the `EAX` register,
 2. We're going to manipulate the `EAX` register with `SUB` and `ADD` instructions so that it eventually holds the value of our intended 4 byte payload,
 3. We're going to push that value onto the stack so that `ESP` is pointing to it. 
+
+As VelloSec put it lightly, manual encoding each 4 byte string can be tedious (especially if at some point you have to encode an entire reverse shell payload). Luckily, @ihack4falafel (Hashim Jawad) has created an amazing encoder called [Slink](https://github.com/ihack4falafel/Slink) for us to use. His encoder uses more `ADD` instructions but abuses the same wrap around concept. 
 
 
 
