@@ -179,6 +179,12 @@ After executing the `POP EAX` you can see that value of `ESP` is now stored in `
 
 ![](/assets/images/CTP/Step3.JPG)
 
+### Step #4
+After adding `0x134b` to our `EAX`, it's now pointing to `017EFFEF` which we can see as being about 8 bytes away from our last instruction (`PUSH EAX`). 
+
+![](/assets/images/CTP/Step4.JPG)
+
+
 
 
 
