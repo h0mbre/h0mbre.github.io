@@ -228,7 +228,7 @@ If you have no experience with SEH overwrite exploits, definitely check out the 
 Again, this exploit methodology is largely the same as Doyler's as I leaned on his walkthrough heavily, but I still wanted to share it to highlight the techniques it teaches. 
 
 ### Overwriting SEH
-We will pick up at the SEH overwrite which is where we left off in the last post. We know we're restricted to alphanumeric shellcode. Let's overflow the SEH components and then find our offsets with Mona. 
+We will pick up at the SEH overwrite which is where we left off in the [last post](https://h0mbre.github.io/LTER_SEH_Exploit/). We know we're restricted to alphanumeric shellcode. Let's overflow the SEH components and then find our offsets with Mona. 
 
 If we send our `A` value buffer we overwrite both 4 byte components of the SEH chain. 
 ```python
