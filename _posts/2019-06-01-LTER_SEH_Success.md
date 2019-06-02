@@ -461,7 +461,9 @@ After executing our first jump, we are now sitting at `0177FF6D`  inside of our 
 
 ![](/assets/images/CTP/inthemiddle.JPG)
 
+We can scroll down in our top-left pane and find out the address that this buffer runs into our SEH component code. 
 
+![](/assets/images/CTP/endofbuffer.JPG)
 
 -- TO BE CONTINUED... --
 
