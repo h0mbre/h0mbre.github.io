@@ -479,7 +479,6 @@ nasm > push eax
 00000000  50                push eax
 nasm > pop esp
 00000000  5C                pop esp
-nasm > 
 ```
 
 So we'll put the variable `espAdj2` and set it equal to: `\x54\x58\x2c\x2a\x50\x5c`. 
