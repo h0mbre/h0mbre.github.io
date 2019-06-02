@@ -457,8 +457,9 @@ It totally worked and now we will let execution pass down to our new `JMP` opera
 
 ### Encoding a Second Jump Backwards
 
-After executing our first jump, we are now sitting at `0177FF6D` as you can tell 
+After executing our first jump, we are now sitting at `0177FF6D`  inside of our `A` buffer as you can tell from the screenshot.
 
+![](/assets/images/CTP/inthemiddle.JPG)
 
 
 
