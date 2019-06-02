@@ -115,7 +115,7 @@ To explain, here are some high-level diagrams.
 
 If we *DON'T* move `ESP`:
 
-![](/assets/images/CTP/noESP.JPG)
+![](/assets/images/CTP/no1ESP.JPG)
 
 
 
