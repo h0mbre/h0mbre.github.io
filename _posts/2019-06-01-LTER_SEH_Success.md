@@ -643,6 +643,21 @@ print s.recv(1024)
 s.close()
 ```
 
+Once we send this, we should see our encoded long jump payload get decoded and then execution eventually reach our decoded payload on the stack and take it and jump all the way back to the beginning of our `A` buffer. Let's do another before and after. 
+
+**BEFORE**
+
+![](/assets/images/CTP/before2.JPG)
+
+**AFTER**
+
+![](/assets/images/CTP/after2.JPG)
+
+As you can see, our `CALL EBX` instruction pops out of thin air onto our stack and we eventually will pass control to it and jump back to the beginning of our `A` buffer!
+
+### Finally, Our Last Payload
+
+
 
 
 
