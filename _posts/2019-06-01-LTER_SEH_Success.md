@@ -52,8 +52,7 @@ As we discovered in the [previous post](https://h0mbre.github.io/LTER_SEH_Exploi
 \x01\x02\x03\x04\x05\x06\x07\x08\x09\x0b\x0c\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27\x28\x29\x2a\x2b\x2c\x2d\x2e\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x3b\x3c\x3d\x3e\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4a\x4b\x4c\x4d\x4e\x4f\x50\x51\x52\x53\x54\x55\x56\x57\x58\x59\x5a\x5b\x5c\x5d\x5e\x5f\x60\x61\x62\x63\x64\x65\x66\x67\x68\x69\x6a\x6b\x6c\x6d\x6e\x6f\x70\x71\x72\x73\x74\x75\x76\x77\x78\x79\x7a\x7b\x7c\x7d\x7e\x7f
 ```
 
-One way to overcome this limitation is to 'sub encode' your shellcode. As VelloSec explains in [CARVING SHELLCODE USING RESTRICTIVE CHARACTER SETS](http://vellosec.net/2018/08/carving-shellcode-using-restrictive-character-sets/), the manual process for sub encoding your payloads can be very tedious. I really recommend you read the VelloSec blog post. I probably had to read it through 4 times today. 
-
+One way to overcome this limitation is to 'sub encode' your shellcode. As VelloSec explains in [CARVING SHELLCODE USING RESTRICTIVE CHARACTER SETS](http://vellosec.net/2018/08/carving-shellcode-using-restrictive-character-sets/), the manual process for sub encoding your payloads can be very tedious. I really recommend you read the VelloSec blog post. I probably had to read it through 6 times today. 
 
 ### Wrap Around Concept
 One thing you need to know is, if you subtract your 4 byte payload from `0`, the value will wrap around. Let's use the Windows calculator to show this. To make things simple let's use a forbidden character of `\xf7` and show how we could get that somewhere on the stack without ever using it via sub encoding. 
@@ -91,6 +90,32 @@ So now that we have our encoded payload, how do we get this to actually execute?
 Let's say we want to short-jump backwards (or negative) the maximum amount. The code to do this is `\xeb\x80`. Obviously we can't use `\xeb` or `\x80` as both of these bytes are not in our allowable range. Let's leverage Slink!
 
 ![](/assets/images/CTP/test2.gif)
+
+Now we have our code:
+```terminal_session
+jump = ""
+jump += "\x25\x4A\x4D\x4E\x55" ## and  eax, 0x554e4d4a
+jump += "\x25\x35\x32\x31\x2A" ## and  eax, 0x2a313235
+jump += "\x05\x76\x40\x50\x50" ## add  eax, 0x50504076
+jump += "\x05\x75\x40\x40\x40" ## add  eax, 0x40404075
+jump += "\x50"                 ## push eax 
+```
+
+Once we complete the `add  eax, 0x40404075` line, `EAX` will hold the value `909080EB`. This is dark magic.
+Now when we `push eax`, `909080EB` will go into the 4 bytes "below" (really above visually, but below address wise as the stack grows in address size as it goes down) `ESP` and then `ESP` will be decremented by 4. 
+
+So how can we use this? Well if we move our ESP to an advantageous spot before using our encoded shellcode, we could have execution finish our decoder, place our desired value onto the stack right below our decoder, and then control will pass to our desired value (shellcode). 
+
+### Moving ESP Before Decoding
+First, what is meant by 'decoding' in this context? Decoding happens when we push `EAX` onto the stack, this places our real code (the value held by `EAX`) right below `ESP`. 
+
+So if our decoded shellcode is going to end up right below `ESP`, we need to know where that is and we need to move it to a location we want so that the program execution goes to it before going over other, potentially harmful instructions. 
+
+To explain, here are some high-level diagrams. 
+
+If we *DON'T* move `ESP`:
+
+![](/assets/images/CTP/noESP.JPG)
 
 
 
