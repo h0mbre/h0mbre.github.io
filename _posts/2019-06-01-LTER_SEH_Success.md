@@ -174,6 +174,10 @@ After executing the `PUSH ESP` we have the following register values.
 
 ![](/assets/images/CTP/Step2.JPG)
 
+### Step #3
+After executing the `POP EAX` you can see that value of `ESP` is now stored in `EAX`. This address is lower (in value, above us graphically) than we are right now, so we have to add to it to get it to us. 
+
+![](/assets/images/CTP/Step3.JPG)
 
 
 
