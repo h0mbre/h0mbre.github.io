@@ -83,6 +83,17 @@ Let's show an example of how to use the tool with the test payload: `\xfe\xcf\xf
 
 ![](/assets/images/CTP/test1.gif)
 
+As you can see, the tool took almost no time at all to encode our payload. One thing to note, Slink only encodes 4 bytes at a time so if you submit a payload that's longer than 4 bytes make sure you grab **ALL** the output from Slink. A good thing to look out for is the `Shellcode final size:`.
+
+### Using Encoded Payloads 
+So now that we have our encoded payload, how do we get this to actually execute? As you can see, the final instruction in our encoded payload is always `\x50` or `push EAX`. This is going to place the value of `EAX` ontop of the stack and decrement `ESP` by 4 bytes. What does this mean? This means that wherever `ESP` is, when we go through our `SUB` instructions and push `EAX`, `ESP - 4` is going to be where our code is that we want to execute. To demonstrate, let's use some actual code we use in the exploit. 
+
+Let's say we want to short-jump backwards (or negative) the maximum amount. The code to do this is `\xeb\x80`. Obviously we can't use `\xeb` or `\x80` as both of these bytes are not in our allowable range. Let's leverage Slink!
+
+![](/assets/images/CTP/test2.gif)
+
+
+
 
 ## Resources
 + [OffSec Alphanumeric Shellcode](https://www.offensive-security.com/metasploit-unleashed/alphanumeric-shellcode/)
