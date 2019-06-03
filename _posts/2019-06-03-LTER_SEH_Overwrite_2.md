@@ -236,7 +236,9 @@ print s.recv(1024)
 s.close()
 ```
 
-Testing it
+Testing it:
+![](/assets/images/CTP/eaxmath.JPG)
+
 
 ## Big Thanks
 
