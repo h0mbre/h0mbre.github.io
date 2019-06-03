@@ -266,6 +266,8 @@ If you remember how the encoding process works, we need `EAX` to be set equal to
 So given the reverse order requirement, and the 4 byte requirement, we need to encode `9090D3FF`. 
 
 Let's use Z3ncoder. 
+![](/assets/images/CTP/zen.gif)
+
 
 
 
