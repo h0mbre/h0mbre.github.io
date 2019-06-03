@@ -72,10 +72,13 @@ s.close()
 ```
 ## From `D` Buffer to Top of `A` Buffer
 
-Once we use our netjump in the `nSeh`, we land at the top of our `D` buffer. 
+Once we use our netjump in the `nSeh`, we land at the top of our `D` buffer in the address space `0174FFCC`. (Don't get too hung up on specific addresses as those will change from application instance to application instance, instead focus on the offsets or distances between two addresses. That number should remain static.)
 
-![](/assets/images/CTP/.JPG)
+![](/assets/images/CTP/Ltertake3.JPG)
 
+If we scroll down in the CPU Instructions pane to the bottom, you can see that the last `44` instruction is sitting at `0174FFFF`.
+
+![](/assets/images/CTP/ohyeahLTER.JPG)
 
 
 ## Big Thanks
