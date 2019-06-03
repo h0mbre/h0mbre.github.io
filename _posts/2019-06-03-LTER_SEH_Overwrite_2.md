@@ -239,6 +239,36 @@ s.close()
 Testing it:
 ![](/assets/images/CTP/eaxmath.JPG)
 
+Our math was correct and `EAX` now points to the top of our `A` buffer at `17EF20A`. 
+
+Now we need to place this value into `EBX` and jump to it. Unfortunately, the opcode required to jump to `EBX` is restricted to us so we have to encode this bit. Let's go to our nasm shell to figure out what the raw opcodes would be. 
+```terminal_session
+nasm > push eax
+00000000  50                push eax
+nasm > pop ebx
+00000000  5B                pop ebx
+nasm > call ebx
+00000000  FFD3              call ebx
+```
+
+Looks like our code will be: `\x50\x5b\xff\xd3`. We know `\x50` and `\x5b` are fine to use so we can place those in our exploit code already. To encode `\xff\xd3` I used an awesome tool called [Z3ncoder](https://github.com/marcosValle/z3ncoder) which does sub encoding. 
+
+Installation spelled out in the readme:
+`git clone https://github.com/marcosValle/z3ncoder`
+`cd z3ncoder`
+`pip install z3-solver`
+`python3 solve.py`
+
+There was some python vs. python3 package confusion after this so I just did `pip install z3-solver` and used python 2.7.
+
+If you remember how the encoding process works, we need `EAX` to be set equal to our opcode instructions and then pushed onto the stack to get decoded. How do we get our current `EAX` register to equal `\xff\xd3`? We need to remember that the code is read in the debugger display from right to left and we also have to pad our two bytes with two bytes of NOPs since we have to have a multiple of four. Luckily we spent 16 hours yesterday figuring out how this works! :) 
+
+So given the reverse order requirement, and the 4 byte requirement, we need to encode `9090D3FF`. 
+
+Let's use Z3ncoder. 
+
+
+
 
 ## Big Thanks
 
