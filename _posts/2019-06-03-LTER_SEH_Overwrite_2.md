@@ -369,6 +369,11 @@ s.close()
 If this works correctly, a red jump instruction to `EBX` at the top of our `A` buffer should pop onto our stack and we should pass control to it and jump. 
 
 **BEFORE DECODING**
+![](/assets/images/CTP/newnewbefore.JPG)
+
+**AFTER DECODING**
+![](/assets/images/CTP/newnewafter.JPG)
+
 
 
 
