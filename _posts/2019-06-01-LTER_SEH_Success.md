@@ -219,7 +219,7 @@ This is because as our encoded shellcode gets decoded, it is placed on top (visu
 
 If we were to encode a payload like `\xaa\xaa\xaa\xaa\xff\xff\xff\xff`, Slink would encode the `\xff` bytes first so that as our payload is decoded those would be placed 'ontop' of `ESP` first and then the `\xaa` bytes would be placed 'ontop' of the `\xaa` bytes.
 
-So as we consider using encoded shellcode, we have to remember that not only do we need room in our buffer for the encoded payload, but also enough room for the decoded payload as it's growing 'upward'. If we do not have enough room, it's possible that as the decoded instructions build up to our encoded payload and they overwrite eachother. 
+So as we consider using encoded shellcode, we have to remember that not only do we need room in our buffer for the encoded payload, but also enough room for the decoded payload as it's growing 'upward'. If we do not have enough room, it's possible that as the decoded instructions build up to our encoded payload they overwrite eachother. 
 
 ## Building the Exploit
 
