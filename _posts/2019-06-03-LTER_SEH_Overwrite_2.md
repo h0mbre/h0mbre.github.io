@@ -551,5 +551,11 @@ It was extremely gratifying to pull of my own version of the exploit using the t
 To everyone who has published free intro-level 32 bit exploit dev material, I'm super appreciative. Truly mean it. 
 
 ## Resources
+## Resources
 + [OffSec Alphanumeric Shellcode](https://www.offensive-security.com/metasploit-unleashed/alphanumeric-shellcode/)
 + [Corelan Mona Tutorial](https://www.corelan.be/index.php/2011/07/14/mona-py-the-manual/)
++ [Doyler LTER SEH Overwrite Part 1](https://www.doyler.net/security-not-included/lter-seh-continued)
++ [Doyler LTER SEH Overwrite Part 2](https://www.doyler.net/security-not-included/lter-seh-continued)
++ [VelloSec Carving Shellcode](http://vellosec.net/2018/08/carving-shellcode-using-restrictive-character-sets/)
++ [Slink by @ihack4falafel](https://github.com/ihack4falafel/Slink)
++ [Zencoder](https://github.com/marcosValle/z3ncoder)
