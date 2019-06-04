@@ -36,7 +36,7 @@ If you have not already done so, please read some of the posts in the 'CTP/OSCE 
 ## Background 
 
 This will be our third go at the 'LTER' command on Vulnserver. 
-+ [The first time](https://h0mbre.github.io/LTER_SEH_Exploit/), I failed miserably to use the SEH overwrite, but I ended up discovering and EIP overwrite vulnerability with a smaller fuzzing payload.
++ [The first time](https://h0mbre.github.io/LTER_SEH_Exploit/), I failed miserably to use the SEH overwrite, but I ended up discovering an EIP overwrite vulnerability with a smaller fuzzing payload.
 + [The second time](https://h0mbre.github.io/LTER_SEH_Success/#), I used @doylersec's approach to the SEH overwrite and worked through the exploit step-by-step for hours and was finally able to complete my own exploit modeled off of Doyler's.
 
 Armed with the ability to use alphanumeric shellcode and a better understanding than the first time around, let's try to come up with our own unique take on the exploit and try to come up with something that's original to us.
