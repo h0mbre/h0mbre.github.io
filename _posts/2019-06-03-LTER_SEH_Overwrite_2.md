@@ -1,6 +1,6 @@
 ---
 layout: single
-title: CTP/OSCE Prep -- 'LTER' SEH Overwrite Version 2.0!
+title: CTP/OSCE Prep -- 'LTER' SEH Overwrite v2.0!
 date: 2019-6-03
 classes: wide
 header:
