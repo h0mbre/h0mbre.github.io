@@ -544,7 +544,7 @@ C:\Users\IEUser\Desktop>
 ## Conclusion
 Lots of sleep lost on this 'LTER' command but I think it was all worth it. As with anything you're new to it takes a lot of time investment to get any better. Once again huge thanks to @doylersec for all of his help and to @ihack4falafel for his help as well. 
 
-It was extremely gratifying to pull of my own version of the exploit using the technique I spent all day learning. Thanks for reading!
+It was extremely gratifying to pull off my own version of the exploit using the technique I spent all day learning. Thanks for reading!
 
 ## Big Thanks
 
