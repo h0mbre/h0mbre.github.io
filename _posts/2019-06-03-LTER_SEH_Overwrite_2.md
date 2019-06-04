@@ -270,10 +270,10 @@ So our zeroing out code is going to be: `\x25\x4A\x4D\x4E\x55\x25\x35\x32\x31\x2
 Now all that's left is to encode `\xff\xd3`. I used an awesome tool called [Z3ncoder](https://github.com/marcosValle/z3ncoder) which does sub encoding. 
 
 Installation spelled out in the readme:
-`git clone https://github.com/marcosValle/z3ncoder`
-`cd z3ncoder`
-`pip install z3-solver`
-`python3 solve.py`
++ `git clone https://github.com/marcosValle/z3ncoder`
++ `cd z3ncoder`
++ `pip install z3-solver`
++ `python3 solve.py`
 
 There was some python vs. python3 package confusion after this so I just did `pip install z3-solver` and used python 2.7.
 
