@@ -527,7 +527,7 @@ s.close()
 
 The last check is we'll step through everything one last time to make sure that `ESP` is pointed right at the start of our shellcode before the first instruction of the shellcode executes. 
 
-![](/assets/images/CTP/espTRUE.JPG)
+![](/assets/images/CTP/ynowork.JPG)
 
 It's aligned perfectly and we catch a reverse shell!
 ```terminal_session
