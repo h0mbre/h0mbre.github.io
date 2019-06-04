@@ -43,7 +43,7 @@ Armed with the ability to use alphanumeric shellcode and a better understanding 
 
 ## Getting Started
 
-We will pick up after the taking the jump code in our 'next SEH address' 4 byte space to jump into our `D` buffer. At the moment, our exploit code looks like this: 
+We will pick up after taking the jump code in our 'next SEH address' 4 byte space to jump into our `D` buffer. At the moment, our exploit code looks like this: 
 ```python
 #!/usr/bin/python
 
