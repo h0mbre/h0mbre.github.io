@@ -84,7 +84,7 @@ When we overflow the buffer, we see that we control `EIP` and `ESP` so basically
 
 `!mona jmp -r esp` nets us the following `JMP ESP` addresses to choose from: 
 
-![](/assets/images/CTP/LTERjmp.JPG)
+![](/assets/images/CTP/hterJMP.JPG)
 
 
 ## Resources
