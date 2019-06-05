@@ -1,6 +1,6 @@
 ---
 layout: single
-title: CTP/OSCE Prep -- Boofuzzing Vulnserver for EIP Overwrite
+title: CTP/OSCE Prep -- 'HTER' EIP Overwrite with a Twist
 date: 2019-6-04
 classes: wide
 header:
@@ -58,9 +58,9 @@ s.send("HTER " + buffer)
 print s.recv(1024)
 s.close()
 ```
-Then I saw *this in EIP. 
+Then I saw **this** in EIP. 
 
-![](/assets/images/CTP/1920x1080_Wallpaper.jpg)
+![](/assets/images/CTP/wtfEIP.JPG)
 
 ## Resources
 
