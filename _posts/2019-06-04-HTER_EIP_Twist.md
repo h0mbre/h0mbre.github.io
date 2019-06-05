@@ -62,6 +62,22 @@ Then I saw **this** in EIP.
 
 ![](/assets/images/CTP/wtfEIP.JPG)
 
+## EIP, wyd? 
+
+So with 8 `A` values in `EIP` something is not normal here. Two possibilities come to mind: 
+1. Our 32 bit registers can now hold 8 bytes via *magic*
+2. The characters are not being interpreted/stored as ASCII, but maybe Hex? 
+
+I'm going with option two here and testing it to see if we're right. (*Psst. I actually didn't even notice the 8 `A` until I found the offset and stuffed it with 8 `B`, but let's pretend I'm ontop of this stuff.*)
+
+### Finding an Offset
+
+Since we are guessing these chars are being interpreted as raw hex and not ASCII, mona is out for pattern create and pattern offset. What I did was cut my 3000 char buffer in half and made it 1500 `A` and 1500 `B` and repeated with similar techniques until I found the correct offset and was able to have my payload include only 8 `B` and all 8 ended up in `EIP`. 
+
+![](/assets/images/CTP/b8EIP.JPG)
+
+
+
 ## Resources
 
 + [Do Buffer Overflow Good](https://github.com/justinsteven/dostackbufferoverflowgood)
