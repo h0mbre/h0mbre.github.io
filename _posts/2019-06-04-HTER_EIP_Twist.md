@@ -76,6 +76,15 @@ Since we are guessing these chars are being interpreted as raw hex and not ASCII
 
 ![](/assets/images/CTP/8beip.png)
 
+Since this was a more manual and creative way to find the offset, I'll leave that excercise to you and won't spoil it!
+
+### Finding a JMP ESP
+
+When we overflow the buffer, we see that we control `EIP` and `ESP` so basically we have everything we need to get a fully working exploit out of this, we just need a reliable way of jumping to `ESP` where we will put some NOPs and our shellcode. 
+
+`!mona jmp -r esp` nets us the following `JMP ESP` addresses to choose from: 
+
+![](/assets/images/CTP/LTERjmp.JPG)
 
 
 ## Resources
