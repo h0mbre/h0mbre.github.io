@@ -74,7 +74,7 @@ I'm going with option two here and testing it to see if we're right. (*Psst. I a
 
 Since we are guessing these chars are being interpreted as raw hex and not ASCII, mona is out for pattern create and pattern offset. What I did was cut my 3000 char buffer in half and made it 1500 `A` and 1500 `B` and repeated with similar techniques until I found the correct offset and was able to have my payload include only 8 `B` and all 8 ended up in `EIP`. 
 
-![](/assets/images/CTP/8beip.PNG)
+![](/assets/images/CTP/8beip.png)
 
 
 
