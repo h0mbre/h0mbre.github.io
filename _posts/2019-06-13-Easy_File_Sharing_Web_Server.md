@@ -77,11 +77,48 @@ After a round of fuzzing, the application crashes relatively closely and as you 
 
 ![](/assets/images/CTP/efscrash1.JPG)
 
-Looking through the payloads sent in the `boofuzz-results` folder, the only payload I could find mention of with `C` values was a 512 byte payload sent in the following format: `GET (C*n) `. This led me to believe that the field that responsible for the crash was the value after the space in the `GET` request. 
+Looking through the payloads sent in the `boofuzz-results` folder, the only payload I could find mention of with `C` values was a 512 byte payload sent in the following format: `GET (C*n) `. This led me to believe that the field responsible for the crash was the value after the space in the `GET` request which in our case was the `'Request-URI'` `s_string` entity (`/index.html`). 
 
 ![](/assets/images/CTP/boofuzzresults.JPG)
 
-It was pretty frustrating not seeing any reference to larger payloads sent by `boofuzz` in the results folder but at least I was able to sort of piece together the format that led to the crash. Terminal output payloads were as large as 100k bytes. I decided to se all of the other fuzzable entities in our `boofuzz` script to not fuzzable to test my half-baked theory. 
+It was pretty frustrating not seeing any reference to larger payloads sent by `boofuzz` in the results folder but at least I was able to sort of piece together the format that led to the crash. Terminal output payloads were as large as 100k bytes. I decided to se all of the other fuzzable entities in our `boofuzz` script to not fuzzable to test my half-baked theory. So now our `boofuzz` script looks like this: 
+```python
+#!/usr/bin/python
+
+from boofuzz import *
+
+
+def main():
+    session = Session(
+        target=Target(
+            connection=SocketConnection("192.168.1.201", 80, proto='tcp')
+        ),
+    )
+
+    s_initialize(name="Request")
+    with s_block("Request-Line"):
+        s_group("Method", ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE'])
+        s_delim(" ", name='space-1', fuzzable = False)
+        s_string("/index.html", name='Request-URI')
+        s_delim(" ", name='space-2', fuzzable = False)
+        s_string('HTTP/1.1', name='HTTP-Version', fuzzable = False)
+        s_static("\r\n", name="Request-Line-CRLF")
+    s_static("\r\n", "Request-CRLF")
+
+    session.connect(s_get("Request"))
+
+    session.fuzz()
+
+
+if __name__ == "__main__":
+    main()
+```
+
+Again we get a crash and EAX is overwritten with `C` values. So we know for certain the `'Request-URI'` entity is vulnerable. Time to create a skeleton and recreate the crash. 
+
+![](/assets/images/CTP/efscrash2.JPG)
+
+
 
 ## Resources
 
