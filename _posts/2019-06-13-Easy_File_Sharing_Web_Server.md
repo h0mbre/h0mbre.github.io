@@ -69,14 +69,19 @@ if __name__ == "__main__":
     main()
 ```
 
-The first thing I noticed was that the script apparently creates a list of HTTP methods for `boofuzz` to craft packets from and also fuzzes the `s_delim` entities `'space-1'` and `'space-2'`. It also fuzzes the `s_string` entities `'Request-URI'` and `'HTTP-Version'`. `boofuzz` does not fuzz `s_static` entities. 
+The first thing I noticed was that the script creates a list of HTTP methods for `boofuzz` to craft packets from, fuzzes the `s_delim` entities `'space-1'` and `'space-2'`, and fuzzes `s_string` entities `'Request-URI'` and `'HTTP-Version'`. `boofuzz` does not fuzz `s_static` entities. 
 
-As you can probably gather, this isn't a super in-depth fuzzing script but it's a great start. It's going to test several HTTP methods and it's going to fuzz about 4 values. Fields such as User Agent or SESSIONID will not be fuzzed, but we can save that for another time.
+As you can probably gather, this isn't a super in-depth fuzzing script but it's a great start. It's going to test several HTTP methods and it's going to fuzz about 4 values. Other standard HTTP request fields (such as User Agent) will not be fuzzed, but we can save that for another time.
 
 After a round of fuzzing, the application crashes relatively closely and as you can see from the screenshot, we notice EAX has been overwritten with `C` values. 
 
 ![](/assets/images/CTP/efscrash1.JPG)
 
+Looking through the payloads sent in the `boofuzz-results` folder, the only payload I could find mention of with `C` values was a 512 byte payload sent in the following format: `GET (C*n) `. This led me to believe that the field that responsible for the crash was the value after the space in the `GET` request. 
+
+![](/assets/images/CTP/boofuzzresults.JPG)
+
+It was pretty frustrating not seeing any reference to larger payloads sent by `boofuzz` in the results folder but at least I was able to sort of piece together the format that led to the crash. Terminal output payloads were as large as 100k bytes. I decided to se all of the other fuzzable entities in our `boofuzz` script to not fuzzable to test my half-baked theory. 
 
 ## Resources
 
