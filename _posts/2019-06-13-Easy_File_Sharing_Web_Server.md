@@ -148,8 +148,12 @@ Sending this payload crashes the server once more and we see that EAX has been o
 
 ![](/assets/images/CTP/efsskeleton.JPG)
 
-
 ## SEH Overwrite
+
+Checking out the SEH Chain in Immunity shows us that we have overwritten both 4 byte components of the SEH. 
+
+![](/assets/images/CTP/efsSEHchain.JPG)
+
 
 ## Resources
 
