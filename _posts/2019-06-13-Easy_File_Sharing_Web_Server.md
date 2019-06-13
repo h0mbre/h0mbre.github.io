@@ -142,6 +142,15 @@ expl.send(buffer)
 expl.close()
 ```
 
+(Notice that we took out the `'\n'` after the `'GET'` in our exploit code and replaced it with a space.)
+
+Sending this payload crashes the server once more and we see that EAX has been overwritten with `A` values, we are in business!
+
+![](/assets/images/CTP/efsskeleton.JPG)
+
+
+## SEH Overwrite
+
 ## Resources
 
 + 
