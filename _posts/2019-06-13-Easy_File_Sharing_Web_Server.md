@@ -204,9 +204,9 @@ Perfect, we land in our `\xcc` buffer as expected. We also have a huge amount of
 
 To do this, I used our favorite Net Jump that we used previously in the series and made `nseh = '\x74\x06\x75\x04'`. This will jump if the Zero Flag is set or if the Zero Flag is not set, since it can only be one or the other, we are guaranteed to jump. We could've used a simple `'\xeb\x06\x90\x90'` value for `nseh` but this is less cool imo. :)
 
-After executing this, take our jump and land in our `D` buffer. 
+After executing this, we take our jump and land in our `D` buffer. 
 
-This is where things went horribly wrong. 
+This is where things got a little sketchy. 
 
 ## Badcharacters Abound
 
