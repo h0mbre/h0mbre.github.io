@@ -73,7 +73,7 @@ The first thing I noticed was that the script creates a list of HTTP methods for
 
 As you can probably gather, this isn't a super in-depth fuzzing script but it's a great start. It's going to test several HTTP methods and it's going to fuzz about 4 values. Other standard HTTP request fields (such as User Agent) will not be fuzzed, but we can save that for another time.
 
-After a round of fuzzing, the application crashes relatively closely and as you can see from the screenshot, we notice EAX has been overwritten with `C` values. 
+After a round of fuzzing, the application crashes relatively quickly and as you can see from the screenshot, we notice EAX has been overwritten with `C` values. 
 
 ![](/assets/images/CTP/efscrash1.JPG)
 
