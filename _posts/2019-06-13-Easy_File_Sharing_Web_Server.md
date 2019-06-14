@@ -196,6 +196,9 @@ Let's set a breakpoint on our `POP POP RET` address like so:
 
 ![](/assets/images/CTP/efsbreak.JPG)
 
+And then we can step through it and make sure we end up in our `\xcc` buffer that we created. 
+
+![](/assets/images/CTP/stepthrough.gif)
 
 
 ## Resources
