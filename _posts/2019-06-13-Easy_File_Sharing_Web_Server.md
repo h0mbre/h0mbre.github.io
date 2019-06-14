@@ -28,7 +28,7 @@ This series of posts will focus on the concepts I'm learning/practicing in prepa
 
 Writing these entries will force me to become intimately familiar with these topics, and hopefully you can get something out of them as well! 
 
-This particular post is about recreating an SEH Overwrite from an ExploitDB entry.
+This particular post is about recreating an SEH Overwrite from an ExploitDB entry. **IF you've never done an SEH-based overflow, check out my [first post on the topic](https://h0mbre.github.io/SEH_Based_Exploit/#)!**
 
 ## Finding a Candidate Exploit
 
@@ -361,4 +361,6 @@ All in all, a pretty standard SEH overwrite with some extensive badcharacter tes
 ## Resources
 
 + [Exploit DB Entry for Easy File Sharing Webserver](https://www.exploit-db.com/exploits/39008)
-+ 
++ [EFS Download](http://www.sharing-file.com/)
++ [HTTP Exploit Skeleton](https://github.com/HanseSecure/ExploitDev/blob/master/poc/http.py)
++ [Boofuzz HTTP Template](https://stackoverflow.com/questions/45355344/http-fuzzing-with-boofuzz)
