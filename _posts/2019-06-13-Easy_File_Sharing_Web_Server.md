@@ -36,7 +36,7 @@ Since I've just about finished all of the Vulnserver exploits and have gone thro
 
 ## Fuzzing
 
-The very first thing I did after downloading and installing the software from [here](http://www.sharing-file.com/) was look for `boofuzz` http fuzzing templates. The first one I came to was [here](https://github.com/jtpereyda/boofuzz-http) and has the following source code: 
+The very first thing I did after downloading and installing the software from [here](http://www.sharing-file.com/) was look for `boofuzz` http fuzzing templates. [The first one I came to](https://github.com/jtpereyda/boofuzz-http) has the following source code: 
 ```python
 #!/usr/bin/env python
 # Designed for use with boofuzz v0.0.9
