@@ -81,7 +81,7 @@ Looking through the payloads sent in the `boofuzz-results` folder, the only payl
 
 ![](/assets/images/CTP/boofuzzresults.JPG)
 
-It was pretty frustrating not seeing any reference to larger payloads sent by `boofuzz` in the results folder but at least I was able to sort of piece together the format that led to the crash. Terminal output payloads were as large as 100k bytes. I decided to se all of the other fuzzable entities in our `boofuzz` script to not fuzzable to test my half-baked theory. So now our `boofuzz` script looks like this: 
+It was pretty frustrating not seeing any reference to larger payloads sent by `boofuzz` in the results folder but at least I was able to sort of piece together the format that led to the crash. Terminal output payloads were as large as 100k bytes. I decided to set all of the other fuzzable entities in our `boofuzz` script to `fuzzable = False` to test my half-baked theory. So now our `boofuzz` script looks like this: 
 ```python
 #!/usr/bin/python
 
