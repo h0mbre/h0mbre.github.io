@@ -46,6 +46,7 @@ First, we want to grab a template HTTP request for the web application. Using Bu
 
 ![](/assets/images/CTP/xitamiHome.JPG)
 
+![](/assets/images/CTP/xitamiBurp.JPG)
 
 
 ## Resources
