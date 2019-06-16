@@ -255,6 +255,10 @@ s.close()
 
 ![](/assets/images/CTP/xitamipartial.JPG)
 
+So we are almost there. We get a value of `4444f584` and we need `0044f584`. I couldn't immediately tell where that extra `44` byte came from but when I looked at the stack, it became apparent that its from our `D` buffer! 
+
+![](/assets/images/CTP/dbuffer.JPG)
+
 
 ## Resources
 
