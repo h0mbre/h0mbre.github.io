@@ -298,6 +298,13 @@ Resending this payload gets us our correct `POP POP RET` address overwritten int
 
 ![](/assets/images/CTP/xitaminoD.JPG)
 
+
+### Why does this work? 
+
+Well, let's see what the address is if we don't overwrite any part of it. Let's comment out our `seh` variable and just send the payload that crashes the application. 
+
+![](/assets/images/CTP/nooverwrite.JPG)
+
 --TO BE CONTINUED--
 
 
