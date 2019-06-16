@@ -176,6 +176,9 @@ This also nets us our crash and we can see that we have overwritten both 4 byte 
 
 ![](/assets/images/CTP/SEHxitami.JPG)
 
+## POP POP RET
+
+At this point we know the drill. First we have to find our offset to the SEH overwrite and then let mona find us a `POP POP RET` address. 
 
 ## Resources
 
