@@ -319,6 +319,10 @@ To do our calculations, I created a [little offset helper script](https://github
 
 ![](/assets/images/CTP/xitamistack.JPG)
 
+It looks like our `A` buffer begins at `0006FE48`; however, around `0006FE94` and `0006FEA4` we see that our buffer has been partially corrupted and filled with values of `00000055` and `FFFFFFFF`. So we'll have to make consider our `A` buffer as starting at `0006FEA4`. Let's let `offset.py` determine our distance from where we currently sit to the "top" of our `A` buffer. 
+
+![](/assets/images/CTP/xitamistart.JPG)
+
 --TO BE CONTINUED--
 
 
