@@ -456,6 +456,12 @@ Checking our math, we see that after taking our negative jump, we land precisely
 
 ![](/assets/images/CTP/correctxitami.JPG)
 
+## End Game
+
+The only thing left for us to do now is to somehow lodge our shellcode in the program's memory space so that our egghunter can find and execute it. I struggled here because I'd never really done this before. I had to peak at the ExploitDB PoC once again and saw that he lodged his shellcode as the value of another HTTP request header value. That's pretty sick! 
+
+We haven't checked for badchars at this point, so if we don't get a call back it could be badchars or our shellcode not being placed in application memory. But since we're lodging this final payload into the application memory somewhere that apparently has large buffer space (notice that we didn't crash the application while fuzzing any other parameter besides `If-Modified-Since`), we can try to head off badcharacter concerns by making the shellcode alphanumeric as these chars are less likely to be bad. **We also musn't forget that our final payload ought to be prepended with two instances of 'PWNS' so that our egghunter can identify it.**
+
 
 --TO BE CONTINUED--
 
