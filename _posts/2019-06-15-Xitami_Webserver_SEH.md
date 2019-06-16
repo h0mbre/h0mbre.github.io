@@ -253,6 +253,8 @@ s.send(req)
 s.close()
 ```
 
+![](/assets/images/CTP/xitamipartial.JPG)
+
 
 ## Resources
 
