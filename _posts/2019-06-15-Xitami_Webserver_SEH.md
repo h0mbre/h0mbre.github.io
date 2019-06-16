@@ -305,6 +305,10 @@ Well, let's see what the address is if we don't overwrite any part of it. Let's 
 
 ![](/assets/images/CTP/nooverwrite.JPG)
 
+As you can see, it currently holds the value `00450800`. This would translate to: `\x00\x08\x45\x00` in our script. So what we end up doing is just overwriting the `450800` value with our `seh` variable and let the `00` on the end remain giving us our valid address. 
+
+## Jumping
+
 --TO BE CONTINUED--
 
 
