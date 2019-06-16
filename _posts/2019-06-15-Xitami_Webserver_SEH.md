@@ -125,7 +125,7 @@ if __name__ == "__main__":
     main()
 ```
 
-Comparing this output file to our `get.txt` file and everything looks the way it should! Notice that everything right now is set to `fuzzable = False` which means, as is, our `boofuzz` script will only send requests that match our `get.txt` file. We will have manually enable fuzzing for each parameter we want to fuzz. This is just a personal taste, if you don't like this approach, feel free to just delete instances of `fuzzable = False` in `boo-gen.py`. 
+Comparing this output file to our `get.txt` file and everything looks the way it should! Notice that everything right now is set to `fuzzable = False` which means, as is, our `boofuzz` script will only send requests that match our `get.txt` file. We will have manually enable fuzzing for each parameter we want to fuzz. This is just a personal taste, if you don't like this approach, feel free to just delete instances of `fuzzable = False` in `boo-gen.py`. *Also change the IP address and port if necessary :)*
 
 ### Getting Fuzzy 
 
@@ -142,6 +142,7 @@ s_string("15 Jun 2019 01:36:09 GMT", name="If-Modified-Since-Value")
 
 Sending this to our webserver nets us our crash!
 
+![](/assets/images/CTP/xitamiSad.JPG)
 
 ## Resources
 
