@@ -452,6 +452,11 @@ s.send(req)
 s.close()
 ```
 
+Checking our math, we see that after taking our negative jump, we land precisely on the beginning of our egghunter. 
+
+![](/assets/images/CTP/correctxitami.JPG)
+
+
 --TO BE CONTINUED--
 
 
