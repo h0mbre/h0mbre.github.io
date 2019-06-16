@@ -129,6 +129,15 @@ Comparing this output file to our `get.txt` file and everything looks the way it
 
 ### Getting Fuzzy 
 
+After spending quite a long time fuzzing the application, I was unable to get it to crash. Eventually I had to peek at the ExploitDB PoC script and determine how they were able to make the application crash. It turns out the `If-Modified-Since` parameter in our `boofuzz` script **is** vulnerable; however, it actually requires the parameter value to be prepended by a day and a space. So it needs to look like this: `If-Modified-Since: Wed, <fuzzing-payload>`. 
+
+So we need to alter our `boofuzz` script slightly, in particular these few lines:
+```python
+s_string("If-Modified-Since: Sat, ", name="If-Modified-Since", fuzzable = False)
+	s_delim(" ", name="space-10", fuzzable = False)
+	s_string("15 Jun 2019 01:36:09 GMT", name="If-Modified-Since-Value")
+```
+
 
 
 ## Resources
