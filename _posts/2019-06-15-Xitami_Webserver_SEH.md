@@ -34,7 +34,7 @@ This particular post is about recreating an SEH Overwrite from an ExploitDB entr
 
 ## Finding a Candidate Exploit
 
-Searching ExploitDB for 'SEH' and one of the first entries is the [Xitami Web Server 2.5 SEH Overflow](https://www.exploit-db.com/exploits/46797). By glancing at the exploit it looks like it utilizes an egghunter and also stores the final shellcode separately from the payload that crashes the application. This should be a great exercise for us to troubleshoot our way through.
+Searching ExploitDB for 'SEH' and one of the first entries is the [Xitami Web Server 2.5 SEH Overflow](https://www.exploit-db.com/exploits/46797). By glancing at the exploit it looks like it utilizes an egghunter and also stores the final shellcode separately from the payload that crashes the application. This should be a great exercise for us to troubleshoot our way through. You can download the application from [here](https://imatix-legacy.github.io/xitami.com/)
 
 ## Fuzzing
 
@@ -51,7 +51,7 @@ First, we want to grab a template HTTP request for the web application. Using Bu
 
 ## Resources
 
-+ [Exploit DB Entry for Easy File Sharing Webserver](https://www.exploit-db.com/exploits/39008)
-+ [EFS Download](http://www.sharing-file.com/)
-+ [HTTP Exploit Skeleton](https://github.com/HanseSecure/ExploitDev/blob/master/poc/http.py)
-+ [Boofuzz HTTP Template](https://stackoverflow.com/questions/45355344/http-fuzzing-with-boofuzz)
++ [h0mbre's First SEH Overflow](https://h0mbre.github.io/SEH_Based_Exploit/#)
++ [Xitami Download](https://imatix-legacy.github.io/xitami.com/)
++ [Boo-Gen](https://github.com/h0mbre/CTP/tree/master/Boo-Gen)
++ [Offset.py](https://github.com/h0mbre/CTP/tree/master/Offset)
