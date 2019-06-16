@@ -134,8 +134,8 @@ After spending quite a long time fuzzing the application, I was unable to get it
 So we need to alter our `boofuzz` script slightly, in particular these few lines:
 ```python
 s_string("If-Modified-Since: Sat, ", name="If-Modified-Since", fuzzable = False)
-	s_delim(" ", name="space-10", fuzzable = False)
-	s_string("15 Jun 2019 01:36:09 GMT", name="If-Modified-Since-Value")
+s_delim(" ", name="space-10", fuzzable = False)
+s_string("15 Jun 2019 01:36:09 GMT", name="If-Modified-Since-Value")
 ```
 
 
