@@ -309,6 +309,16 @@ As you can see, it currently holds the value `00450800`. This would translate to
 
 ## Jumping
 
+After we take our `POP POP RET` we end up as planned in our `nseh` 4 byte space of `CCCC`. Unlike our normal situation where we jump over the current SEH and into our `D` buffer, we will have to jump backwards since there is no `D` buffer for us to jump forward into. 
+
+Let's first do some offset calcuations to see how large our buffer space is.
+
+### Offset.py
+
+To do our calculations, I created a [little offset helper script](https://github.com/h0mbre/CTP/tree/master/Offset). We will first need to examine the stack and see what we have to work with. 
+
+![](/assets/images/CTP/xitamistack.JPG)
+
 --TO BE CONTINUED--
 
 
