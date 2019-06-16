@@ -1,7 +1,7 @@
 ---
 layout: single
 title: CTP/OSCE Prep -- Xitami Webserver 2.5 SEH Overflow With Egghunter 
-date: 2019-6-13
+date: 2019-6-15
 classes: wide
 header:
   teaser: /assets/images/CTP/immunity.jpg
