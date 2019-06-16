@@ -133,11 +133,14 @@ After spending quite a long time fuzzing the application, I was unable to get it
 
 So we need to alter our `boofuzz` script slightly, in particular these few lines:
 ```python
-s_string("If-Modified-Since: Sat, ", name="If-Modified-Since", fuzzable = False)
+s_string("If-Modified-Since: Sat,", name="If-Modified-Since", fuzzable = False)
 s_delim(" ", name="space-10", fuzzable = False)
 s_string("15 Jun 2019 01:36:09 GMT", name="If-Modified-Since-Value")
 ```
 
+`"If-Modified-Since"` now has the day included along with a comma. This entity will not be fuzzed as it's set to `fuzzable = False`. The `"If-Modified-Since-Value"` entity has been shortened and we have deleted the fuzzable declaration so now it will be fuzzed. 
+
+Sending this to our webserver nets us our crash!
 
 
 ## Resources
