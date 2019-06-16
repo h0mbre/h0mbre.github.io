@@ -42,13 +42,15 @@ In the last post we fuzzed another HTTP service and the `boofuzz` script only re
 
 ### Introducing Boo-Gen!
 
+[Boo-Gen is a simple Python script](https://github.com/h0mbre/CTP/tree/master/Boo-Gen) which uses an example HTTP request (right now just the headers) to generate a `boofuzz` script. It should function dynamically and work with any headers that follow a `Parameter: Value` paradigm. All you need is an example `.txt` file with your HTTP request.
+
 First, we want to grab a template HTTP request for the web application. Using Burpsuite, I just browsed to the address of the webserver and grabbed the `GET` request and saved it to a file called `get.txt`. 
 
 ![](/assets/images/CTP/xitamiHome.JPG)
 
 ![](/assets/images/CTP/xitamiBurp.JPG)
 
-Right-clicking anywhere in the `GET` request and selecting 'Copy to file' within Burp allows us to save the request a `.txt` file. Now we just need to feed this request to Boo-Gen (which you can find [here](https://github.com/h0mbre/CTP/tree/master/Boo-Gen) and let it do its thing. We will not specify an output file name with the `-f, --filename` flag and will instead let it default to `http.py`. 
+Right-clicking anywhere in the `GET` request and selecting 'Copy to file' within Burp allows us to save the request a `.txt` file. Now we just need to feed this request to Boo-Gen and let it do its thing. We will not specify an output file name with the `-f, --filename` flag and will instead let it default to `http.py`. 
 ```terminal
 root@kali:~/OSCE/ # python boo-gen.py get.txt
 ```
