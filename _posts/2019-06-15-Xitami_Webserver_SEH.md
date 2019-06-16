@@ -212,7 +212,14 @@ s.send(req)
 s.close()
 ```
 
+Looks like we were correct. 
 ![](/assets/images/CTP/xitamicorrect.JPG)
+
+Time to find a `POP POP RET`. `!mona seh` nets us a small list of gadget addresses we can use; however, there is a problem. All of the addresses start with `00` which we cannot have in our shellcode. 
+
+![](/assets/images/CTP/xitamiSEH.JPG)
+
+The workaround here is that we need to overwrite only the first 3 bytes of 
 
 
 ## Resources
