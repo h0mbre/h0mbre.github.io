@@ -377,7 +377,7 @@ s.send(req)
 s.close()
 ```
 
-![](/assets/images/CTP/xitamiland.JPG)
+![](/assets/images/CTP/xitamiLand.JPG)
 
 --TO BE CONTINUED--
 
