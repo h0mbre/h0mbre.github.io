@@ -40,7 +40,7 @@ Searching ExploitDB for 'SEH' and one of the first entries is the [Xitami Web Se
 
 In the last post we fuzzed another HTTP service and the `boofuzz` script only really fuzzed the first part of the request header. I wanted a way to dynamically create `boofuzz` scripts based on the HTTP requests actually sent to the web application, so I created a script to do just that. 
 
-## Introducing Boo-Gen!
+### Introducing Boo-Gen!
 
 First, we want to grab a template HTTP request for the web application. Using Burpsuite, I just browsed to the address of the webserver and grabbed the `GET` request and saved it to a file called `get.txt`. 
 
