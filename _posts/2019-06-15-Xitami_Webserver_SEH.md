@@ -571,7 +571,7 @@ C:\Users\IEUser\Downloads\xiopen_2_5\xitami-25\app>
 
 ## Conclusion
 
-This was a really cool exploit to recreate. I definitely got stuck on the things I hadn't done before. The partial SEH overwrite, the placing final shellcode in another area of application memory, creating some helper scripts were all really eye opening. Thanks for reading!
+This was a really cool exploit to recreate. I definitely got stuck on the things I hadn't done before. The partial SEH overwrite, the placing final shellcode in another area of application memory, and creating some helper scripts were all really eye opening. Thanks for reading!
 
 ## Resources
 
