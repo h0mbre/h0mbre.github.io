@@ -76,6 +76,9 @@ For completeness, I'm going to include all of the references I found useful and 
 + [OJ Reeves Net Jumping Tutorial](https://buffered.io/posts/jumping-with-bad-chars/)
 + [JMP Opcode Explainer by Unixwiz](http://www.unixwiz.net/techtips/x86-jumps.html)
 
+### Partial Overwrites/Application Memory
++ [Xitami Webserver 2.5](https://h0mbre.github.io/Xitami_Webserver_SEH/)
+
 ### Backdooring PEs/Bypassing AV
 + [Backdooring PE File by Adding New Section Header by Capt Meelo](https://captmeelo.com/exploitdev/osceprep/2018/07/16/backdoor101-part1.html)
 + [Backdooring PE File w/ User Interaction & Custom Encoder Using Existing Code Cave by Capt Meelo](https://captmeelo.com/exploitdev/osceprep/2018/07/21/backdoor101-part2.html)
