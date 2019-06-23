@@ -68,7 +68,7 @@ For completeness, I'm going to include all of the references I found useful and 
 
 ### Net Jumping
 + [OJ Reeves Net Jumping Tutorial](https://buffered.io/posts/jumping-with-bad-chars/)
-+ [JMP Opcode Explainer by Unixwiz(http://www.unixwiz.net/techtips/x86-jumps.html)
++ [JMP Opcode Explainer by Unixwiz](http://www.unixwiz.net/techtips/x86-jumps.html)
 
 ### Backdooring PEs/Bypassing AV
 + [Backdooring PE File by Adding New Section Header by Capt Meelo](https://captmeelo.com/exploitdev/osceprep/2018/07/16/backdoor101-part1.html)
@@ -78,11 +78,11 @@ For completeness, I'm going to include all of the references I found useful and 
 + [Vulnserver KSTET Exploit by Rastating](https://rastating.github.io/using-socket-reuse-to-exploit-vulnserver/)
 + [Vulnserver KSTET Exploit by Deceptive Security](https://deceiveyour.team/2018/10/15/vulnserver-kstet-ws2_32-recv-function-re-use/)
 
-##Tools/Scripts
+## Tools/Scripts
 ### Exploit Skeletons
 [Exploit Skeleton Repo by HanseSecure](https://github.com/HanseSecure/ExploitDev/tree/master/poc)
 
-### Tools/Scripts
+### Tools
 + [Offset Helper Script](https://github.com/h0mbre/CTP/tree/master/Offset)
 + [Boo-Gen (Boofuzz Script Generator)](https://github.com/h0mbre/CTP/tree/master/Boo-Gen)
 + [Slink Add/Sub Encoder for Alphanumeric Shellcode](https://github.com/ihack4falafel/Slink)
