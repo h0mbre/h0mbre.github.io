@@ -35,6 +35,8 @@ For completeness, I'm going to include all of the references I found useful and 
 + bypassing AV, and
 + socket reuse. 
 
+Hopefully this series is helpful to a CTP/OSCE student some day! 
+
 ## Concepts
 ### SEH Overwrite Resources
 + [My First SEH Overwrite](https://h0mbre.github.io/SEH_Based_Exploit/#)
