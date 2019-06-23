@@ -35,7 +35,7 @@ For completeness, I'm going to include all of the references I found useful and 
 + bypassing AV, and
 + socket reuse. 
 
-Hopefully this series is helpful to a CTP/OSCE student some day! 
+Hopefully this series is helpful to a CTP/OSCE student some day! It's now exam-prep crunch time so I will be relatively quiet. Looking forward to posting a review for the course after I'm finished and continuing down the exploit dev path for the forseeable future. Thanks for reading along! 
 
 ## Concepts
 ### SEH Overwrite Resources
@@ -110,8 +110,3 @@ Hopefully this series is helpful to a CTP/OSCE student some day!
 ### Prep Guides
 + [Tulpa's OSCE Prep Guide](https://tulpa-security.com/2017/07/18/288/)
 + [Abatchy's OSCE Study Guide](https://www.abatchy.com/2017/03/osce-study-plan)
-
-
-
-
-
