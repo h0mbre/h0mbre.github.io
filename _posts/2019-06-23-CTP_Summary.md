@@ -110,3 +110,7 @@ Hopefully this series is helpful to a CTP/OSCE student some day! It's now exam-p
 ### Prep Guides
 + [Tulpa's OSCE Prep Guide](https://tulpa-security.com/2017/07/18/288/)
 + [Abatchy's OSCE Study Guide](https://www.abatchy.com/2017/03/osce-study-plan)
+
+## Thanks!!!
+
+Huge thanks to everyone who published/publishes all of this amazing free content on entry-level exploit dev topics. I would be lost without all of your hard work. I truly appreciate it!
