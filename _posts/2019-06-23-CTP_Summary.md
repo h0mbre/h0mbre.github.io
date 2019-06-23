@@ -51,20 +51,26 @@ For completeness, I'm going to include all of the references I found useful and 
 + [Skape's Egghunter Explainer](http://www.hick.org/code/skape/papers/egghunt-shellcode.pdf)
 + [Fuzzy Security Egghunter Tutorial](https://www.fuzzysecurity.com/tutorials/expDev/4.html)
 + [Corelan Win32 Egghunting Guide](https://www.corelan.be/index.php/2010/01/09/exploit-writing-tutorial-part-8-win32-egg-hunting/)
++ [Vulnserver: GMON Egghunter with Char Restrictions](https://h0mbre.github.io/Badchars_Egghunter_SEH_Exploit/)
 
 ### Fuzzing Resources
 + [ZeroAptitude Intro to Boofuzz](https://zeroaptitude.com/zerodetail/fuzzing-with-boofuzz/)
 + [Boofuzz](https://github.com/jtpereyda/boofuzz)
 + [Boo-Gen](https://github.com/h0mbre/CTP/tree/master/Boo-Gen)
++ [Vulnserver: Boofuzz to TRUN EIP Overwrite](https://h0mbre.github.io/Boofuzz_to_EIP_Overwrite/#)
 
 ### Alphanumeric Encoding Resources
-+ [A Noob's Approach to Alphanumeric Shellcode](https://github.com/h0mbre/h0mbre.github.io/blob/master/_posts/2019-06-01-LTER_SEH_Success.md)
++ [Vulnserver: A Noob's Approach to Alphanumeric Shellcode (LTER)](https://github.com/h0mbre/h0mbre.github.io/blob/master/_posts/2019-06-01-LTER_SEH_Success.md)
++ [Vulnserver: Alphanumeric Shellcode Exploit for LTER v2.0](https://h0mbre.github.io/LTER_SEH_Overwrite_2/)
 + [OffSec Alphanumeric Shellcode](https://www.offensive-security.com/metasploit-unleashed/alphanumeric-shellcode/)
 + [Doyler LTER SEH Overwrite Part 1](https://www.doyler.net/security-not-included/lter-seh-continued)
 + [Doyler LTER SEH Overwrite Part 2](https://www.doyler.net/security-not-included/lter-seh-continued)
 + [VelloSec Carving Shellcode](http://vellosec.net/2018/08/carving-shellcode-using-restrictive-character-sets/)
 + [Slink by @ihack4falafel](https://github.com/ihack4falafel/Slink)
 + [Z3ncoder](https://github.com/marcosValle/z3ncoder)
+
+### Hex Encoded Characters
++ [Vulnserver: HTER EIP Overwrite with Hex Encoded Payload](https://h0mbre.github.io/HTER_EIP_Twist/#)
 
 ### Net Jumping
 + [OJ Reeves Net Jumping Tutorial](https://buffered.io/posts/jumping-with-bad-chars/)
@@ -78,15 +84,28 @@ For completeness, I'm going to include all of the references I found useful and 
 + [Vulnserver KSTET Exploit by Rastating](https://rastating.github.io/using-socket-reuse-to-exploit-vulnserver/)
 + [Vulnserver KSTET Exploit by Deceptive Security](https://deceiveyour.team/2018/10/15/vulnserver-kstet-ws2_32-recv-function-re-use/)
 
-## Tools/Scripts
+## ExploitDB Recreations
++ [Easy File Sharing Web Server 7.2](https://h0mbre.github.io/Easy_File_Sharing_Web_Server/)
++ [Xitami Webserver 2.5](https://h0mbre.github.io/Xitami_Webserver_SEH/)
+
+## Tools/Scripts/Misc
 ### Exploit Skeletons
-[Exploit Skeleton Repo by HanseSecure](https://github.com/HanseSecure/ExploitDev/tree/master/poc)
++ [Exploit Skeleton Repo by HanseSecure](https://github.com/HanseSecure/ExploitDev/tree/master/poc)
 
 ### Tools
 + [Offset Helper Script](https://github.com/h0mbre/CTP/tree/master/Offset)
 + [Boo-Gen (Boofuzz Script Generator)](https://github.com/h0mbre/CTP/tree/master/Boo-Gen)
 + [Slink Add/Sub Encoder for Alphanumeric Shellcode](https://github.com/ihack4falafel/Slink)
 + [Z3ncoder Sub Encoder for Alphanumeric Shellcode](https://github.com/marcosValle/z3ncoder)
+
+### Vulnserver
++ [Vulnserver](https://github.com/stephenbradshaw/vulnserver)
+
+### Prep Guides
++ [Tulpa's OSCE Prep Guide](https://tulpa-security.com/2017/07/18/288/)
++ [Abatchy's OSCE Study Guide](https://www.abatchy.com/2017/03/osce-study-plan)
+
+
 
 
 
