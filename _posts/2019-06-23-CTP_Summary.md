@@ -60,6 +60,7 @@ Hopefully this series is helpful to a CTP/OSCE student some day!
 + [Boofuzz](https://github.com/jtpereyda/boofuzz)
 + [Boo-Gen](https://github.com/h0mbre/CTP/tree/master/Boo-Gen)
 + [Vulnserver: Boofuzz to TRUN EIP Overwrite](https://h0mbre.github.io/Boofuzz_to_EIP_Overwrite/#)
++ [Using Boo-Gen to Fuzz Xitami Webserver](https://h0mbre.github.io/Xitami_Webserver_SEH/#)
 
 ### Alphanumeric Encoding Resources
 + [Vulnserver: A Noob's Approach to Alphanumeric Shellcode (LTER)](https://github.com/h0mbre/h0mbre.github.io/blob/master/_posts/2019-06-01-LTER_SEH_Success.md)
