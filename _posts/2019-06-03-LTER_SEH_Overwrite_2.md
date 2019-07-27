@@ -84,9 +84,9 @@ To figure out the distance between those two points we do: (`0174FFFF` - `0174FF
 
 Let's see what we can do now that we understand it a little bit better.
 
-### Adjusting ESP
+**WARNING: In this post I set `ESP` to `0174FFFF` which is not divisible by four and will often ruin your stack alignment and cause the exploit to fail. This is not good practice. Don't actually do this.**
 
-**WARNING:** In this post I set `ESP` to `0174FFFF` which is not divisible by four and will often ruin your stack alignment and cause the exploit to fail. This is not good practice. Don't actually do this. 
+### Adjusting ESP
 
 As we know, the first thing we have to do before putting our encoded shellcode on the stack is adjust `ESP`. As you can see from our screenshot, `ESP` is residing at `0174ECA4` and we want to put it at the bottom of our `D` buffer since our decoded shellcode will be plopped 'ontop' of it as it's decoded. To figure out how much we have adjust `ESP` we do (`0174FFFF` - `0174ECA4` = `135B` or 4,955 in decimal). So we have to add quite a bit!
 
