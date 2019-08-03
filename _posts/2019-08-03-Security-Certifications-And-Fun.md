@@ -276,6 +276,7 @@ I would say, you just want to know about Windows x86 buffer overflows, (and SEH,
 I would say the main lesson I learned on my journey was that you need to cultivate an ability to self-learn. The amount of free resources out there for any security topic is overwhelming. A certification course in my opinion should: 
 + collate all of the relevant information and present it to students in a digestible format, and
 + have an instructor/teaching style which anticipates student’s learning difficulties/roadblocks and effectively mitigates them. 
+
 If a certification course does not do these two things, then the only reason left to take the course and get the certification is because it is needed for a resume. 
 
 ### If You Only Get One
@@ -284,7 +285,7 @@ If you were only going to do one certification from this list with the goal of b
 
 ### What I’d Do Differently
 
-Since I came into this with zero background, I should’ve taken more care to get more familiar with Windows or Linux. If I was going to go the certification route, I should’ve done something like the Red Hat Certified System Administrator (RHCSA) or one of the Microsoft MCSE certifications. If not the actual certification, then at least spend time digesting and learning the materials. More detailed knowledge about these operating systems would’ve served me extremely well during my journey. To this day there are very simple things about both operating systems that I don’t know.  Knowing what I know now, I would probably substitute the time spent on Sec+, Net+, and CEH and spend that time instead on learning one of the operating systems from a sysadmin perspective and spent time learning to program in C or C++. I think I’d be way ahead of my current self if I had done those things instead. 
+Since I came into this with zero background, I should’ve taken more care to get more familiar with Windows or Linux. If I was going to go the certification route, I should’ve done something like the Red Hat Certified System Administrator (RHCSA) or one of the Microsoft MCSE certifications. If not the actual certification, then at least spend time digesting and learning the materials. More detailed knowledge about these operating systems would’ve served me extremely well during my journey. To this day there are very simple things about both operating systems that I don’t know.  Knowing what I know now, I would probably take back the time spent on Sec+, Net+, and CEH and spend that time instead on learning one of the operating systems from a sysadmin perspective and spent time learning to program in C or C++. I think I’d be way ahead of my current self if I had done those things instead. 
 
 ### Optimized Path 
 
@@ -298,4 +299,7 @@ I think a great path for someone who wants to get into security and build a good
 
 From here, I think you could go a number of different ways based on your interests. This curriculum obviously has some huge knowledge gaps (networking for example), but I think you would be ahead of where I was at the same point. Obviously if you don’t need the certifications and are only interested in the skillset, then just study the related/relevant materials. 
 
+## Conclusion
+
+Just wanted to give my take on the training I have done so far and potentially save some from making the same mistakes I felt I made. Again, none of this is fact, this is all simply my opinion. It's entirely possible I'm 100% wrong about everything I wrote and I did in fact take the best route during my training and I'm simply doing the 'grass is always greener' bit. I would just generally tell people going forward that you need to make sure the certification is doing at least one of the two things I said:
 
