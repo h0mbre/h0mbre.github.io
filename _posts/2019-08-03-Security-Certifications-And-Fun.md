@@ -139,7 +139,7 @@ CONS:
 I would say stay away from this certification unless you absolutely need it on your resume. I can't think of a single redeeming quality to this course or certification. It has been over a year at this point since I took this certification so maybe it has changed in the mean time, seek out some other opinions before making a decision. 
 
 ## eLearnSecurity Certified Professional Penetration Tester (eCPPTv2) (August 2018 - November 2018)
-According to [eLearnSecurity] (https://www.elearnsecurity.com/certification/ecppt/), an eCPPT holder is knowledgeable in the following domains:
+According to [eLearnSecurity](https://www.elearnsecurity.com/certification/ecppt/), an eCPPT holder is knowledgeable in the following domains:
 + Penetration testing processes and methodologies;
 + Vulnerability Assessment of Networks;
 + Vulnerability Assement of Web Applications;
@@ -187,7 +187,7 @@ I would absolutely recommend this course to anyone looking to break into penetra
 I spent about 150 hours total in this course, at the time it felt like a huge time investment. That is because I hadn't yet done OSCP :) 
 
 ## OffensiveSecurity Certified Professional (OSCP) (November 2018 - Janurary 2019)
-I won't spend much time describing my PWK/OSCP experience in this space as I have already written a stand-alone review of it [here:] (https://h0mbre.github.io/OSCP/). Altogther, I spent about 300 hours preparing for the exam and rooted around 100 boxes between my efforts in the OSCP labs, the VirtualHackingLabs environment, Hack the Box, and Vulnhub. I really felt like my experience with eCPPT really allowed me to hit the ground running in OSCP and allowed me to maximize my time in labs instead of digesting the materials.
+I won't spend much time describing my PWK/OSCP experience in this space as I have already written a stand-alone review of it [here:](https://h0mbre.github.io/OSCP/). Altogther, I spent about 300 hours preparing for the exam and rooted around 100 boxes between my efforts in the OSCP labs, the Virtual Hacking Labs environment, Hack the Box, and Vulnhub. I really felt like my experience with eCPPT allowed me to hit the ground running in OSCP and allowed me to maximize my time in labs instead of digesting the materials.
 
 PROS:
 + Exposure to a ton of different exploitation techniques;
@@ -205,7 +205,7 @@ CONS:
 Out of all of the certifications and trainings mentioned thus far, I would recommend this one the most. It is very broad and will not make you an expert in anything and you will definitely not be able to walk right into a penetration testing role and begin performing; however, it does give you a solid foundation and a great mindset. If you're going to spend money on just one certification, let it be this one. 
 
 ## eLearnSecurity Web Application Penetration Testing (eWPT) (February 2019 - April 2019)
-Again, I won't spend much time describing my eWPT experience in this space as I have already written a stand-alone review of it [here] (https://h0mbre.github.io/eWPT/). eWPT really helped me solidify my understanding of SQLi and XSS fundamentals. It also taught me some great web application enumeration fundamentals and some new tricks for BurpSuite that I hadn't seen before. I think you could conceivably take this course before eCPPT or OSCP but it will be pretty difficult in that case. It was great for getting acquainted with web application testing fundamentals. 
+Again, I won't spend much time describing my eWPT experience in this space as I have already written a stand-alone review of it [here](https://h0mbre.github.io/eWPT/). eWPT really helped me solidify my understanding of SQLi and XSS fundamentals. It also taught me some great web application enumeration fundamentals and some new tricks for BurpSuite that I hadn't seen before. I think you could conceivably take this course before eCPPT or OSCP but it will be pretty difficult in that case. It was great for getting acquainted with web application testing fundamentals. 
 
 Once again, I underestimated the exam and got owned. Luckily, I was able to breakthrough on day 3 after much frustration and reach the final objective. This course was very fun. 
 
@@ -223,7 +223,7 @@ CONS:
 I thought the course was great and really helped me solidify some gaps in my web app knowledge that I had after OSCP and doing Hack the Box sporadically. I would recommend this to anyone who knows that they want to specifically do web app testing and wants a solid grasp of the fundamentals in a structured environment. Otherwise, I think you can achieve the same level of competency with just reference to open-source/free materials that exist on the internet such as the bWAPP vulnerable VM and Bugcrowd's tutorials. 
 
 ## Pentester Academy's Security Linux Assembly Expert x86 (SLAE) (April 2019 - June 2019) 
-Again, I won't spend much time describing my SLAE experience in this space as I have already written a stand-alone review of it [here] (https://h0mbre.github.io/SLAE_x86_Review/). 
+Again, I won't spend much time describing my SLAE experience in this space as I have already written a stand-alone review of it [here](https://h0mbre.github.io/SLAE_x86_Review/). 
 
 PROS:
 + Exposure to x86 Assembly;
@@ -239,7 +239,7 @@ CONS:
 As I said in my course review, this is my favorite course ever. I had so much fun doing this course and writing the blog post solutions for the exam. I don't know that this certification is for everyone but I know for a fact that it was an outstanding on-ramp for OSCE and gave me more than enough Assembly knowledge to understand the concepts taught in OSCE. The course also helped me rediscover and refine some of my Python skills that had atrophied by this point. If you're interested in anything that deals with low-level programming: reverse engineering, shellcoding, exploit development, vulnerability research, etc, you need to take this course if you have no experience. I had no idea what Assembly was prior to this course and had a blast. 
 
 ## OffensiveSecurity Certified Expert (OSCE) (June 2019 - July 2019)
-OSCE is the certification that corresponds to Offensive Security’s Cracking the Perimeter (CTP) course. According to the [CTP Webpage] (https://www.offensive-security.com/information-security-training/cracking-the-perimeter/), an OSCE will gain competencies int eh following domains: 
+OSCE is the certification that corresponds to Offensive Security’s Cracking the Perimeter (CTP) course. According to the [CTP Webpage](https://www.offensive-security.com/information-security-training/cracking-the-perimeter/), an OSCE will gain competencies int eh following domains: 
 + Greater confidence in debugging Windows binaries,
 + Ability to work through encoding issues and space restrictions while crafting exploits,
 + An understanding of PE structure in order to learn techniques that backdoor executables and bypass AV,
@@ -248,7 +248,7 @@ OSCE is the certification that corresponds to Offensive Security’s Cracking th
 + Ability to think outside of the box in order to determine innovative ways of penetrating internal networks.
 
 All of this is extremely fair in my opinion. In fact, you will know so much about these things you will want to cry at times 😊. 
-After taking SLAE I jumped right into prep for CTP/OSCE. I blogged all of my preparation [here] (https://h0mbre.github.io/). I spent a ton of time researching the exploit concepts and reading people’s blogs and spent tons of time in Immunity debugger. By the time CTP actually started for me I felt like most of the information was review. This was the goal though, I wanted to be overprepared. I think if you solely use the limited lab environment of CTP you will be in a tough spot come exam time. I recommend grabbing a Windows 7 VM from Microsoft and downloading Vulnserver as a bare minimum to supplementing your CTP lab work. 
+After taking SLAE I jumped right into prep for CTP/OSCE. I blogged all of my preparation [here](https://h0mbre.github.io/). I spent a ton of time researching the exploit concepts and reading people’s blogs and spent tons of time in Immunity debugger. By the time CTP actually started for me I felt like most of the information was review. This was the goal though, I wanted to be overprepared. I think if you solely use the limited lab environment of CTP you will be in a tough spot come exam time. I recommend grabbing a Windows 7 VM from Microsoft and downloading Vulnserver as a bare minimum to supplementing your CTP lab work. 
 My exposure to Assembly from SLAE was a huge factor for my success during CTP/OSCE, I can’t imagine coming into the course never having done any work in Assembly. 
 
 In a lot of ways, OSCE was frustrating but the one I’m most proud of to date. For one, the materials and lab environment weren’t too robust. I think a lot of is expected of the student with regards to supplemental research, which is normally fine I just guess I had different expectations. This isn’t to say that I didn’t learn a bunch of useful techniques and tricks during the course, I definitely did, I would just say it’s less self-contained than say OSCP and by quite a bit. 
