@@ -301,5 +301,4 @@ From here, I think you could go a number of different ways based on your interes
 
 ## Conclusion
 
-Just wanted to give my take on the training I have done so far and potentially save some from making the same mistakes I felt I made. Again, none of this is fact, this is all simply my opinion. It's entirely possible I'm 100% wrong about everything I wrote and I did in fact take the best route during my training and I'm simply doing the 'grass is always greener' bit. I would just generally tell people going forward that you need to make sure the certification is doing at least one of the two things I said:
-
+Just wanted to give my take on the training I have done so far and potentially save some from making the same mistakes I felt I made. Again, none of this is fact, this is all simply my opinion. It's entirely possible I'm 100% wrong about everything I wrote and I did in fact take the best route during my training and I'm simply doing the 'grass is always greener' bit. I would just generally tell people going forward that you need to make sure the certification is offering you something that self-study will not or that it is required to get past HR for a position you want. As long as it's doing one of those things, it should be fine to take! Just don't underestimate your ability to self-learn. 
