@@ -250,8 +250,11 @@ OSCE is the certification that corresponds to Offensive Security’s Cracking th
 All of this is extremely fair in my opinion. In fact, you will know so much about these things you will want to cry at times 😊. 
 After taking SLAE I jumped right into prep for CTP/OSCE. I blogged all of my preparation [here] (https://h0mbre.github.io/). I spent a ton of time researching the exploit concepts and reading people’s blogs and spent tons of time in Immunity debugger. By the time CTP actually started for me I felt like most of the information was review. This was the goal though, I wanted to be overprepared. I think if you solely use the limited lab environment of CTP you will be in a tough spot come exam time. I recommend grabbing a Windows 7 VM from Microsoft and downloading Vulnserver as a bare minimum to supplementing your CTP lab work. 
 My exposure to Assembly from SLAE was a huge factor for my success during CTP/OSCE, I can’t imagine coming into the course never having done any work in Assembly. 
+
 In a lot of ways, OSCE was frustrating but the one I’m most proud of to date. For one, the materials and lab environment weren’t too robust. I think a lot of is expected of the student with regards to supplemental research, which is normally fine I just guess I had different expectations. This isn’t to say that I didn’t learn a bunch of useful techniques and tricks during the course, I definitely did, I would just say it’s less self-contained than say OSCP and by quite a bit. 
+
 Secondly, the techniques you learn and the exploits you write aren’t very relevant for modern applications/operating systems. The exploit development you learn was relevant around 2010. This is fine since you have to start somewhere. I wouldn’t expect to say “I want to learn Windows exploit development” and then jump immediately into trying to piece together a reliable RCE exploit for the BlueKeep vulnerability; however, even after taking and passing the course I really can’t do anything lol. I would say OSCE is more like a gateway drug than anything else. This course got me hooked on exploit development and I plan on going further down this path. This course got me addicted to the feeling of building an exploit from scratch and getting it to work. I wish discovering vulnerabilities was a larger focus for the course, but you do get some exposure to some very basic techniques. 
+
 Overall, I recommend the course for the sheer challenge of the exam. It was really quite different than anything I had done before. I found myself learning and doing things for the first time on the exam but it wasn’t as terrifying as I thought it would be. There was a confident calmness to it since throughout the course you learn related concepts and I put so much time into prepping for the course I knew that I could figure out how to do what was required. 
 
 PROS:
@@ -267,7 +270,7 @@ CONS:
 + labs/materials not as comprehensive/robust as PWK.  
 
 ### Final Verdict 
-I would say, you just want to know about Windows x86 buffer overflows, (and SEH, egghunters, alphanumeric shellcode, backdooring PEs, web application static code analysis, and Windows shellcoding, etc) then stick to books and blogs. However, if you want to set yourself apart on paper from the ever growing OSCP army and are looking for a challenge, I think the exam and certification are great for you. I’m very happy I took the course and was able to get through the exam, it has inspired me to continue learning. 
+I would say, if you just want to know about Windows x86 buffer overflows, (and SEH, egghunters, alphanumeric shellcode, backdooring PEs, web application static code analysis, and Windows shellcoding, etc) then stick to books and blogs. However, if you want to set yourself apart on paper from the ever growing OSCP army and are looking for a challenge, I think the exam and certification are great for you. I’m very happy I took the course and was able to get through the exam, it has inspired me to continue learning. 
 
 ## Lessons Learned 
 
