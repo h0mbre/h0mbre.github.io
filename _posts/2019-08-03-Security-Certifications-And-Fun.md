@@ -65,9 +65,9 @@ So straight from the mouth of someone who makes hiring decisions in the cybersec
 ### Final Verdict
 At first I think I had conflicting goals, I wanted hardcore technical skills but also wanted the ability to get my foot in the door in an information security role so I had to get at least some official bona fides onto my resume. This certification was good for the latter goal and also did at least impart upon me some lasting high-level understanding of security concepts. I found the lessons on the interplay between business decisions and risk management to be the most instructive.
 
-All in all, I'd say if you're coming into information security with zero background knowledge, and especially if you are trying to get a DoD position, then it would be ok to take the course and aim for the certification. It's best suited for someone who cannot self-orient their desired learning path and doesn't know exactly what they don't know. This is where the broadness and lack of depth is actually a plus. You get introduced to so many different topics, maybe one will stoke your interest and you can specialize from there. My only suggestion would be that you self-study very hard for 8-12 weeks and not pursue any formal training. You can do this. 
+All in all, I'd say if you're coming into information security with zero background knowledge, and especially if you need an 8570 certification, then it would be ok to take the course and aim for the certification. It's best suited for someone who cannot self-orient their desired learning path and doesn't know exactly what they don't know. This is where the broadness and lack of depth is actually a plus. You get introduced to so many different topics, maybe one will stoke your interest and you can specialize from there. My only suggestion would be that you self-study very hard for 8-12 weeks and not pursue any formal training. You can do this. 
 
-If you're just after some skills/knowledge (especially practical skills on the keyboard,) I would recommend taking a more targeted approach and again opting for self-study. If you want to study encryption, check out books and blog posts about encryption. If you want to study SIEM implementations and logging best practices for enterprise networks, again, look at some of the amazing blue-team blog posts that are out there. Obviously general security knowledge is great to have and can help you contextualize more advanced information; however, if you take a targeted approach and research things that come up as you progress in your narrow focus, you can often acheive a comparable level of background knowledge and often it'll be related in some way to your main interest (read 'useful'). 
+If you're just after some skills/knowledge (especially practical skills on the keyboard), I would recommend taking a more targeted approach and again opting for self-study. If you want to study encryption, check out books and blog posts about encryption. If you want to study SIEM implementations and logging best practices for enterprise networks, again, look at some of the amazing blue-team blog posts that are out there. Obviously general security knowledge is great to have and can help you contextualize more advanced information; however, if you take a targeted approach and research things that come up as you progress in your narrow focus, you can often acheive a comparable level of background knowledge and often it'll be related in some way to your main interest (read 'useful'). 
 
 ## Network+ from CompTIA (January 2018 - June 2018)
 According to [CompTIA](https://certification.comptia.org/certifications/network#overview), Network+ holders have the knowledge and skills to do the following:
@@ -103,7 +103,7 @@ CONS:
 ### Final Verdict
 I'm having a hard time recommending this certification for a couple of reasons. One, if you are curious about networking and want to explore it, I think self-study would more than suffice for that purpose. Through self-study, I think you will be able to determine whether or not the material and subject matter is captivating for you. Two, if you know for a fact you want to learn networking, I think there are better training alternatives which cover the material in more depth and actually will impart upon you the practical skills to at least perform *some* professional networking tasks with appropriate adult-level supervision. The Cisco certifications come to mind (at least the entry-level-ish ones like CCNA R&S). Three, if you think you need this certification on your resume to get your past an HR filter or get your foot in the door, that is a completely valid concern; however, the issue arises whenever we consider that the Cisco certifications better prepare you for professional networking roles and would also accomplish this same HR filter defeating goal. As an added bonus, any hiring manager who prefers Net+ over something like CCNA R&S just removed themselves from your list of potential employers! One less thing to worry about! 
 
-But! If you're dead set on the certification then by all means go for it! It is DoD compliant. It does provide some good foundational networking information for those who perhaps need networking knowledge but nothing too esoteric. Not everyone needs to be a networking guru, this is where this certification comes in. I think for the purposes of entry level pentesting, the kind of material covered in the certification course might be pretty spot on (again, I’m just guessing here I have no idea.) I just think if your goal is the information you need to do entry-level pentesting then you can do it without the certification. 
+But! If you're dead set on the certification then by all means go for it! It is 8570 compliant. It does provide some good foundational networking information for those who perhaps need networking knowledge but nothing too esoteric. Not everyone needs to be a networking guru, this is where this certification comes in. I think for the purposes of entry level pentesting, the kind of material covered in the certification course might be pretty spot on (again, I’m just guessing here I have no idea.) I just think if your goal is the information you need to do entry-level pentesting then you can do it without the certification. 
 
 If you need an 8570 compliant certification for your resume then go for it! 
 
@@ -136,7 +136,7 @@ CONS:
 + Everything else!
 
 ### Final Verdict
-I would say stay away from this certification unless you absolutely need it on your resume for a DoD job. I can't think of a single redeeming quality to this course or certification.
+I would say stay away from this certification unless you absolutely need it on your resume. I can't think of a single redeeming quality to this course or certification. It has been over a year at this point since I took this certification so maybe it has changed in the mean time, seek out some other opinions before making a decision. 
 
 ## eLearnSecurity Certified Professional Penetration Tester (eCPPTv2) (August 2018 - November 2018)
 According to [eLearnSecurity] (https://www.elearnsecurity.com/certification/ecppt/), an eCPPT holder is knowledgeable in the following domains:
@@ -289,11 +289,13 @@ Since I came into this with zero background, I should’ve taken more care to ge
 ### Optimized Path 
 
 One underappreciated resource in my opinion is [Virtual Hacking Labs] (https://www.virtualhackinglabs.com/). The materials and lab environment are extremely similar to PWK/OSCP. The systems in the lab are more up to date as well. For a month pass the price right now is $99 compared to certification courses which cost thousands.
+
 I think a great path for someone who wants to get into security and build a good foundation would be to do the following: 
 1.	One of the aforementioned sysadmin certifications or something similar;
 2.	a free intro to programming course (codeacademy has plenty);
 3.	Virtual Hacking Labs 3 month pass;
 4.	PWK/OSCP.
+
 From here, I think you could go a number of different ways based on your interests. This curriculum obviously has some huge knowledge gaps (networking for example), but I think you would be ahead of where I was at the same point. Obviously if you don’t need the certifications and are only interested in the skillset, then just study the related/relevant materials. 
 
 
