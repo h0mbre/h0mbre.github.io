@@ -1,6 +1,6 @@
 ---
 layout: single
-title: From Sec+ to OSCE: Lessons Learned 
+title: Security+ to OSCE in 18 Months, Lessons Learned 
 date: 2019-8-03
 classes: wide
 header:
