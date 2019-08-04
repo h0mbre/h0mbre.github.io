@@ -35,6 +35,8 @@ If you have not already done so, please read some of the posts in the 'CTP/OSCE 
 
 ## Background 
 
+**WARNING: In this post I do a bunch of really dumb stuff and ruin my stack alignment multiple times but somehow the exploit still works, maybe don't try to recreate this exact exploit but just use it as a reference for some of the techniques discussed. What I'm saying is, I got plain lucky doing this and it won't work for you most likely. Cheers!**
+
 This will be our third go at the 'LTER' command on Vulnserver. 
 + [The first time](https://h0mbre.github.io/LTER_SEH_Exploit/), I failed miserably to use the SEH overwrite, but I ended up discovering an EIP overwrite vulnerability with a smaller fuzzing payload.
 + [The second time](https://h0mbre.github.io/LTER_SEH_Success/#), I used @doylersec's approach to the SEH overwrite and worked through the exploit step-by-step for hours and was finally able to complete my own exploit modeled off of Doyler's.
@@ -83,8 +85,6 @@ If we scroll down in the CPU Instructions pane to the bottom, you can see that t
 To figure out the distance between those two points we do: (`0174FFFF` - `0174FFCC` = `33` or 51 in decimal). So we have **some** room to play with. Previously I tried to make use of this space to jump all the way back to the top of our `A` buffer and put shellcode there but I couldn't make it work because I didn't quite have a good handle on the `SUB` or `ADD` encoding you have to do with the shellcode to make it alphanumeric. 
 
 Let's see what we can do now that we understand it a little bit better.
-
-**WARNING: In this post I set `ESP` to `0174FFFF` which is not divisible by four and will often ruin your stack alignment and cause the exploit to fail. This is not good practice. Don't actually do this.**
 
 ### Adjusting ESP
 
