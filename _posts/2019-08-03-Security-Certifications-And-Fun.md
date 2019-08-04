@@ -1,22 +1,23 @@
 ---
 layout: single
-title: CTP/OSCE Prep -- Wrapping Up Our Prep 
-date: 2019-6-23
+title: From Sec+ to OSCE: Lessons Learned 
+date: 2019-8-03
 classes: wide
 header:
   teaser: /assets/images/CTP/immunity.jpg
 tags:
-  - buffer overflow
-  - Windows
-  - x86
-  - shellcoding
-  - exploit development
-  - assembly
-  - python
+  - Security+
+  - Network+
+  - CompTIA
+  - Certified Ethical Hacker
+  - EC Council
+  - eCPPT
+  - eWPT
+  - eLearnSecurity
+  - OSCP
   - OSCE
-  - CTP
-  - ExploitDB
-  - egghunter
+  - Offensive Security
+  - Python
 --- 
 ![](/assets/images/CTP/1920x1080_Wallpaper.jpg)
 
@@ -239,7 +240,7 @@ CONS:
 As I said in my course review, this is my favorite course ever. I had so much fun doing this course and writing the blog post solutions for the exam. I don't know that this certification is for everyone but I know for a fact that it was an outstanding on-ramp for OSCE and gave me more than enough Assembly knowledge to understand the concepts taught in OSCE. The course also helped me rediscover and refine some of my Python skills that had atrophied by this point. If you're interested in anything that deals with low-level programming: reverse engineering, shellcoding, exploit development, vulnerability research, etc, you need to take this course if you have no experience. I had no idea what Assembly was prior to this course and had a blast. 
 
 ## OffensiveSecurity Certified Expert (OSCE) (June 2019 - July 2019)
-OSCE is the certification that corresponds to Offensive Security’s Cracking the Perimeter (CTP) course. According to the [CTP Webpage](https://www.offensive-security.com/information-security-training/cracking-the-perimeter/), an OSCE will gain competencies int eh following domains: 
+OSCE is the certification that corresponds to Offensive Security’s Cracking the Perimeter (CTP) course. According to the [CTP Webpage](https://www.offensive-security.com/information-security-training/cracking-the-perimeter/), an OSCE will gain competencies in the following domains: 
 + Greater confidence in debugging Windows binaries,
 + Ability to work through encoding issues and space restrictions while crafting exploits,
 + An understanding of PE structure in order to learn techniques that backdoor executables and bypass AV,
