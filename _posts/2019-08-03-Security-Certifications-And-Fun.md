@@ -59,7 +59,8 @@ CONS:
 + Not specialized for anyone seeking more in-depth information. 
 
 I [once mentioned on Twitter](https://twitter.com/h0mbre_/status/1109834208283901952?s=20) that I had completed the certification and contrasted my feelings about it with my feelings about more practical certifications and received this response from @rotate26chars:
-"...another way to view the CompTIA stuff is foundational. Though not hands-on, you will regularly fall back on the broader concepts you learn in your career.  IMHO they add a ton of context to the practical skills learned studying for hands-on certs. When I'm hiring someone with Net+/Sec+ certs, I'm not looking for someone whose able to tune a SIEM, or manage a firewall, I'm looking for someone who can learn how to do those things faster, and with a better understanding of how they fit into a broader security strategy." 
+
+*"...another way to view the CompTIA stuff is foundational. Though not hands-on, you will regularly fall back on the broader concepts you learn in your career.  IMHO they add a ton of context to the practical skills learned studying for hands-on certs. When I'm hiring someone with Net+/Sec+ certs, I'm not looking for someone whose able to tune a SIEM, or manage a firewall, I'm looking for someone who can learn how to do those things faster, and with a better understanding of how they fit into a broader security strategy."* 
 
 So straight from the mouth of someone who makes hiring decisions in the cybersecurity field, the certification shows that the holder at least has a foundational grasp of several knowledge domains and can more easily contextualize more esoteric concepts once hired. 
 
