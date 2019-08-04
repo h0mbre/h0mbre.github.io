@@ -278,7 +278,7 @@ I would say, if you just want to know about Windows x86 buffer overflows, (and S
 
 ### Why Get Certs? 
 
-I would say the main lesson I learned on my journey was that you need to cultivate an ability to self-learn. The amount of free resources out there for any security topic is overwhelming. A certification course in my opinion should: 
+I would say the main lesson I learned during this process was that you need to cultivate an ability to self-learn. The amount of free resources out there for any security topic is overwhelming. A certification course in my opinion should: 
 + collate all of the relevant information and present it to students in a digestible format, and
 + have an instructor/teaching style which anticipates student’s learning difficulties/roadblocks and effectively mitigates them. 
 
