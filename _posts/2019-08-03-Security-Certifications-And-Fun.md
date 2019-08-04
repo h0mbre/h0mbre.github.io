@@ -293,7 +293,7 @@ Since I came into this with zero background, I should’ve taken more care to ge
 
 ### Optimized Path 
 
-One underappreciated resource in my opinion is [Virtual Hacking Labs] (https://www.virtualhackinglabs.com/). The materials and lab environment are extremely similar to PWK/OSCP. The systems in the lab are more up to date as well. For a month pass the price right now is $99 compared to certification courses which cost thousands.
+One underappreciated resource in my opinion is [Virtual Hacking Labs](https://www.virtualhackinglabs.com/). The materials and lab environment are extremely similar to PWK/OSCP. The systems in the lab are more up to date as well. For a month pass the price right now is $99 compared to certification courses which cost thousands.
 
 I think a great path for someone who wants to get into security and build a good foundation would be to do the following: 
 1.	One of the aforementioned sysadmin certifications or something similar;
