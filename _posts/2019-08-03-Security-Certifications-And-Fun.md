@@ -19,7 +19,6 @@ tags:
   - Offensive Security
   - Python
 --- 
-![](/assets/images/avatar.jpg)
 
 ## Background Information
 In late 2017 I decided I needed to shake things up and try to learn some new skills. I don't remember exactly how it happened but at some point I came across a job post for a 'Security Engineer' position and found the requirements to be very interesting. I started researching the skills mentioned, namely 'pentesting' and the related certifications. After digging more into penetration testing, I resolved to get OSCP within 18 months starting in January 2018. I'm going to describe how that endeavor ended up playing out, some strategies I found useful, the mistakes I feel like I made, and in the end whether or not it was worth the effort. The goal of this post is to potentially inspire someone to pursue any type of education or self-improvement while also potentially saving those interested in information security some time and optimizing their education path. 
