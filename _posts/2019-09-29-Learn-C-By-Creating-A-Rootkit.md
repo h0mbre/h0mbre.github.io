@@ -10,6 +10,9 @@ tags:
   - Socket Programming
   - C
   - Rootkits
+  - LD_PRELOAD
+  - Jynx Rootkit
 --- 
 
 ## Background Information
+This is post is my solution for the last assignment in my [Learning-C](https://github.com/h0mbre/Learning-C) repository.
