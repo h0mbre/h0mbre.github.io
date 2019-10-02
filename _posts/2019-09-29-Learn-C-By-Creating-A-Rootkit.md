@@ -1,6 +1,6 @@
 ---
 layout: single
-title: Making a Simple Userland Rootkit for Linux 
+title: Writing Some Malware to Learn C
 date: 2019-9-29
 classes: wide
 header:
@@ -198,6 +198,7 @@ ssize_t write(int fildes, const void *buf, size_t nbytes)
  We have quite a few possiblities here. All in all, there are 4 distinct triggers for an IPv4 bindshell, IPv6 bindshell, IPv4 reverse-shell, and IPv6 reverse-shell. Let's dig into those a bit. We won't recapitulate the entire piece of code in each since we've already completed [a bind shell](https://github.com/h0mbre/Learning-C/tree/master/Assignment-26), but we'll focus on the new aspects. Here is each function: 
  
 ### `ipv4_bind()` Bind Shell
+
  ```c
  int ipv4_bind (void)
 {
