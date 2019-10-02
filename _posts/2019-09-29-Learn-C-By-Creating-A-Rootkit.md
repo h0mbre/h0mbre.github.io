@@ -110,7 +110,51 @@ read(3, "\177ELF\1\1\1\0\0\0\0\0\0\0\0\0\3\0\3\0\1\0\0\0\360\21\0\0004\0\0\0"...
 We see that not only did it open `/etc/ld.so.preload`, it read some values from the file and then opened our shared library for reading. We were able to get our shared library loaded into memory for the run time of `/bin/ls`. 
 
 ## Hooking Syscalls with Shared Library Injections
-As we have discussed in the `Learning C` progression, this preloading mechanism allows a `root` user to powerfully manipulate userland programs. We can effectively redefine common, frequently-used syscall functions and their higher-level abstraction wrapper functions to mean whatever we arbitrarily desire. If you need more information on this portion of our experiment please consult 
+As we have discussed in the `Learning C` progression, this preloading mechanism allows a `root` user to powerfully manipulate userland programs. We can effectively redefine common, frequently-used syscall functions and their higher-level abstraction wrapper functions to mean whatever we arbitrarily desire. If you need more information on this portion of our experiment please consult [Assignment-27](https://github.com/h0mbre/Learning-C/tree/master/Assignment-27) of our `Learning C` repo where we go over a lot of the information discussed so far. [In a previous example], we hooked `puts()` by using an example found in [this blog post](https://blog.netspi.com/function-hooking-part-i-hooking-shared-library-function-calls-in-linux/) to check its buffer for a string and if found, print a different message to the terminal. 
+
+## The Noob Rootkit "Manteau"
+To meet my aforementioned rootkit goals I didn't have to hook many syscalls. I ended up hooking `write()`, `readdir()`, `readdir64()`, `fopen()`, and `fopen64()`. If you discount the `64` variations for large file considerations, basically just 3 syscalls. With these 3 syscalls, we can hide from `netstat`, `lsof`, `ls`, and also spawn some plaintext connections to our attacker machine. 
+
+## Hooking `write()` For a Trigger!
+Hooking `write()` was surprisingly simple for our purposes. I wanted to create a cool way to activate/trigger our rootkit from an external host. There have been some really cool ways to do this developed over the years but I tried to be somewhat original. [The Jynx rootkit](https://github.com/chokepoint/Jynx2/blob/master/jynx2.c) I have discussed previously in the repo hooked the `accept()` syscall (which we will be using a lot in this post) to check local and source port information of the connection as a way to check if the connection came from the attacker. These values were hardcoded in their malicious library and could be set at compile time. It then would prompt for a password and spawn an encrypted back connect over `openssl`. We won't be doing anything that badass, but we will be doing something cool. 
+
+### Making Syslog Evil
+Initially, when contemplating ways to make a remote host do work after touching it in someway, I landed on the Apache `access.log`. What I thought I would do is, I would send a simple `GET HTTP` request with a magic string in the `User Agent:` field, and when the Apache process wrote that information to disk in the `access.log`, our hook would check the `write()` buffer for our magic string and if found, spawn a connection to our host. 
+
+This actually worked, and it worked really well! However, there was a small problem. It actually required me restarting Apache after specifying our malicious library in `/etc/ld.so.preload` so that was aesthetically displeasing to me. I didn't like the fact that you'd have to restart a webservice for your rootkit, not saying our shared library is super stealth, but knocking over a webserver is kind of high-visibility. 
+
+Along those same lines, I discovered that the `syslog` user writes failed SSH attempts to `auth.log`. It logs the user's username and IP address. Awesome, we control the username field in a log on the system. The same problem applies, we must restart syslog after loading our shared library, but this isn't as high visibility as say, restarting Apache. (Linux sysadmins let me know if I'm wrong about that). 
+
+A second problem we face is that we don't want to come back to this box as `syslog`, we want to come back as `root`. There are probably a million ways to leave yourself privesc breadcrumbs, especially given that you can hide arbitrary files, but I chose to just `visudo` the `sudoers` file and add `syslog`. I also inserted about 80 newlines after the last bit of visible text in the file before adding the `syslog ALL=(ALL) NOPASSWD:ALL` entry so that the casual `sudoers` file editor hopefully wouldn't notice. (LOL)
+
+Alright, so we have a trigger idea and a built in privesc. Let's write some C finally!
+
+### Write Hook
+The `write()` hook I created is a lot like the `puts()` hi-jack we already studied surprisingly. The first portion looks like this: 
+```C
+ssize_t write(int fildes, const void *buf, size_t nbytes)
+{
+    ssize_t (*new_write)(int fildes, const void *buf, size_t nbytes);
+
+    ssize_t result;
+
+    new_write = dlsym(RTLD_NEXT, "write");
+
+
+    char *bind4 = strstr(buf, KEY_4);
+    char *bind6 = strstr(buf, KEY_6);
+    char *rev4 = strstr(buf, KEY_R_4);
+    char *rev6 = strstr(buf, KEY_R_6);
+ ```
+ 
+ Let's break this down:
+ + `ssize_t write(int fildes, const void *buf, size_t nbytes)` this is the man page declaration of the `write()` function. This has to match perfectly or the calling process won't use our shared library as a resource, it will continue to look for `write()` definition elsewhere. Now that we have the calling process' attention;
+ + `ssize_t (*new_write)(int fildes, const void *buf, size_t nbytes);` we declare a second function with the same structure as the genuine `write()` function. This one is actually declaring a pointer but it is not yet initialized (it doesn't yet point to anything). `(*new_write)` says "this is a pointer to a function called `new_write()`" and then the rest of the declaration provides a definition for the function that will eventually be pointed to;
+ + `new_write = dlsym(RTLD_NEXT, "write");`
+ + `ssize_t result;` we declare a variable of type `ssize_t` the data type returned by our `write()` function and call it `result`. 
+ + The last four lines are very similar, `char *bind4 = strstr(buf, KEY_4);` delcares and initializes a new 
+
+
 
 
 
