@@ -44,7 +44,7 @@ tokyo:~/ # ldd /bin/ls
 	libpthread.so.0 => /lib/i386-linux-gnu/libpthread.so.0 (0xb7cd9000)
 ```
 
-So we see a number of shared library dependencies for `/bin/ls`. If we set the environment variable for `LD_PRELOAD` to a notional shared library and then specify a binary, we can actually change what shared library dependencies that binary has. Furthermore, `LD_PRELOAD` allows us to specify that our chosen library is loaded into memory **before all others**. We can create a shared library called `example.so` and export it `LD_PRELOAD` as follows, and then check the library dependencies of `/bin/ls`: 
+So we see a number of shared library dependencies for `/bin/ls`. If we set the environment variable for `LD_PRELOAD` to a notional shared library we can actually change what shared library dependencies that binary has. Furthermore, `LD_PRELOAD` allows us to specify that our chosen library is loaded into memory **before all others**. We can create a shared library called `example.so` and export it `LD_PRELOAD` as follows, and then check the library dependencies of `/bin/ls`: 
 ```terminal_session
 tokyo:~/LearningC/ # export LD_PRELOAD=$PWD/example.so                                                                     
 tokyo:~/LearningC/ # ldd /bin/ls                                                                                            
@@ -59,6 +59,10 @@ tokyo:~/LearningC/ # ldd /bin/ls
 ```
 
 As you can see, our library at `/root/LearningC/example.so` is loaded first before any other library on disk. ([Awesome explanation](https://www.technovelty.org/linux/a-little-tour-of-linux-gateso.html) of that first library, "`linux-gate.so.1`")
+
+It should be noted that by not specifying a binary after the path to our shared library, `LD_PRELOAD` will use the specified shared library for all dynamically linked programs system wide. 
+
+## /etc/ld.so.preload
 
 
 
