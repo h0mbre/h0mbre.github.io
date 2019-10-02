@@ -195,7 +195,7 @@ ssize_t write(int fildes, const void *buf, size_t nbytes)
  
  So, our trigger hit the write buffer, was written to `/dev/null` instead of `/var/log/auth.log`, a function opening a bind shell was called, and then finally we need to return the result to the calling process so it knows whether or not the `write()` function worked. We accomplish that with the last bit of code `return result;`. 
  
- We have quite a few possiblities here. All in all, there are 4 distinct triggers for an IPv4 bindshell, IPv6 bindshell, IPv4 reverse-shell, and IPv6 reverse shell. Let's dig into those a bit. We won't recapitulate the entire piece of code in each since we've already completed [a bind shell](https://github.com/h0mbre/Learning-C/tree/master/Assignment-26), but we'll focus on the new aspects. Here is each function. 
+ We have quite a few possiblities here. All in all, there are 4 distinct triggers for an IPv4 bindshell, IPv6 bindshell, IPv4 reverse-shell, and IPv6 reverse-shell. Let's dig into those a bit. We won't recapitulate the entire piece of code in each since we've already completed [a bind shell](https://github.com/h0mbre/Learning-C/tree/master/Assignment-26), but we'll focus on the new aspects. Here is each function: 
  
  ### IPv4 Bind Shell
  ```c
