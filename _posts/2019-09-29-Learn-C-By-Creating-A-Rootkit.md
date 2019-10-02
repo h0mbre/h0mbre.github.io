@@ -1,6 +1,6 @@
 ---
 layout: single
-title: Recreating Old Malware to Learn C
+title: Creating a Rootkit to Learn C
 date: 2019-9-29
 classes: wide
 header:
@@ -28,7 +28,7 @@ My goal for this assignment since we had just learned how to hook syscalls in th
 
 All of this is possible with very simple C. (hacky, bad C at that!)
 
-***Do not use these techinques for malicious purposes. The technical explanation of the code and techniques below are simply my understanding of how they work. It is possible I have completely misinterpreted how these programs behave and running them on your system could cause damage.***
+***Do not use these techinques for malicious purposes. The technical explanation of the code and techniques below are simply my understanding of how they work. It is entirely possible I have completely misinterpreted how these programs behave and running them on your system could cause damage.***
 
 ## Shared Libraries and LD_PRELOAD
 
@@ -244,7 +244,9 @@ ssize_t write(int fildes, const void *buf, size_t nbytes)
 }
 ```
 
- The new code that wasn't present in our last implementation of a bind shell, really starts in earnest with `read(new_sockfd, input, sizeof(input));`.
+ The new code that wasn't present in our last implementation of a bind shell, really starts in earnest with `read(new_sockfd, input, sizeof(input));`. You can see that a little earlier in the program we had declared a `char input[30]` variable. What we're doing here is executing a `read()` syscall and passing it the file descriptor returned by our `accept()` command. So when someone makes a connection to our bind shell, we are reading their input. 
+ 
+ We use the `strcmp()` function, which returns a pointer to the location of the first occurence of the second argument 
  
 ## TEST
  
