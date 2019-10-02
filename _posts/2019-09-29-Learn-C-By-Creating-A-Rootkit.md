@@ -265,6 +265,16 @@ password
 The input was password#
 ```
 
+So this is what we use to compare the user's input to our hardcoded password defined by `PASS` with the `strcmp()` function. 
+
+If `strcmp()` returns a `0`, indicating the arguments matched, the program issues an `execve()` call and pushes to the `/bin/sh` program to the connection giving the end user a command shell. 
+
+If `strcmp()` returns a value other than `0`, indicating there was not a match between the arguments, the socket associated with the `accept()` syscall is shutdown, and the listening socket is closed. 
+
+The `ipv6_rev()` function works very similarly except it has been programmed to deal strictly with IPv6 traffic. 
+
+### `ipv4_rev()` Reverse Shell
+
 
  
 ## TEST
