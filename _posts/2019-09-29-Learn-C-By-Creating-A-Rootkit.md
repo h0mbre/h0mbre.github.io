@@ -246,16 +246,26 @@ ssize_t write(int fildes, const void *buf, size_t nbytes)
 
  The new code that wasn't present in our last implementation of a bind shell, really starts in earnest with `read(new_sockfd, input, sizeof(input));`. You can see that a little earlier in the program we had declared a `char input[30]` variable. What we're doing here is executing a `read()` syscall and passing it the file descriptor returned by our `accept()` command. So when someone makes a connection to our bind shell, we are reading their input. 
  
- We use the `strcspn()` function, which returns the number of characters in the first argument string that exist before we reach the 2nd argument. So since the user would enter a password and then hit return, they would send something like `"reallygoodpassword\n"` as our `input`. `input[strcspn(input, "\n")] = 0;` says the value of the last index of the `input` variable is `0`, effectively null terminating our string for us by replacing the newline character with a null terminator. Let's test out our theory here with this simple code:
+ We use the `strcspn()` function, which returns the number of characters in the first argument string that exist before we reach the 2nd argument. So since the user would enter a password and then hit return, they would send something like `"reallygoodpassword\n"` as our `input`. `input[strcspn(input, "\n")] = 0;` says the value of the last index of the `input` variable is `0`, effectively null terminating our string for us by replacing the newline character with a null terminator. Let's test out our theory here with this simple code where read input from `stdin` and store it in `input`:
  ```c
  int main (void)
 {
-	char input[30];
-	read(0, input, sizeof(input));
+    char input[30];
+    read(0, input, sizeof(input));
     input[strcspn(input, "\n")] = 0;
     printf("The input was %s", input);
 }
 ```
+
+Let's compile and run this:
+```
+tokyo:~/LearningC/ # gcc test.c -o test
+tokyo:~/LearningC/ # ./test                                                                                                
+password
+The input was password#
+```
+
+
  
 ## TEST
  
