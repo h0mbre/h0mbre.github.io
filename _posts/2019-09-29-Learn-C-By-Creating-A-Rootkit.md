@@ -33,7 +33,7 @@ All of this is possible with very simple C. (hacky, bad C at that!)
 A lot has been written on the topic of Shared Libraries so I won't spend much time here explaining them (we even touched on them in the last post). Shared or dynamic libraries define functions that the dynamic linker links to other programs during their run time. A common example is [libc](http://man7.org/linux/man-pages/man7/libc.7.html). This reduces the amount of code you need in a program executable because it shares function definitions with a library. 
 
 `LD_PRELOAD` is a configurable environment variable that allows users to specify a shared library to be loaded into memory for programs before other shared libraries. Just a quick example, if we check the shared libraries used by `/bin/ls` on a standard x86 Kali box, we get:
-```terminal_session
+```
 tokyo:~/ # ldd /bin/ls                                             
 	linux-gate.so.1 (0xb7fcf000)
 	libselinux.so.1 => /lib/i386-linux-gnu/libselinux.so.1 (0xb7f57000)
@@ -45,7 +45,7 @@ tokyo:~/ # ldd /bin/ls
 ```
 
 So we see a number of shared library dependencies for `/bin/ls`. If we set the environment variable for `LD_PRELOAD` to a notional shared library we can actually change what shared library dependencies that binary has. Furthermore, `LD_PRELOAD` allows us to specify that our chosen library is loaded into memory **before all others**. We can create a shared library called `example.so` and export it `LD_PRELOAD` as follows, and then check the library dependencies of `/bin/ls`: 
-```terminal_session
+```
 tokyo:~/LearningC/ # export LD_PRELOAD=$PWD/example.so                                                                     
 tokyo:~/LearningC/ # ldd /bin/ls                                                                                            
 	linux-gate.so.1 (0xb7fc0000)
@@ -131,7 +131,7 @@ Alright, so we have a trigger idea and a built in privesc. Let's write some C fi
 
 ### Write Hook
 The `write()` hook I created is a lot like the `puts()` hi-jack we already studied surprisingly. The first portion looks like this: 
-```C
+```c
 ssize_t write(int fildes, const void *buf, size_t nbytes)
 {
     ssize_t (*new_write)(int fildes, const void *buf, size_t nbytes);
