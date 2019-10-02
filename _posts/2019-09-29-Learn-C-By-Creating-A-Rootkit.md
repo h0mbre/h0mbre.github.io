@@ -312,6 +312,14 @@ The `ipv4_rev()` function works very similarly to the bind shell we just explain
 
 One other aspect of the reverse shell, is that we issue a `bind()` syscall with the following line: `bind(sockfd, (struct sockaddr*) &client, sizeof(client));`. `client` in this case is a reference to our `client` struct of type `sockaddr` which describes the victim host (the client in a reverse shell paradigm). This line of code helps us ensure that the outgoing reverse shell connection is coming from a specific source port (`LOC_PORT` or `65065`) on the victim which will come in handy later when we are hiding connections from `/bin/netstat` based on a port number. 
 
+The IPv6 reverse shell function works very similarly. 
+
+### Wrapping Up Our `write()` Hook
+
+We have hooked all `write()` calls system wide and have isolated `syslog` writing to the `/var/log/auth.log` file to log failed SSH attempts. We use a trigger word as our username, which tells the hooked command to either spawn a bind or reverse shell over either IPv4 or IPv6. 
+
+## Hiding From `/bin/netstat`
+
 
 
 
