@@ -155,7 +155,7 @@ ssize_t write(int fildes, const void *buf, size_t nbytes)
  + The last four lines are very similar, `char *bind4 = strstr(buf, KEY_4);` delcares and initializes a new pointer variable of the `char` type that is equal to the result of the `strstr()` function after comparing the buffer being written (a reference to the `const void *buf` argument in our `write()` syscall) to a harcoded defined variable `KEY_4`. You can set `KEY_4` to whatever you like, I set it to `#define KEY_4 "notavaliduser4"`. `strstr()` is very interesting. If it finds the second argument within the first argument, it will return a pointer to the first occurence of the second argument. So if it returns a `NULL` we know that it didn't find a match. 
  
  Let's look at the next block of code:
- ```C
+ ```c
  if (bind4 != NULL)
     {
         fildes = open("/dev/null", O_WRONLY | O_APPEND);
