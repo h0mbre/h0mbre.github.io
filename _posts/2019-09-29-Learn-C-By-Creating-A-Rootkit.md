@@ -400,7 +400,15 @@ Let's explain this line by line:
 + `if (ptr_tcp != NULL)` if there's a match, and the file being opened is our `/proc/net/tcp`, do something;
 + `char line[256];` we are declaring a character array of 255 bytes and a null terminator;
 + `FILE *temp = tmpfile();` we are declaring AND initializing another `FILE` pointer, this one named `temp`, which points to a temporary file that lives in `/tmp` as long as `netstat` is running;
-+ 
++ `fp = orig_fopen(pathname, mode);` we've now finally initialized the `fp` `FILE` pointer and we have a pointer to the `/proc/net/tcp` file that's been opened;
++ `while (fgets(line, sizeof(line), fp))` we are using `fgets()` to grab a line of the `fp` (`/proc/net/tcp`) file at a time. As long as there are lines to grab (`while True`), do something;
++ `char *listener = strstr(line, KEY_PORT);` we are declaring a pointer named `listener` that will be initialized if there is a substring match between the line we just collected from `/proc/net/tcp` and `KEY_PORT` which we have defined as `FE29` (the hex representation of `65065`);
++ ```c
+if (listener != NULL)
+			{
+				continue;
+			}
+```
 
 
 
