@@ -316,10 +316,47 @@ The IPv6 reverse shell function works very similarly.
 
 ### Wrapping Up Our `write()` Hook
 
-We have hooked all `write()` calls system wide and have isolated `syslog` writing to the `/var/log/auth.log` file to log failed SSH attempts. We use a trigger word as our username, which tells the hooked command to either spawn a bind or reverse shell over either IPv4 or IPv6. 
+We have hooked all `write()` calls system wide and have isolated `syslog` writing to the `/var/log/auth.log` file to log failed SSH attempts. We use a trigger word as our username, which tells the hooked command to either spawn a bind or reverse shell over either IPv4 or IPv6. We have a lot of options for our backdoor now. 
 
-## Hiding From `/bin/netstat`
+## Hiding From `netstat`
+Now that we have a functioning backdoor, it's time to hide those connections from `netstat`. We've picked a high port for our shell functions so that the host is always using local port `65065` for our connections. This is a pretty random port to use so we will avoid a lot of false positives hopefully. 
 
+To understand how to hide from these utilities, we first have to understand what syscalls they're making when they're run. Let's open up a listener on `65065` and run `netstat` and `lsof` with `strace` to see what's going on under the hood. We'll do `netstat` first:
+```tokyo:~/LearningC/ # strace netstat -ano | grep -v unix                                                                     
+execve("/usr/bin/netstat", ["netstat", "-ano"], 0xbfd0de64 /* 47 vars */) = 0
+-----snip-----
+openat(AT_FDCWD, "/proc/net/tcp", O_RDONLY|O_LARGEFILE) = 3
+read(3, "  sl  local_address rem_address "..., 4096) = 450
+read(3, "", 4096)                       = 0
+close(3)                                = 0
+-----snip-----
+write(1, "Active Internet connections (ser"..., 4096Active Internet connections (servers and established)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       Timer
+tcp        0      0 0.0.0.0:65065           0.0.0.0:*               LISTEN      off (0.00/0/0)
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      off (0.00/0/0)
+tcp6       0      0 :::65065                :::*                    LISTEN      off (0.00/0/0)
+tcp6       0      0 :::22                   :::*                    LISTEN      off (0.00/0/0)
+udp        0      0 0.0.0.0:68              0.0.0.0:*                           off (0.00/0/0)
+raw6       0      0 :::58                   :::*                    7           off (0.00/0/0)
+```
+
+So the first thing we're seeing is that we use `execve()` to call it, we then see it opening `/proc/net/tcp` in read only mode and reading `450` bytes from the file and then closing. Later, it then writes all of that data to `stdout`. Pretty straight forward stuff. 
+
+Let's pop open `/proc/net/tcp` for ourselves and see what's there:
+```
+tokyo:~/LearningC/ # cat /proc/net/tcp                                                                                      
+  sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode                                                     
+   0: 00000000:FE29 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 107639 1 c563dbf8 100 0 0 10 0                            
+   1: 00000000:0016 00000000:0000 0A 00000000:00000000 00:00000000 00000000     0        0 73178 1 cb66d650 100 0 0 10 0               
+```
+
+So we see the same information that was printed to the terminal in hex representation. `FE29` is `65065` in hex and since we're listening on the local `0.0.0.0` interface, it's prepended by `00000000`. There is no remote address information because we're not connected. 
+
+So `netstat` reads this file and then stores that in a read buffer which is then interpreted and written to the terminal. Let's look at `lsof` now:
+```
+tokyo:~/LearningC/ # strace lsof -i :65065                                                                                 
+execve("/usr/bin/lsof", ["lsof", "-i", ":65065"], 0xbfe2b318 /* 47 vars */) = 0
+-----snip-----
 
 
 
