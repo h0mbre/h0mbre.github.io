@@ -24,7 +24,7 @@ My goal for this assignment since we had just learned how to hook syscalls in th
 - hid malicious network connections from `netstat` (and maybe `lsof`), and
 - hid malicious files. 
 
-**To be clear:** I'm fully aware this isn't a robust, well-written leet tool. These techniques have been analyzed and discussed for around 7 years now. **BUT** it is sort of a niche subject and something I don't think many people have come across. I would also like to just point people towards blogs and posts that detail the technical details at play here instead of expounding on those details myself, as I am not an expert. 
+**To be clear:** I'm fully aware this isn't a robust, ground breaking program. These techniques have been analyzed and discussed for around 7 years now. **BUT** it is sort of a niche subject and something I don't think many people have come across. I would also like to just point people towards blogs and posts that detail the technical details at play here instead of expounding on those details myself, as I am not an expert. 
 
 All of this is possible with very simple C. (hacky, bad C at that!)
 
