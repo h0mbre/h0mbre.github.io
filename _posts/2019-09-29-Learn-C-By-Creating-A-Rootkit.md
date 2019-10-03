@@ -322,6 +322,7 @@ We have hooked all `write()` calls system wide and have isolated `syslog` writin
 Now that we have a functioning backdoor, it's time to hide those connections from `netstat`. We've picked a high port for our shell functions so that the host is always using local port `65065` for our connections. This is a pretty random port to use so we will avoid a lot of false positives hopefully. 
 
 To understand how to hide from these utilities, we first have to understand what syscalls they're making when they're run. Let's open up a listener on `65065` and run `netstat` with `strace` to see what's going on under the hood:
+
 ```tokyo:~/LearningC/ # strace netstat -ano | grep -v unix                                                                     
 execve("/usr/bin/netstat", ["netstat", "-ano"], 0xbfd0de64 /* 47 vars */) = 0
 -----snip-----
