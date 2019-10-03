@@ -908,3 +908,4 @@ I apologize if I left anyone off, writing this thing was a blur, I had so many t
 + [Jynx2 source code](https://github.com/chokepoint/Jynx2/blob/master/jynx2.c)
 + [ipv6 socket programming](https://deceiveyour.team/2018/08/26/tcp-ipv4-and-ipv6-reverse-shell/)
 + [iamrastating socket programming](https://rastating.github.io/creating-a-bind-shell-tcp-shellcode/)
++ [detecting and analyzing LD_PRELOAD rootkits](https://volatility-labs.blogspot.com/2012/09/movp-24-analyzing-jynx-rootkit-and.html)
