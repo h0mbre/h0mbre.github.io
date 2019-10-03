@@ -411,9 +411,36 @@ Let's explain this line by line:
 + `return temp;` here we just return `temp`, which is the result of our `fopen()` function to our temporary file, back to the end-user for futher processing;
 + finally, if `/proc/net/tcp` is NOT being opened, we simply pass execution to the real `fopen()` with `fp = orig_fopen(pathname, mode);` and `return fp;`. 
 
-Phew, that was quite a bit. I was quite proud of this one, there is definitely a memory leak in here somewhere but it works! When the user calls `netstat` its going to open `/proc/net/tcp` our hook will then create a temporary file and copy everything BUT our malicious connection into the temporary file and then present that temporary file to the end user. That owns. 
+Phew, that was quite a bit. I was quite proud of this one, there is definitely a memory leak in here somewhere but it works! When the user calls `netstat` its going to open `/proc/net/tcp` our hook will then create a temporary file and copy everything BUT our malicious connection into the temporary file and then present that temporary file to the end user. As a bonus, that file only lives on disk in `/tmp` for as long as `netstat` runs, which is not very long. That owns. 
 
-Somehow, this hook also destroys `lsof` ability to check the port as well. As far as I can tell in `strace`, `lsof` doesn't ever open `/proc/net/tcp` so I'm not quite sure how this is accomplished, but we've effectively hidden from two powerful utilities with our simple C. 
+This hook also destroys `lsof` ability to check the port as well. I'm not quite sure how this is accomplished yet, but we've effectively hidden from two powerful utilities with our simple C. 
 
 ## Hiding from `/bin/ls`
+After consulting some resources, namely [this explanation of ls here](https://gist.github.com/amitsaha/8169242), I knew I had to hook the `readdir()` function which again is a higher-level wrapper which calls `getdents()`. We can see this in the `strace` output: 
+```
+tokyo:~/LearningC/ # strace /bin/ls                                                                                                     execve("/bin/ls", ["/bin/ls"], 0xbfbf4890 /* 47 vars */) = 0
+-----snip-----
+getdents64(3, /* 34 entries */, 32768)  = 1064
+getdents64(3, /* 0 entries */, 32768)   = 0
+close(3)  
+```
+
+We see that `getdents()` getting the directory entries for the `3` file descripter and brings back `34` entries with a size of `1064`. So we have to figure out how `readdir()` works. 
+
+The [manpage](http://man7.org/linux/man-pages/man3/readdir.3.html) defines the function: `struct dirent *readdir(DIR *dirp);`. 
+
+So it returns a pointer to the next `dirent` structure in the directory. Here is the definition in `glibc` of the `dirent` struct:
+```
+struct dirent {
+               ino_t          d_ino;       /* Inode number */
+               off_t          d_off;       /* Not an offset; see below */
+               unsigned short d_reclen;    /* Length of this record */
+               unsigned char  d_type;      /* Type of file; not supported
+                                              by all filesystem types */
+               char           d_name[256]; /* Null-terminated filename */
+           }
+```
+
+
+
 
