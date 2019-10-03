@@ -458,6 +458,19 @@ struct dirent *readdir(DIR *dirp)
 }
 ```
 
+I got this hook from basically just following the walkthrough on this blog: https://ketansingh.net/overview-on-linux-userland-rootkits/
+
+We can go through it piece by piece:
++ `struct dirent *(*old_readdir)(DIR *dir);` same thing as our hook for `fopen()`, we're declaring a function that will later be initialized to point towards the address of the real `readdir()`;
++ `struct dirent *readdir(DIR *dirp)` we are declaring a function which perfectly matches the definition of the legitimate `readdir()` function;
++ `old_readdir = dlsym(RTLD_NEXT, "readdir");` we are initializing the function we declared so that it points to the real `readdir()`;
++ `while (dir = old_readdir(dirp))` we are saying, while it is true that the legitimate `readdir()` is still iterating through directory entries and returning a value, do something;
++ `if(strstr(dir->d_name,FILENAME) == 0) break;` we are comparing `FILENAME`, which is a definiton, to the `d_name` member of the `dir` struct returned by our `old_readdir()` and if a match is found (that is, a `0` is returned), we are `breaking` on that entry and skipping over it;
++ finally, we `return dir` to complete the function's called purpose. 
+
+With this setup, we can hide arbitrary files from `/bin/ls`. 
+
+## Actually Using the Damn Rootkit
 
 
 
