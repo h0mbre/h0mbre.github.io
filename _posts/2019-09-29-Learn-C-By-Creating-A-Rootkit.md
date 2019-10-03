@@ -323,7 +323,8 @@ Now that we have a functioning backdoor, it's time to hide those connections fro
 
 To understand how to hide from these utilities, we first have to understand what syscalls they're making when they're run. Let's open up a listener on `65065` and run `netstat` with `strace` to see what's going on under the hood:
 
-```tokyo:~/LearningC/ # strace netstat -ano | grep -v unix                                                                     
+```
+tokyo:~/LearningC/ # strace netstat -ano | grep -v unix                                                                     
 execve("/usr/bin/netstat", ["netstat", "-ano"], 0xbfd0de64 /* 47 vars */) = 0
 -----snip-----
 openat(AT_FDCWD, "/proc/net/tcp", O_RDONLY|O_LARGEFILE) = 3
@@ -344,6 +345,7 @@ raw6       0      0 :::58                   :::*                    7           
 So the first thing we're seeing is that we use `execve()` to call it, we then see it opening `/proc/net/tcp` in read only mode and reading `450` bytes from the file and then closing. Later, it then writes all of that data to `stdout`. Pretty straight forward stuff. 
 
 Let's pop open `/proc/net/tcp` for ourselves and see what's there:
+
 ```
 tokyo:~/LearningC/ # cat /proc/net/tcp                                                                                      
   sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode                                                     
