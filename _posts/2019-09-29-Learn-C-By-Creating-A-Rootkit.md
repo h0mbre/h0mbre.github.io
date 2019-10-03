@@ -529,7 +529,7 @@ uid=0(root) gid=0(root) groups=0(root)
 ```
 9. Let's check `netstat` for our malicious connection on the victim,
 ```
-root@ubuntu:/home/caz# netstat -ano | grep -v unix
+root@ubuntu:/home/manteau# netstat -ano | grep -v unix
 Active Internet connections (servers and established)
 Proto Recv-Q Send-Q Local Address           Foreign Address         State       Timer
 udp        0      0 127.0.1.1:53            0.0.0.0:*                           off (0.00/0/0)
@@ -546,7 +546,7 @@ Proto RefCnt Flags       Type       State         I-Node   Path
 ```
 10. Awesome. Our connection on local port `65065` is not shown. Let's try looking in `/etc` for `/etc/ld.so.preload` which was the file I chose to hide.
 ```
-root@ubuntu:/home/caz# ls -lah /etc
+root@ubuntu:/home/manteau# ls -lah /etc
 -----snip-----
 -rw-r--r--   1 root root    110 Feb 20  2019 kernel-img.conf
 -rw-r--r--   1 root root   1.3K Mar 10  2016 kerneloops.conf
