@@ -403,24 +403,14 @@ Let's explain this line by line:
 + `fp = orig_fopen(pathname, mode);` we've now finally initialized the `fp` `FILE` pointer and we have a pointer to the `/proc/net/tcp` file that's been opened;
 + `while (fgets(line, sizeof(line), fp))` we are using `fgets()` to grab a line of the `fp` (`/proc/net/tcp`) file at a time. As long as there are lines to grab (`while True`), do something;
 + `char *listener = strstr(line, KEY_PORT);` we are declaring a pointer named `listener` that will be initialized if there is a substring match between the line we just collected from `/proc/net/tcp` and `KEY_PORT` which we have defined as `FE29` (the hex representation of `65065`);
-+ ```c
-if (listener != NULL)
-			{
-				continue;
-			}
-```
++ Next, we have an `if` statement `if (listener != NULL)` so that if `listener` isn't `NULL`, we `continue` meaning, we won't actually do anything with that line, leave that line in the ether;
++ BUT, if the pointer isn't `NULL`, we `fputs(line, temp);` which means that we place that line in our temporary file;
++ `return temp;` here we just return `temp`, which is the result of our `fopen()` function to our temporary file, back to the end-user for futher processing;
++ finally, if `/proc/net/tcp` is NOT being opened, we simply pass execution to the real `fopen()` with `fp = orig_fopen(pathname, mode);` and `return fp;`. 
 
+Phew, that was quite a bit. I was quite proud of this one, there is definitely a memory leak in here somewhere but it works! When the user calls `netstat` its going to open `/proc/net/tcp` our hook will then create a temporary file and copy everything BUT our malicious connection into the temporary file and then present that temporary file to the end user. That owns. 
 
+Somehow, this hook also destroys `lsof` ability to check the port as well. As far as I can tell in `strace`, `lsof` doesn't ever open `/proc/net/tcp` so I'm not quite sure how this is accomplished, but we've effectively hidden from two powerful utilities with our simple C. 
 
-
-
-
- 
-## TEST
- 
-
-
-
-
-
+## Hiding from `/bin/ls`
 
