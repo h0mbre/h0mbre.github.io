@@ -158,7 +158,7 @@ After using `!mona pc 5000` and placing the resulting address in our SEH entry i
 
 What we need now is the location of a `POP POP RET` gadget in this application so that we can place it in our current SEH 4 byte space and we can work our way 4 bytes backwards into the 4 byte space that typically holds the pointer to the next SEH. 
 
-Using the `!mona seh` command, most of the addresses we see immediately stat with `00` which is not ideal since this will require us to include a null byte in our shellcode. We could try for a partial overwrite but instead, I kept looking for a more friendly 4 byte address and eventually found one at the following location in the `seh.txt` file that mona creates. 
+Using the `!mona seh` command, most of the addresses we see immediately start with `00` which is not ideal since this will require us to include a null byte in our shellcode. We could try for a partial overwrite but instead, I kept looking for a more friendly 4 byte address and eventually found one at the following location in the `seh.txt` file that mona creates. 
 
 ![](/assets/images/CTP/sehlocation.JPG)
 
