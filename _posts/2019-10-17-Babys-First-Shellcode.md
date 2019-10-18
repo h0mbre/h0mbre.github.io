@@ -52,7 +52,7 @@ int main (void)
 
 `STARTUPINFO` is a struct with a bunch of members; however, I only really needed to initialize the first member `cb` which is an unsigned int for the size of the structure. The `PROCESS_INFORMATION` structure really didn't even need any members initialized. Most of the parameters in the `CreateProcessA` API ended up being `NULL` except for the `lpCommandLine` parameter which is of the `LPSTR` data type and is `"calc"` in this case.
 
-### CreateProcessA Calc.exe Shellcode v1.0
+### CreateProcessA Calc Shellcode v1.0
 Concerned only with making shellcode that would spawn a calculator, leaving the stress of creating Null-free/optimized code aside for the time being, I came up with the following after heavily borrowing concepts from both aforementioned blog posts. 
 ```nasm
 global_start
@@ -88,12 +88,12 @@ _start:
     add esi, 0x4
     add ebx, eax
     cmp dword [ebx], 0x61657243         ; Crea
-	jnz Get_Function
-	cmp dword [ebx + 0x4], 0x72506574   ; tePr  
-	jnz Get_Function
-	cmp dword [ebx + 0x8], 0x7365636f   ; oces
-	jnz Get_Function
-	cmp word [ebx + 0xa], 0x41737365	; essA
+jnz Get_Function
+cmp dword [ebx + 0x4], 0x72506574   ; tePr  
+jnz Get_Function
+cmp dword [ebx + 0x8], 0x7365636f   ; oces
+jnz Get_Function
+cmp word [ebx + 0xa], 0x41737365	; essA
     jnz Get_Function
 
     ; now that we have the ordinal, we need to find the real address of the CreateProcessA function
