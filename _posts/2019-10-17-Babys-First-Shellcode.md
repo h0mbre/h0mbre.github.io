@@ -167,7 +167,7 @@ We only check the beginning and the end of the string. Since we know the length 
 ```nasm
 cmp dword [eax], 0x61657243          ; Crea
 jnz Get_Function
-cmp word [eax + 0xa], 0x41737365	 ; essA
+cmp word [eax + 0xa], 0x41737365	   ; essA
 jnz Get_Function
 ```
 
