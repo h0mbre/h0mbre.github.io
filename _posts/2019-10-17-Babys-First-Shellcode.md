@@ -247,3 +247,9 @@ push ecx
 push edx
 call edi
 ```
+
+Final length: 100 bytes
+Null-Free: True
+
+## Conclusion
+This was a ton of fun, I think a good excercise for the reader would be using `CreateProcessA` to spawn a message box with custom text. In the next post, we'll make our code more robust by adding an exit function which will require finding new ways to dynamically find functions. Until next time!
