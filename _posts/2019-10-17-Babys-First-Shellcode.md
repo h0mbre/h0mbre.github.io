@@ -93,7 +93,7 @@ _start:
     jnz Get_Function
     cmp dword [ebx + 0x8], 0x7365636f   ; oces
     jnz Get_Function
-    cmp word [ebx + 0xa], 0x41737365	  ; essA
+    cmp word [ebx + 0xa], 0x41737365	; essA
     jnz Get_Function                    ; if we get past here, we know our program has found 'CreateProcessA'
 
     ; now that we have the ordinal, we need to find the real address of the CreateProcessA function
@@ -159,7 +159,7 @@ cmp dword [ebx + 0x4], 0x72506574   ; tePr
 jnz Get_Function
 cmp dword [ebx + 0x8], 0x7365636f   ; oces
 jnz Get_Function
-cmp word [ebx + 0xa], 0x41737365	  ; essA
+cmp word [ebx + 0xa], 0x41737365	; essA
 jnz Get_Function                    ; if we get past here, we know our program has found 'CreateProcessA'
 ```
 
@@ -167,7 +167,7 @@ We only check the beginning and the end of the string. Since we know the length 
 ```nasm
 cmp dword [eax], 0x61657243          ; Crea
 jnz Get_Function
-cmp word [eax + 0xa], 0x41737365	   ; essA
+cmp word [eax + 0xa], 0x41737365	 ; essA
 jnz Get_Function
 ```
 
