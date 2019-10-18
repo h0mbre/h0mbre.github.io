@@ -136,6 +136,7 @@ _start:
 ```
 
 Final length: 126 bytes
+
 Null-Free: False
 
 ## Optimizing a Bit
@@ -249,7 +250,11 @@ call edi
 ```
 
 Final length: 100 bytes
+
 Null-Free: True
 
 ## Conclusion
-This was a ton of fun, I think a good excercise for the reader would be using `CreateProcessA` to spawn a message box with custom text. In the next post, we'll make our code more robust by adding an exit function which will require finding new ways to dynamically find functions. Until next time!
+This was a ton of fun, I think a good excercise for the reader would be using `CreateProcessA` to spawn a message box with custom text. In the next post, we'll make our code more robust by adding an exit function which will require finding new ways to dynamically find functions. Until next time.
+
+## One More Thanks
+Thank you to the blog post authors and the author of the calc shellcode on PacketStorm. Thank you to everyone who publishes free content for all of us to learn, it is much appreciated!
