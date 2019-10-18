@@ -53,7 +53,7 @@ int main (void)
 `STARTUPINFO` is a struct with a bunch of members; however, I only really needed to initialize the first member `cb` which is an unsigned int for the size of the structure. The `PROCESS_INFORMATION` structure really didn't even need any members initialized. Most of the parameters in the `CreateProcessA` API ended up being `NULL` except for the `lpCommandLine` parameter which is of the `LPSTR` data type and is `"calc"` in this case.
 
 ### CreateProcessA Calc Shellcode v1.0
-Concerned only with making shellcode that would spawn a calculator, leaving the stress of creating Null-free/optimized code aside for the time being, I came up with the following after heavily borrowing concepts from both aforementioned blog posts. 
+Concerned only with making shellcode that would spawn a calculator, leaving the stress of creating Null-free/optimized code aside for the time being, I came up with the following after heavily borrowing concepts from both aforementioned blog posts. Again, I beg you to go read the blog posts I mentioned earlier which explain every single step in critical detail. I copied a lot of code from both blogs, and for the final `CreateProcessA` call, I copied a lot of code from [here](https://packetstormsecurity.com/files/102847/All-Windows-Null-Free-CreateProcessA-Calc-Shellcode.html). 
 ```nasm
 global_start
 
@@ -64,73 +64,73 @@ _start:
     
     ; find base address of kernel32.dll
     xor ecx, ecx
-    mov eax, [fs:ecx + 0x30]
-    mov eax, [eax + 0xc]
-    mov eax, [eax + 0x14]
-    mov eax, [eax]
-    mov eax, [eax]
-    mov eax, [eax + 0x10]      
+    mov eax, [fs:ecx + 0x30]    ; offset to the PEB struct
+    mov eax, [eax + 0xc]        ; offset to LDR within PEB
+    mov eax, [eax + 0x14]       ; offset to InMemoryOrderModuleList
+    mov eax, [eax]              ; moving to 2nd loaded module
+    mov eax, [eax]              ; moving to 3rd loaded module
+    mov eax, [eax + 0x10]       ; moving to base address of 3rd loaded module (kernel32.dll)
 
     ; parse kernel32.dll for the beginning of the "AddressOfNames" array of pointers
-    mov edx, [eax + 0x3c]
-    add edx, eax
-    mov edx, [edx + 0x78]
-    add edx, eax
-    mov esi, [edx + 0x20]
-    add esi, eax
-    xor ecx, ecx
+    mov edx, [eax + 0x3c]       ; offset to e_lfanew
+    add edx, eax                ; PE Header offset + base address
+    mov edx, [edx + 0x78]       ; offset to export table
+    add edx, eax                ; export table offset + base address
+    mov esi, [edx + 0x20]       ; offset to names table
+    add esi, eax                ; offset to names table + base address
+    xor ecx, ecx                ; zero out ECX so we can use it as a counter
 
     ; start our loop to find a string match with our desired function, which is 'CreateProcessA'. we will end up with the ordinal of the function
     Get_Function:
 
-    inc ecx
-    mov ebx, [esi]
-    add esi, 0x4
-    add ebx, eax
+    inc ecx                             ; increase ECX to keep track of our iterations
+    mov ebx, [esi]                      
+    add esi, 0x4                        ; get name offset
+    add ebx, eax                        ; get function name 
     cmp dword [ebx], 0x61657243         ; Crea
-jnz Get_Function
-cmp dword [ebx + 0x4], 0x72506574   ; tePr  
-jnz Get_Function
-cmp dword [ebx + 0x8], 0x7365636f   ; oces
-jnz Get_Function
-cmp word [ebx + 0xa], 0x41737365	; essA
     jnz Get_Function
+    cmp dword [ebx + 0x4], 0x72506574   ; tePr  
+    jnz Get_Function
+    cmp dword [ebx + 0x8], 0x7365636f   ; oces
+    jnz Get_Function
+    cmp word [ebx + 0xa], 0x41737365	  ; essA
+    jnz Get_Function                    ; if we get past here, we know our program has found 'CreateProcessA'
 
     ; now that we have the ordinal, we need to find the real address of the CreateProcessA function
-    mov esi, [edx + 0x24]
-    add esi, eax
-    mov cx, [esi + ecx * 2]
-    dec ecx
-    mov esi, [edx + 0x1c]
-    add esi, eax
-    mov edx, [esi + ecx * 4]
-    add edx, eax
+    mov esi, [edx + 0x24]               ; get the offset to the "AddressOfNameOrdinals" offset from IMAGE_EXPORT_DIRECTORY
+    add esi, eax                        ; offset + base address
+    mov cx, [esi + ecx * 2]             ; We want index number of an array essentially. Array is full of two-byte numbers. (ecx *2)
+    dec ecx                             ; accounting for index [0] of the array
+    mov esi, [edx + 0x1c]               ; "AddressOfFunctions" offset
+    add esi, eax                        ; offset + base address
+    mov edx, [esi + ecx * 4]            ; 4 byte indexes in this new array (ecx * 4)
+    add edx, eax                        ; offset + base address. EDX now holds memory addr of CreateProcessA
 
     ; we now have the address of CreateProcessA inside of EDX. we can call calc.exe by just placing 'calc' on the stack, and setting a pointer to it to satisfy the struct arguments 
     ; for 'lpProcessInformation' and 'lpStartupInfo'
 
-    xor ecx, ecx
-    mov cl, 0x8
-    xor edi, edi
+    xor ecx, ecx                ; zero out counter register
+    mov cl, 0xff                ; we'll loop 255 times (0xff)
+    xor edi, edi                ; edi now 0x00000000
 
     zero_loop:
-    push edi
+    push edi                    ; place 0x00000000 on stack 255 times as a way to 'zero memory' 
     loop zero_loop
 
     
-    push 0x636c6163
-    mov ecx, esp
+    push 0x636c6163             ; 'calc'
+    mov ecx, esp                ; stack pointer to 'calc'
 
-    push ecx
-    push ecx
-    xor eax, eax
+    push ecx                    ; processinfo pointing to 'calc' as a struct argument
+    push ecx                    ; startupinfo pointing to 'calc' as a struct argument
+    xor eax, eax                ; zero out
+    push eax                    ; NULLS
     push eax
     push eax
     push eax
     push eax
     push eax
+    push ecx                    ; 'calc'
     push eax
-    push ecx
-    push eax
-    call edx
+    call edx                    ; call CreateProcessA and spawn calc
 
