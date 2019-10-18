@@ -133,4 +133,6 @@ _start:
     push ecx                    ; 'calc'
     push eax
     call edx                    ; call CreateProcessA and spawn calc
+```
 
+## Optimizing a Bit
