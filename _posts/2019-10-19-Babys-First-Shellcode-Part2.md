@@ -24,7 +24,7 @@ Everything in our code will basically remain unchaged, we'll simply be adding in
 
 ### GetProcAddress
 Instead of combing through `kernel32.dll` for `CreateProcessA`, this time we're going to find the address of the function `GetProcAddress`. According to the [MSDN documentation](https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-getprocaddress), the syntax looks like this:
-```c
+```c++
 FARPROC GetProcAddress(
   HMODULE hModule,
   LPCSTR  lpProcName
