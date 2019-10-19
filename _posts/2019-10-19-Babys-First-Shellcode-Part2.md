@@ -23,4 +23,10 @@ Picking up where we left off in the [last post](https://h0mbre.github.io/Babys-F
 Everything in our code will basically remain unchaged, we'll simply be adding intermediate steps and also an exit routine at the end. This will obviously change how we're using the registers to a degree as well. 
 
 ### GetProcAddress
-Instead of combing thr
+Instead of combing through `kernel32.dll` for `CreateProcessA`, this time we're going to find the address of the function `GetProcAddress`. According to the [MSDN documentation](https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-getprocaddress), the syntax looks like this:
+```c
+FARPROC GetProcAddress(
+  HMODULE hModule,
+  LPCSTR  lpProcName
+);
+```
