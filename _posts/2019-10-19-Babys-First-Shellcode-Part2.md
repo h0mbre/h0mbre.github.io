@@ -45,6 +45,7 @@ void ExitProcess(
 );
 ```
 
+### New Shellcode Outline
 Roughly, our shellcode will do the following:
 + Find base address of `kernel32.dll`
 + Comb through `kernel32.dll` for the address of the exported `GetProcAddress` function
