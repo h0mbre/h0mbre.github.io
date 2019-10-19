@@ -58,7 +58,7 @@ Sounds simple? Let's get to it!
 ## Let's Get to Coding
 Anything that is very similar to our last post, I'll leave alone and only highlight significant changes. 
 
-```asm
+```nasm
 global_start
 
 
@@ -85,7 +85,7 @@ xor ecx, ecx
 
 No big changes yet, this is identical to our last shellcode. We now have the address of `kernel32.dll` stored in ESI. 
 
-```asm
+```nasm
 Get_Function:
  
 inc ecx                              ; increase ECX to keep track of our iterations
@@ -99,7 +99,7 @@ jnz Get_Function
 
 Notice here we again, to save bytes, only compared the first 4 bytes `GetP` and the last 4 bytes `ress` of `GetProcAddress` to the string pointed to by EAX. Now that we have a match, our ECX register has kept track of how many iterations it took so we can move onto translating that into the actual memory address of the function. 
 
-```asm
+```nasm
 mov esi, [edi + 0x24]                ; ESI = Offset ordinals
 add esi, ebx                         ; ESI = Ordinals table
 mov cx, [esi + ecx * 2]              ; Number of function
@@ -112,7 +112,7 @@ add edi, ebx                         ; EDI = GetProcAddress address
 
 Nothing new here, I even copied @NytroRST's comments right out of his blog so that it's easier for you to follow along looking at his blog. We now have the memory address of `GetProcAddress` stored in EDI. 
 
-```asm
+```nasm
 ; use GetProcAddress to find CreateProcessA
 xor ecx, ecx
 push 0x61614173
@@ -133,7 +133,7 @@ We push `0x61614173`, which is the last 4 bytes `sAaa`, and then subtract them o
 
 Now that our string is on the stack, we push the pointer to it with `push esp` and then finally, we push the base address of `kernel32` onto the stack and call `GetProcAddress` with `call edi`. So we called the function with our two arguments on the stack that we discussed earlier: `HMODULE hModule` and `LPCSTR  lpProcName`. 
 
-```asm
+```nasm
 ; EAX = CreateProcessA address
 ; ECX = kernel32 base address
 ; EDX = kernel32 base address
@@ -145,7 +145,7 @@ Now that our string is on the stack, we push the pointer to it with `push esp` a
 
 During the shellcode writing process, I found it valuable to run the incomplete code in the debugger to keep track of register values and then place them in the shellcode after I used `GetProcAddress` since I was unfamiliar with it. Here we see several registers get filled with the `kernel32` address but the most important part is that EAX is filled with the address of `CreateProcessA` and EDI retained the address of `GetProcAddress` so that we can use it again later. 
 
-```asm
+```nasm
 xor ecx, ecx
 xor edx, edx
 mov cl, 0xff
@@ -172,7 +172,7 @@ call eax
 
 Nothing new really, calling `CreateProcessA` and spawning a calculator. Time for a register value check. 
 
-```asm
+```nasm
 ; EAX = 0x00000001
 ; ECX = some kernel32 address
 ; EDX = some stack Pointer
@@ -182,7 +182,7 @@ Nothing new really, calling `CreateProcessA` and spawning a calculator. Time for
 
 EAX is holding a non-zero return value from our `CreateProcessA` function call which indicates the function was successful. Our calculator has spawned. Now it's time to call `ExitProcess` and get out of here. 
 
-```asm
+```nasm
 add esp, 0x10                  ; clean the stack
 push 0x61737365
 sub dword [esp + 0x3], 0x61    ; essa - a    
@@ -195,7 +195,7 @@ call edi
 
 We add `0x10` to ESP so that we get ourselves to a position on the stack that is not filled with junk from our last operation. We now have a blank canvas to work with on the stack and can start preparing it for our second `GetProcAddress` call. It's helpful to keep debugging your code as you go, so that you can see all the register conditions and stack in real time as you step through your program, I like to actually code inside of the debugger. Again, we use the `sub` operation trick since `ExitProcess` doesn't break up evenly into 4 byte chunks. Once we `call edi` here, we'll have the memory address of `ExitProcess` stored in EAX. 
 
-```asm
+```nasm
 xor ecx, ecx
 push ecx
 call eax
@@ -212,7 +212,7 @@ The calc shellcode now exits cleanly, is NULL free, and I think pretty short at 
 Thanks again to @NytroRST, couldn't have done any of this without his wonderful blog posts. Thanks to anyone who publishes educational content for free, it is a huge benefit to us, much appreciated. 
 
 ## Final Shellcode
-```asm
+```nasm
 global_start
 
 
