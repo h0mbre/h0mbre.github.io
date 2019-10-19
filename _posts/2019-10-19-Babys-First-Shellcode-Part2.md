@@ -57,6 +57,7 @@ Sounds simple? Let's get to it!
 
 ## Let's Get to Coding
 Anything that is very similar to our last post, I'll leave alone and only highlight significant changes. 
+
 ```asm
 global_start
 
