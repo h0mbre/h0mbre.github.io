@@ -242,7 +242,7 @@ lodsd                                ; Get name offset
 add eax, ebx                         ; Get function name
 cmp dword [eax], 0x50746547          ; GetP
 jnz Get_Function
-cmp word [eax + 0xa], 0x73736572	 ; ress
+cmp word [eax + 0xa], 0x73736572	   ; ress
 jnz Get_Function
 mov esi, [edi + 0x24]                ; ESI = Offset ordinals
 add esi, ebx                         ; ESI = Ordinals table
