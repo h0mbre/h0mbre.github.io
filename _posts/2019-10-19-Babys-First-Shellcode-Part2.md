@@ -96,7 +96,7 @@ cmp word [eax + 0xa], 0x73736572     ; ress
 jnz Get_Function
 ```
 
-Notic here we again, to save bytes, only compared the first 4 bytes `GetP` and the last 4 bytes `ress` of `GetProcAddress` to the string pointed to by EAX. Now that we have a match, our ECX register has kept track of how many iterations it took so we can move onto translating that into the actual memory address of the function. 
+Notice here we again, to save bytes, only compared the first 4 bytes `GetP` and the last 4 bytes `ress` of `GetProcAddress` to the string pointed to by EAX. Now that we have a match, our ECX register has kept track of how many iterations it took so we can move onto translating that into the actual memory address of the function. 
 
 ```asm
 mov esi, [edi + 0x24]                ; ESI = Offset ordinals
@@ -105,6 +105,111 @@ mov cx, [esi + ecx * 2]              ; Number of function
 dec ecx
 mov esi, [edi + 0x1c]                ; Offset address table
 add esi, ebx                         ; ESI = Address table
-mov edi, [esi + ecx * 4]             ; EDi = Pointer(offset)
-add edi, ebx                         ; EDi = GetProcAddress address
+mov edi, [esi + ecx * 4]             ; EDI = Pointer(offset)
+add edi, ebx                         ; EDI = GetProcAddress address
 ```
+
+Nothing new here, I even copied @NytroRST's comments right out of his blog so that it's easier for you to follow along looking at his blog. We now have the memory address of `GetProcAddress` stored in EDI. 
+
+```asm
+; use GetProcAddress to find CreateProcessA
+xor ecx, ecx
+push 0x61614173
+sub word [esp + 0x2], 0x6161
+push 0x7365636f
+push 0x72506574
+push 0x61657243
+push esp
+push ebx
+call edi
+```
+
+New code. Here we're using `GetProcAddress` to find the memory address of `CreateProcessA`. A cool technique that @NytroRST shows is to put non-4-byte strings on the stack with placeholder characters, such as `a` here, and then subtract them off the stack with a `sub` operation.
+
+So, instead of pushing `CreateProcessA` which doesn't break up evenly into 4-byte chunks, we push `CreateProcessAaa`, which does. 
+
+We push `0x61614173`, which is the last 4 bytes `sAaa`, and then subtract them off of the stack with the `sub` operation. We then push the rest of the string. 
+
+Now that our string is on the stack, we push the pointer to it with `push esp` and then finally, we push the base address of `kernel32` onto the stack and call `GetProcAddress` with `call edi`. So we called the function with our two arguments on the stack that we discussed earlier: `HMODULE hModule` and `LPCSTR  lpProcName`. 
+
+```asm
+; EAX = CreateProcessA address
+; ECX = kernel32 base address
+; EDX = kernel32 base address
+; EBX = kernel32 base address
+; ESP = "CreateProcessA.."
+; ESI = ???
+; EDI = GetProcAddress address
+```
+
+During the shellcode writing process, I found it valuable to run the incomplete code in the debugger to keep track of register values and then place them in the shellcode after I used `GetProcAddress` since I was unfamiliar with it. Here we see several registers get filled with the `kernel32` address but the most important part is that EAX is filled with the address of `CreateProcessA` and EDI retained the address of `GetProcAddress` so that we can use it again later. 
+
+```asm
+xor ecx, ecx
+xor edx, edx
+mov cl, 0xff
+
+zero_loop:
+push edx
+loop zero_loop
+
+push 0x636c6163                      ; "calc"
+mov ecx, esp
+
+push ecx
+push ecx
+push edx
+push edx
+push edx
+push edx
+push edx
+push edx
+push ecx
+push edx
+call eax
+```
+
+Nothing new really, calling `CreateProcessA` and spawning a calculator. Time for a register value check. 
+
+```asm
+; EAX = 0x00000001
+; ECX = some kernel32 address
+; EDX = some stack Pointer
+; EBX = kernel32 base
+; EDI = GetProcAddress address
+```
+
+EAX is holding a non-zero return value from our `CreateProcessA` function call which indicates the function was successful. Our calculator has spawned. Now it's time to call `ExitProcess` and get out of here. 
+
+```asm
+add esp, 0x10                  ; clean the stack
+push 0x61737365
+sub dword [esp + 0x3], 0x61    ; essa - a    
+push 0x636f7250                ; Proc
+push 0x74697845                ; Exit
+push esp
+push ebx
+call edi
+```
+
+We add `0x10` to ESP so that we get ourselves to a position on the stack that is not filled with junk from our last operation. We now have a blank canvas to work with on the stack and can start preparing it for our second `GetProcAddress` call. It's helpful to keep debugging your code as you go, so that you can see all the register conditions and stack in real time as you step through your program, I like to actually code inside of the debugger. Again, we use the `sub` operation trick since `ExitProcess` doesn't break up evenly into 4 byte chunks. Once we `call edi` here, we'll have the memory address of `ExitProcess` stored in EAX. 
+
+```asm
+xor ecx, ecx
+push ecx
+call eax
+```
+
+Pretty simple here, just calling `ExitProcess` and we only needed one parameter on the stack, our desired return value, which is `0` here. 
+
+## Conclusion
+We learned about using `GetProcAddress` when we have to make multiple function calls. What happens if the exported function we want isn't in `kernel32.dll`? Well, we'd have to use different techniques to first load those DLLs into memory, which we will do in subsequent posts. 
+
+The calc shellcode now exits cleanly, is NULL free, and I think pretty short at 169 bytes. 
+
+## Thanks
+Thanks again to @NytroRST, couldn't have done any of this without his wonderful blog posts. Thanks to anyone who publishes educational content for free, it is a huge benefit to us, much appreciated. 
+
+
+
+
