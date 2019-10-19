@@ -210,6 +210,108 @@ The calc shellcode now exits cleanly, is NULL free, and I think pretty short at 
 ## Thanks
 Thanks again to @NytroRST, couldn't have done any of this without his wonderful blog posts. Thanks to anyone who publishes educational content for free, it is a huge benefit to us, much appreciated. 
 
+## Final Shellcode
+```asm
+global_start
 
 
+section .text
+_start: 
+
+xor ecx, ecx
+mul ecx
+mov eax, [fs:ecx + 0x30] ; EAX = PEB
+mov eax, [eax + 0xc]     ; EAX = PEB->Ldr
+mov esi, [eax + 0x14]    ; ESI = PEB->Ldr.InMemOrder
+lodsd                    ; EAX = Second module
+xchg eax, esi            ; EAX = ESI, ESI = EAX
+lodsd                    ; EAX = Third(kernel32)
+mov ebx, [eax + 0x10]    ; EBX = Base address
+mov edi, [ebx + 0x3c]    ; EDi = DOS->e_lfanew
+add edi, ebx             ; EDi = PE Header
+mov edi, [edi + 0x78]    ; EDi = Offset export table
+add edi, ebx             ; EDi = Export table
+mov esi, [edi + 0x20]    ; ESI = Offset namestable
+add esi, ebx             ; ESI = Names table
+xor ecx, ecx             ; EXC = 0
+
+Get_Function:
+ 
+inc ecx                              ; Increment the ordinal
+lodsd                                ; Get name offset
+add eax, ebx                         ; Get function name
+cmp dword [eax], 0x50746547          ; GetP
+jnz Get_Function
+cmp word [eax + 0xa], 0x73736572	 ; ress
+jnz Get_Function
+mov esi, [edi + 0x24]                ; ESI = Offset ordinals
+add esi, ebx                         ; ESI = Ordinals table
+mov cx, [esi + ecx * 2]              ; Number of function
+dec ecx
+mov esi, [edi + 0x1c]                ; Offset address table
+add esi, ebx                         ; ESI = Address table
+mov edi, [esi + ecx * 4]             ; EDi = Pointer(offset)
+add edi, ebx                         ; EDi = GetProcAddress address
+
+; use GetProcAddress to find CreateProcessA
+xor ecx, ecx
+push 0x61614173
+sub word [esp + 0x2], 0x6161
+push 0x7365636f
+push 0x72506574
+push 0x61657243
+push esp
+push ebx
+call edi
+
+; EAX = CreateProcessA address
+; ECX = kernel32 base address
+; EDX = kernel32 base address
+; EBX = kernel32 base address
+; ESP = "CreateProcessA.."
+; ESI = ???
+; EDI = GetProcAddress address
+
+xor ecx, ecx
+xor edx, edx
+mov cl, 0xff
+
+zero_loop:
+push edx
+loop zero_loop
+
+push 0x636c6163                      ; "calc"
+mov ecx, esp
+
+push ecx
+push ecx
+push edx
+push edx
+push edx
+push edx
+push edx
+push edx
+push ecx
+push edx
+call eax
+
+; EAX = 0x00000001
+; ECX = some kernel32 address
+; EDX = some stack Pointer
+; EBX = kernel32 base
+; EDI = GetProcAddress address
+
+add esp, 0x10                   ; clean the stack
+push 0x61737365
+sub dword [esp + 0x3], 0x61    ; essa - a    
+push 0x636f7250                ; Proc
+push 0x74697845                ; Exit
+push esp
+push ebx
+call edi
+
+xor ecx, ecx
+push ecx
+call eax
+```
 
