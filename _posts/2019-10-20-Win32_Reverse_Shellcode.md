@@ -190,7 +190,6 @@ call edi
 
 We have to push the string `LoadLibraryA` onto the stack first. I used my [ascii to hex converter python script](https://github.com/h0mbre/AWE-OSEE/tree/master/Ascii_to_Hex), which I got from @NinjaParanoid. The script is this:
 ```python
-C:\Users\IEUser\Documents>type a2h.py
 import textwrap
 import binascii
 import sys
