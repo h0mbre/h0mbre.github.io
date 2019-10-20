@@ -265,7 +265,7 @@ Right now, `WSAStartup` is stored in EAX, so let's put that into ESI and make ES
 
 ```nasm
 push eax
-lea esi, [esp]                          ; esi will store WSAStartup location, and we'll calculate offsets from here
+lea esi, [esp]       ; esi will store WSAStartup location, and we'll calculate offsets from here
 ```
 
 So we pushed EAX onto the stack, therefore ESP was pointing at EAX. Then we put the address of ESP into ESI. So now we can refer to ESI and its offsets we create later to make the function calls. 
