@@ -472,6 +472,8 @@ Finally we call `ExitProcess` which should be familiar from the last shellcode w
 ## Conclusion
 Thank you very much to the aformentioned resource authors, I really appreciate it! Learned a lot about the subtle differences between Windows and Linux when it comes to socket programming a reverse shell payload. Next we might explore a different way to find function addresses, x64 shellcoding, or some exploit development techniques, I'm not sure yet. All will be covered at some point though. Until next time, thanks for reading!
 
+Our shellcode should be NULL-free and it came in around 370 bytes. I believe the msfvenom equivalent shellcode is somewhere around 335 bytes so we didn't do too much worse in our first shot, definitely some room for improvement I'm sure. 
+
 ## Complete Shellcode
 ```nasm
 global_start
