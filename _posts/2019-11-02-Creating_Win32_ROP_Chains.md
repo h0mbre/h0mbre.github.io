@@ -78,4 +78,4 @@ makedafile.close()
 
 For all of our checking in this blogpost, the way I do it in Immunity is to open the MP3 player in the debugger, start it, go to the address of our `RETN` we know we'll be hitting every time, set a breakpoint. 
 
-
+![](/assets/images/AWE/starting.JPG)
