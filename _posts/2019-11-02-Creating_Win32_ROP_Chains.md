@@ -111,4 +111,16 @@ There are apparently a lot of different ways to disable DEP. FuzzySec has a nice
 0x00501154 : kernel32!loadlibrarya | 0x7569de35 | startnull,ascii {PAGE_READONLY} [VUPlayer.exe] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.49 (C:\Program Files\VUPlayer\VUPlayer.exe)
 ```
 
+Ordinarily since they persist across the most versions of Windows, I'd like to either use `VirtualProtect` or `VirtualAlloc`. It looks like we only have pointers for `VirtualProtect` available to us, so that will be our weapon of choice. I used the pointer at `0x1060e25c`. 
+
+Now that we have our function picked out, let's look at the values we need to call it and what it actually does. Consulting the [MSDN documentation](https://docs.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-virtualprotect?redirectedfrom=MSDN), we see the structure of the function is as follows: 
+```cpp
+BOOL VirtualProtect(
+  LPVOID lpAddress,
+  SIZE_T dwSize,
+  DWORD  flNewProtect,
+  PDWORD lpflOldProtect
+);
+```
+
 
