@@ -23,7 +23,7 @@ ROP stands for Return Oriented Programming. Essentially what we're doing is plac
 
 The reason this behavior is desirable is because when Data Execution Prevention (DEP) is enabled, we are typically unable to execute code in any section of memory that doesn't explicitly contain executable instructions. This means our traditional stack based overflow attacks won't work as we cannot execute shellcode on the stack. 
 
-This is where the power of ROP comes into play. We uses tiny sections of existing code in the target program that are punctuated in sequence by a `RETN` instruction and piece them together to make a function call which disables DEP. We can then run our shellcode on the stack as we're used to. 
+This is where the power of ROP comes into play. We uses tiny sections of existing code in the target program that are punctuated in sequence by a `RETN` instruction (called 'gadgets') and piece them together to make a function call which disables DEP. We can then run our shellcode on the stack as we're used to. 
 
 ## Required Reading
 Corelan has essentially written a manifesto on DEP and Win32 ROP chains [here](https://www.corelan.be/index.php/2010/06/16/exploit-writing-tutorial-part-10-chaining-dep-with-rop-the-rubikstm-cube/). Nothing I say or do in this blog is new or groundbreaking, I'm simply recapitulating the ROP learning process for beginners like myself interested in taking their Windows game further and documenting my work for my own reference. 
@@ -79,3 +79,36 @@ makedafile.close()
 For all of our checking in this blogpost, the way I do it in Immunity is to open the MP3 player in the debugger, start it, go to the address of our `RETN` we know we'll be hitting every time, set a breakpoint. 
 
 ![](/assets/images/AWE/starting.JPG)
+
+As you can see, we've hit our breakpoint and the stack looks perfect. EIP is at our `RETN` address and immediately after the pointer to our `RETN` function we see our `C` buffer where will we place additional pointers to ROP 'gadgets'.
+
+## API Calls To Disable DEP
+There are apparently a lot of different ways to disable DEP. FuzzySec has a nice chart on his blogpost so definitely check that out. We will use `mona.py` to determine what API call pointers we have access to that we can use to disable DEP with the command `!mona ropfunc`. This will output the results to `ropfunc.txt`. 
+
+#### ropfunc.txt
+```
+0x00501a7c : msvcrt!strncpy | 0x75b808a9 | startnull,asciiprint,ascii {PAGE_READONLY} [VUPlayer.exe] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.49 (C:\Program Files\VUPlayer\VUPlayer.exe)
+0x00501150 : kernel32!freelibrary | 0x7569f137 | startnull,ascii {PAGE_READONLY} [VUPlayer.exe] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.49 (C:\Program Files\VUPlayer\VUPlayer.exe)
+0x005011f0 : kernel32!getprocaddress | 0x7569ce64 | startnull {PAGE_READONLY} [VUPlayer.exe] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.49 (C:\Program Files\VUPlayer\VUPlayer.exe)
+0x10109268 : kernel32.getmodulehandlea | 0x7569dac3 |  {PAGE_EXECUTE_READWRITE} [BASSWMA.dll] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.3 (C:\Program Files\VUPlayer\BASSWMA.dll)
+0x1060e254 : kernel32.getmodulehandlea | 0x7569dac3 |  {PAGE_EXECUTE_READWRITE} [BASSMIDI.dll] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.3 (C:\Program Files\VUPlayer\BASSMIDI.dll)
+0x1004027c : kernel32.getmodulehandlea | 0x7569dac3 | ascii {PAGE_EXECUTE_READWRITE} [BASS.dll] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.3 (C:\Program Files\VUPlayer\BASS.dll)
+0x1010926c : kernel32.getprocaddress | 0x7569ce64 |  {PAGE_EXECUTE_READWRITE} [BASSWMA.dll] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.3 (C:\Program Files\VUPlayer\BASSWMA.dll)
+0x1060e258 : kernel32.getprocaddress | 0x7569ce64 |  {PAGE_EXECUTE_READWRITE} [BASSMIDI.dll] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.3 (C:\Program Files\VUPlayer\BASSMIDI.dll)
+0x10040280 : kernel32.getprocaddress | 0x7569ce64 |  {PAGE_EXECUTE_READWRITE} [BASS.dll] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.3 (C:\Program Files\VUPlayer\BASS.dll)
+0x005011dc : kernel32!getmodulehandlea | 0x7569dac3 | startnull {PAGE_READONLY} [VUPlayer.exe] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.49 (C:\Program Files\VUPlayer\VUPlayer.exe)
+0x005011fc : kernel32!lstrcpyna | 0x756890f9 | startnull {PAGE_READONLY} [VUPlayer.exe] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.49 (C:\Program Files\VUPlayer\VUPlayer.exe)
+0x00501020 : bass!bass_streamcreatefile | 0x100106e3 | startnull,ascii {PAGE_READONLY} [VUPlayer.exe] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.49 (C:\Program Files\VUPlayer\VUPlayer.exe)
+0x00501200 : kernel32!createfilea | 0x7569ec31 | startnull {PAGE_READONLY} [VUPlayer.exe] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.49 (C:\Program Files\VUPlayer\VUPlayer.exe)
+0x00501c18 : comdlg32!getopenfilenamea | 0x75c9a2a9 | startnull,asciiprint,ascii {PAGE_READONLY} [VUPlayer.exe] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.49 (C:\Program Files\VUPlayer\VUPlayer.exe)
+0x005011d0 : kernel32!getlasterror | 0x7569cfb0 | startnull {PAGE_READONLY} [VUPlayer.exe] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.49 (C:\Program Files\VUPlayer\VUPlayer.exe)
+0x005011d4 : kernel32!createmutexa | 0x7569d9a4 | startnull {PAGE_READONLY} [VUPlayer.exe] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.49 (C:\Program Files\VUPlayer\VUPlayer.exe)
+0x00501abc : msvcrt!memmove | 0x75b79e5a | startnull {PAGE_READONLY} [VUPlayer.exe] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.49 (C:\Program Files\VUPlayer\VUPlayer.exe)
+0x10109270 : kernel32.virtualprotect | 0x75692e1d |  {PAGE_EXECUTE_READWRITE} [BASSWMA.dll] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.3 (C:\Program Files\VUPlayer\BASSWMA.dll)
+0x1060e25c : kernel32.virtualprotect | 0x75692e1d |  {PAGE_EXECUTE_READWRITE} [BASSMIDI.dll] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.3 (C:\Program Files\VUPlayer\BASSMIDI.dll)
+0x10040284 : kernel32.virtualprotect | 0x75692e1d |  {PAGE_EXECUTE_READWRITE} [BASS.dll] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.3 (C:\Program Files\VUPlayer\BASS.dll)
+0x00501214 : kernel32!lstrcpya | 0x7569a7df | startnull,ascii {PAGE_READONLY} [VUPlayer.exe] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.49 (C:\Program Files\VUPlayer\VUPlayer.exe)
+0x00501154 : kernel32!loadlibrarya | 0x7569de35 | startnull,ascii {PAGE_READONLY} [VUPlayer.exe] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.49 (C:\Program Files\VUPlayer\VUPlayer.exe)
+```
+
+
