@@ -115,7 +115,7 @@ There are apparently a lot of different ways to disable DEP. FuzzySec has a nice
 
 Ordinarily, since they persist across the most versions of Windows, I'd like to either use `VirtualProtect` or `VirtualAlloc`. It looks like we only have pointers for `VirtualProtect` available to us, so that will be our weapon of choice. I used the pointer at `0x1060e25c`. 
 
-Now that we have our function picked out, let's look at the values we need to call it and what it actually does. Consulting the [MSDN documentation](https://docs.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-virtualprotect?redirectedfrom=MSDN) and FuzzySec's blogpost we see the functiond definition and required paramters as follows: 
+Now that we have our function picked out, let's look at the values we need to call it and what it actually does. Consulting the [MSDN documentation](https://docs.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-virtualprotect?redirectedfrom=MSDN) and FuzzySec's blogpost we see the function definition and required paramters as follows: 
 ```cpp
 Structure:                                 Parameters:
 
