@@ -347,7 +347,7 @@ crash_file = "vuplayer-dep.m3u"
 # GOALS
 # EAX 90909090 => Nop {COMPLETED}                                                
 # ECX <writeable pointer> => lpflOldProtect {COMPLETED}                                 
-# EDX 00000040 => flNewProtect                             
+# EDX 00000040 => flNewProtect {COMPLETED}                             
 # EBX 00000201 => dwSize                                            
 # ESP ???????? => Leave as is                                         
 # EBP ???????? => Call to ESP (jmp, call, push,..)                
@@ -393,4 +393,20 @@ makedafile = open(crash_file, "w")
 makedafile.write(fuzz)
 makedafile.close()
 ```
+
+EDX crushed, moving on!
+
+## EBX ROP Chain
+Another fun one, this time we have to get `0x201` into EBX. Same thing again, couldn't find a nice way to do it directly with EBX; however, EAX comes to the rescue again. 
+
+This time, I got more creative and was able to find an `# XOR EAX,994803BD # RETN` gadget that was XOR'ing EAX against a static value located at `0x1003a074`. The great thing about this is that when it comes to XOR, the following is true:
++ `a` XOR `b` = `c`
++ `b` XOR `c` = `a`
++ `c` XOR `a` = `b`
+
+So since we know one variable, the static value being XOR'd (`0x994803BD`), and we know a second variable, our desired `0x201` outcome, in fact already know the third variable!
+
+Let's use an [online calculator](https://miniwebtool.com/bitwise-calculator/?data_type=16&number1=994803bd&number2=00000201&operator=XOR) to figure it out. 
+
+![](/assets/images/AWE/xorcalc.JPG)
 
