@@ -35,7 +35,7 @@ You need to read and understand these blog posts very well in order to keep up. 
 Seriously, go read those two blogs, like now. 
 
 ## Getting Started
-In order to save time from scanning through Exploit DB for a suitable PoC and recreating the exploit, I found this [blog post by Steven Patterson](https://www.shogunlab.com/blog/2018/02/11/zdzg-windows-exploit-5.html) and used the same vulnerable program. We will not be consulting the blog post for help on our ROP chain, simply using the same vulnerable program which you can download from [ExploitDB](https://www.exploit-db.com/exploits/40018). Afterwards, we can compare ROP chains and see if there were any areas we could've been more efficient. 
+In order to save time from scanning through Exploit DB for a suitable POC and recreating the exploit, I found this [blog post by Steven Patterson](https://www.shogunlab.com/blog/2018/02/11/zdzg-windows-exploit-5.html) and used the same vulnerable program. We will not be consulting the blog post for help on our ROP chain, simply using the same vulnerable program which you can download from [ExploitDB](https://www.exploit-db.com/exploits/40018). Afterwards, we can compare ROP chains and see if there were any areas we could've been more efficient. 
 
 Our starting POC should look something like this: 
 ```python
