@@ -263,3 +263,6 @@ makedafile.write(fuzz)
 makedafile.close()
 ```
 
+We run it, using our aforementioned test method and stepping through it and indeed EAX now holds `90909090`. 
+
+![](/assets/images/AWE/eaxtest.JPG)
