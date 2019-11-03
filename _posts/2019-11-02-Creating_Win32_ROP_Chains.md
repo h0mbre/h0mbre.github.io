@@ -287,8 +287,8 @@ import os
 crash_file = "vuplayer-dep.m3u"
 
 # GOALS
-# EAX 90909090 => Nop                                                
-# ECX <writeable pointer> => lpflOldProtect                                 
+# EAX 90909090 => Nop {COMPLETED}                                                
+# ECX <writeable pointer> => lpflOldProtect {COMPLETED}                                 
 # EDX 00000040 => flNewProtect                             
 # EBX 00000201 => dwSize                                            
 # ESP ???????? => Leave as is                                         
@@ -316,3 +316,9 @@ makedafile.write(fuzz)
 makedafile.close()
 ```
 
+You can see I'm annotating at the beginning of each gadget section what registers the gadget affects, this will come in handy later when we're determining what order the gadgets should be executed. For example, we wouldn't want to use a gadget that sets EAX and then when a subsequent gadget which sets EDI also happens to affect EAX is used it ruins our EAX value. Just another thing that keeps us organized when the code can get quite complex. Go look at some DEP bypass exploit POCs on ExploitDB, you'll understand ;)
+
+ECX crushed, moving onto the next goal!
+
+## EDX ROP Chain
+This is the first fun one, how do we get EDX to hold the value `0x40`? After sifting through a bunch of gadgets, I couldn't really find a good series of gadgets to directly influence EDX in an efficient manner. When this happens, I often start looking at ways to manipulate other registers and then somehow move that value into EDX. 
