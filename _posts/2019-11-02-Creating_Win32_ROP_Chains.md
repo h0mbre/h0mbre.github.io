@@ -402,9 +402,9 @@ Another fun one, this time we have to get `0x201` into EBX. Same thing again, co
 Before we get carried away, let's make sure we can cleanly get the value of EAX into EBX. Sifting through our two text files, I was able to find this gadget `# XCHG EAX,EBX # RETN 0x00` at `0x10032f32`. Awesome, let's proceed!
 
 This time, I got more creative and was able to find an `# XOR EAX,994803BD # RETN` gadget that was XOR'ing EAX against a static value located at `0x1003a074`. The great thing about this is that when it comes to XOR, the following is true:
-+ `a` XOR `b` = `c`
-+ `b` XOR `c` = `a`
-+ `c` XOR `a` = `b`
++ `a XOR b` = `c`
++ `b XOR c` = `a`
++ `c XOR a` = `b`
 
 So since we know one variable, the static value being XOR'd (`0x994803BD`), and we know a second variable, our desired `0x201` outcome, we already know the third variable!
 
