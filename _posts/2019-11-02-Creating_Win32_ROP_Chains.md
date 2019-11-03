@@ -142,7 +142,7 @@ ESI ???????? => PTR to VirtualProtect - DWORD PTR of 0x1060E25C
 EDI 10101008 => ROP-Nop same as EIP
 ```
 
-`VirtualProtect` has different order of parameters but overall, it is very similar to `VirtualAlloc` so we can adjust the goals outlined in FuzzySec's blogpost subtly. 
+`VirtualProtect` has different parameters but overall, it is very similar to `VirtualAlloc` so we can adjust the goals outlined in FuzzySec's blogpost subtly. 
 
 The value for the `dwSize` parameter was automatically chosen by a mona operation at some point it is more than enough space (513 bytes) for our calculator shellcode so I just left it. 
 
