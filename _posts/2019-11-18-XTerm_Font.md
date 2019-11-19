@@ -29,3 +29,5 @@ I went ahead and installed `font-manager` with `apt-get install font-manager` an
 Next, just open terminal window and then select `Edit` --> `Preferences` --> check `Custom font: Fixed SemiCondensed 10`.
 
 Now your terminal should look just like XTerm! Hopefully this saves someone 2 hours.
+
+![](/assets/images/AWE/xterm.JPG)
