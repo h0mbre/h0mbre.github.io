@@ -13,7 +13,7 @@ tags:
 ---
 
 ## Introduction
-In mid-November I decided to try and start a project that would be both fun and educational. I settled on trying to come up with a somewhat creative C2 channel proof-of-concept that involved steganography and a somewhat trusted domain instead of bespoke infrastructure. I don't know much about Red Teaming, this will become apparent as you read this post. I'm mostly going off of high-level concepts I've gathered from passively consuming red teaming material that has passed over my Twitter timeline. I know there are agents/implants in networks that need to be tasked and that need to stealthily send data back to a C2 server. That's about it, folks!
+In late-November I decided to try and start a project that would be both fun and educational. I settled on trying to come up with a somewhat creative C2 channel proof-of-concept that involved steganography and a somewhat trusted domain instead of bespoke infrastructure. I don't know much about Red Teaming, this will become apparent as you read this post. I'm mostly going off of high-level concepts I've gathered from passively consuming red teaming material that has passed over my Twitter timeline. I know there are agents/implants in networks that need to be tasked and that need to stealthily send data back to a C2 server. That's about it, folks!
 
 I started by looking at open-source C2 channel concepts that involved trusted web applications or domains and found quite a few awesome projects, such as: [Slackor](https://github.com/Coalfire-Research/Slackor), [gcat](https://github.com/byt3bl33d3r/gcat), and [twittor](https://github.com/PaulSec/twittor). 
 
