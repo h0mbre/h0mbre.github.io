@@ -255,6 +255,3 @@ Since we're authenticated when we post to Imgur's Gallery, we can post large `PN
 
 ## Conclusion
 As you can see, we successfully retrieved a payload from our agent! Thanks for playing along. I had a lot of fun making this and will probably create something much more versatile and robust next year. Please visit the Dali repo for more information about the tool. Thank you and have a great end of the year, cheers!
-
----TO BE CONTINUED---
-
