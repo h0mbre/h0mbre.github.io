@@ -196,3 +196,20 @@ for i in range(img.size[0]): # for every pixel:
 Our image now holds the red pixel values it needs so that when the client looks at all the absolute LSB differences in red pixels, it comes out with our command string. 
 
 ## Introducing Dali
+To really test out my ideas, I had to build at least half of a C2 framework, namely the server side. Dali, named after the famous surrealist who had a penchant for creating less than normal paintings, is a command line interface (based in functionality off of Metasploit) that allows you to:
+- Create stego'd images with hidden commands
+- Create albums for client responses
+- Create logical agent/implant entities to manage tasking
+- Create/Manage tasking events to retrieve information from and execute commands on agents/implants
+
+Tasking events involve uploading images to Imgur. 
+
+Dali uses MySQL for bookeeping. Remember, this is just to demonstrate a PoC so Dali might be buggy. Here's how to use it!
+
+### What You Will Need
+- Please consult the Imgur API documentation and read the Terms of Service for API applications
+- Obtain a Client-ID by registering your application
+- Obtain a Bearer token by creating an authenticated account and tying it to your API client
+- Configure MySQL to accept credentialed logins (just because you can access MySQL as root on Kali doesn't mean it's been configured!)
+
+### High Level Overview
