@@ -33,6 +33,16 @@ After some research, I settled on Imgur. Imgur has some advantages to it, you ca
 One large drawback is that anonymously uploaded images are not indexed and searchable in the 'Gallery.' This would mean that in order to complete tasking, the tasking-side of the framework would have to be authenticated. But we will make do! (There are lots of different ways you can configure this communication paradigm, my way is not the best. Maybe I'm saving something better for later...)
 
 ## Creating A Steganography Method
-This is where I spent the most time. `JPEG` files are unreliable when uploaded to Imugr as they do not retain their binary integrity. This is by design obviously, so `JPEG` is out as a file format. (Though that didn't stop me from trying for multiple nights!) After some early research, I discovered that `PNG` files contain a fourth pixel value known as an 'alpha-channel'. This alpha-channel value determines the opacity of that specific pixel. In the around 30 `PNG` files I examined, all alpha-channels were set to `255`. 
+This is where I spent the most time. `JPEG` files are unreliable when uploaded to Imugr as they do not retain their binary integrity. This is by design obviously, so `JPEG` is out as a file format. (Though that didn't stop me from trying for multiple nights!) After some early research, I discovered that `PNG` files contain a fourth pixel value known as an 'alpha-channel' (The other three values being: Red, Gree, and Blue). This alpha-channel value determines the opacity of that specific pixel. In the ~30 `PNG` files I examined, all alpha-channels were set to `255`. This seemed like a good target to hide data. 
+
+My first approach was to simply base64 encode a string, a command let's say, and then hardcode a dictionary in Python so that each possible base64 character could act as a key, and they would correspond to a value of `255` - `190`. This would look strange if someone examined the pixel data though, as alpha-channel values were typically not varied. Second, and much more simply, there was a huge error in my Python that led me to believe that each time I opened a `PNG` image, the alpha-channel values were set to `255` by the Python library `PIL`. So I threw this idea away, although in hindsight it would've worked fine, besides the fact that we would've had "weird" alpha-channel values. 
+
+There was also the problem of picking the right image size. Imgur has strict limits on what types of account are allowed to upload large files. Authenticated accounts can upload `5MB` `PNG` files and unauthenticated accounts can upload `1MB` `PNG` files, anything larger than these size-limits would be converted to `JPEG`. This threw a wrench in some of my early techniques. 
+
+### Settling Down And Marrying Red Value Diffs
+Ultimately I came up with a method that would prioritize the normalcy of the image's appearance but also minimize the amount of pixel values changed. 
+
+
+
 
 
