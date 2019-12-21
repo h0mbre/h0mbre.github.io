@@ -13,3 +13,4 @@ tags:
 ---
 
 ## Introduction
+In mid-November I decided to try and start a project that would be both fun and educational. I settled on trying to come up with a somewhat creative C2 channel proof-of-concept that involved steganography. 
