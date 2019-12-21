@@ -233,7 +233,9 @@ We set the album type to `unauth` and also provide a `title` for the album. This
 [![asciicast](https://asciinema.org/a/YmyjgMgTPbOVHgKrvEuTGYM9b.svg)](https://asciinema.org/a/YmyjgMgTPbOVHgKrvEuTGYM9b)
 
 ### Image Creation
-Now that we've created an album, we're ready to create an image to actually upload and task our 
+Now that we've created an album, we're ready to create an image to actually upload and task our agent, we can go view that album's details in the `List` module. We will take the album ID in the `List` module, and use it to configure our image. Dali will look up the album ID in MySQL and then append the album's delete hash from Imgur into our command string so that the agent can respond by editing that album. The `Base-Image` is the image we are altering. `Command` is obviously what we want to run on our agent. 
+
+[![asciicast](https://asciinema.org/a/hBNQIm7TpZjf1mSNAY5H76cje.svg)](https://asciinema.org/a/hBNQIm7TpZjf1mSNAY5H76cje)
 
 ---TO BE CONTINUED---
 
