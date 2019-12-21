@@ -62,7 +62,8 @@ So for instance, if our 8-digit binary number was `00000010`, we would know that
 To recap, our stego method does the following:
 1. Takes a command string, let's say `hostname`, and base64 encodes this string. (It is also encrypted in the actual program)
 2. We now have the string, `aG9zdG5hbWU=`
-3. If we map this using our dictionary, with some code like the following, we get a nice output of the binary numbers we need in the image: ```python
+3. If we map this using our dictionary, with some code like the following, we get a nice output of the binary numbers we need in the image: 
+```python
 encode_keys = {'=': '00000001', '/': '00000010', '+': '00000011', 'Z': '00000100', 'Y': '00000101', 'X': '00000110', 'W': '00000111', 'V': '00001000', 'U': '00001001', 'T': '00001010', 'S': '00001011', 'R': '00001100', 'Q': '00001101', 'P': '00001110', 'O': '00001111', 'N': '00010000', 'M': '00010001', 'L': '00010010', 'K': '00010011', 'J': '00010100', 'I': '00010101', 'H': '00010110', 'G': '00010111', 'F': '00011000', 'E': '00011001', 'D': '00011010', 'C': '00011011', 'B': '00011100', 'A': '00011101', 'z': '00011110', 'y': '00011111', 'x': '00100000', 'w': '00100001', 'v': '00100010', 'u': '00100011', 't': '00100100', 's': '00100101', 'r': '00100110', 'q': '00100111', 'p': '00101000', 'o': '00101001', 'n': '00101010', 'm': '00101011', 'l': '00101100', 'k': '00101101', 'j': '00101110', 'i': '00101111', 'h': '00110000', 'g': '00110001', 'f': '00110010', 'e': '00110011', 'd': '00110100', 'c': '00110101', 'b': '00110110', 'a': '00110111', '9': '00111000', '8': '00111001', '7': '00111010', '6': '00111011', '5': '00111100', '4': '00111101', '3': '00111110', '2': '00111111', '1': '01000000', '0': '01000001'}
 
 command = 'hostname'
