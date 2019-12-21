@@ -238,5 +238,23 @@ Now that we've created an album, we're ready to create an image to actually uplo
 
 [![asciicast](https://asciinema.org/a/hBNQIm7TpZjf1mSNAY5H76cje.svg)](https://asciinema.org/a/hBNQIm7TpZjf1mSNAY5H76cje)
 
+### Agent Creation
+Now that we've created an image, we need to utilize the `Agent` module to create a logical agent entity for book-keeping purposes. Agents need to be set with a `Title` and `Tags` value so we know what kind of title and tags the agent will be searching for on Imgur for tasking. We'll also confirm our image was created and logged to MySQL correctly with the `List` module once more.
+
+[![asciicast](https://asciinema.org/a/xrdfzsnqmCh1e63fJkIi8SKuU.svg)](https://asciinema.org/a/xrdfzsnqmCh1e63fJkIi8SKuU)
+
+### Tasking
+It's time, now we can task our agent. Remember, we are simulating an agent with a simple Python script that will browse to our uploaded tasking image and respond accordingly; however, we'll still go through the motions of setting a `Title` and `Tags` value to simulate creating tasking that our agent would hypothetically find based on its own values for those parameters. `Tasking-Image` is the `ID` of a created image. `Bearer-Token` is the auth token to upload images to Imgur's Gallery. 
+
+[![asciicast](https://asciinema.org/a/JOQTAqAZJVcdsxheitwDw82K8.svg)](https://asciinema.org/a/JOQTAqAZJVcdsxheitwDw82K8)
+
+### Retrieving Responses
+Since we're authenticated when we post to Imgur's Gallery, we can post large `PNG` files; however, the agent cannot respond with the same fize file since it will be unauthenticated for `Short` response mode. In this case, it will crop the image we provided to 1500x500 pixels, encode its response in the image, and upload the response image to the unauthenticated album we created for it. Once we enter the `Response` module, Dali will comb through `PENDING` taskings in MySQL and check the associated albums. If it finds response images, it will delete the original tasking in the Gallery, log the response in MySQL, and update the agent's status back to `IDLE` from `TASKED`. (Keep in mind I'm manually responding with our agent simulation script.)
+
+[![asciicast](https://asciinema.org/a/Q5v6vsJWQsMtqRPOii4xpVCmp.svg)](https://asciinema.org/a/Q5v6vsJWQsMtqRPOii4xpVCmp)
+
+## Conclusion
+As you can see, we successfully retrieved a payload from our agent! Thanks for playing along. I had a lot of fun making this and will probably create something much more versatile and robust next year. Please visit the Dali repo for more information about the tool. Thank you and have a great end of the year, cheers!
+
 ---TO BE CONTINUED---
 
