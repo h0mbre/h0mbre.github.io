@@ -213,5 +213,7 @@ Dali uses MySQL for bookeeping. Remember, this is just to demonstrate a PoC so D
 - Configure MySQL to accept credentialed logins (just because you can access MySQL as root on Kali doesn't mean it's been configured!)
 
 ### High Level Overview
+Here is a high-level overview of how our process works. Keep in mind that we are merely simulating a client in this process with a Python script, so will just be hardcoding URLs. But the premise is still valid as described in the diagram. 
+
 ![](/assets/images/AWE/overview.JPG)
 
