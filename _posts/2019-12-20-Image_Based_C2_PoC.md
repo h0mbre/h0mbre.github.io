@@ -48,7 +48,7 @@ Ultimately I came up with a method that would prioritize the normalcy of the ima
 #### Trickery
 Red pixel values can range from `0-255` or `00000000-11111111` in binary. I decided to take the absolute difference between every neighboring red pixel's least significant bit and concatenate every group of 8 values into a new binary number. Let me show you. 
 
-Let's say we have neighboring red pixel values of `128` and `128` or `1000000` and `1000000`. The least significant bit in each value is the furthest right digit, or `0` in both cases. The absolute difference of `0` and `0` is `0` of course. So this absolute difference would form the first digit of our new binary number. Right now we have `0xxxxxxx` as our binary number. We would repeat this process, moving to the next two red values each time, until we had an 8-digit binary number. 
+Let's say we have neighboring red pixel values of `128` and `128` or `1000000` and `1000000`. The least significant bit in each value is the furthest right digit, or `0` in both cases. The absolute difference of `0` and `0` is `0` of course. So this absolute difference would form the first digit of our new binary number. Right now we have `0xxxxxxx` as our binary number. We would repeat this process, moving to the next two red values each time, until we had an 8-digit binary number. Given a starting point of 3.6 million pixels, this leaves us with: ((3,686,400/2) / 8) = **230,400** values to use. 
 
 #### Mapping Differences to Base64
 The next step, once we have our 8-digit binary number, is to somehow translate that into something meaningful. This was accomplished using a hardcoded dictionary, `encode_keys`, which looks like this:
@@ -81,6 +81,7 @@ Ouput:
 ['00110111', '00010111', '00111000', '00011110', '00110100', '00010111', '00111100', '00110000', '00110110', '00000111', '00001001', '00000001']
 ```
 
+4. To arrive at these numbers, remember, we need the absolute value of the red pixel value least significant bits to match our list here. For instance, the first number, `00110111`, we would need differences of 
 
 
 
