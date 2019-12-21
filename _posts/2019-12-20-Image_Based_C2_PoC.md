@@ -206,19 +206,19 @@ Tasking events involve uploading images to Imgur.
 
 Dali uses MySQL for bookeeping. Remember, this is just to demonstrate a PoC so Dali might be buggy. Here's how to use it!
 
-### What You Will Need
-- Please consult the Imgur API documentation and read the Terms of Service for API applications
-- Obtain a Client-ID by registering your application
-- Obtain a Bearer token by creating an authenticated account and tying it to your API client
-- Configure MySQL to accept credentialed logins (just because you can access MySQL as root on Kali doesn't mean it's been configured!)
-
 ### High Level Overview
 Here is a high-level overview of how our process works. Keep in mind that we are merely simulating a client in this process with a Python script, so will just be hardcoding URLs. But the premise is still valid as described in the diagram. 
 
 ![](/assets/images/AWE/overview.JPG)
 
 ## How To Use Dali
-Here I will show you step by step how to create tasking for 3 different agents for the 3 different types of tasking. 
+Here I will show you step by step how to create unauth/short-response tasking for an implant.
+
+### What You Will Need
+- Please consult the Imgur API documentation and read the Terms of Service for API applications
+- Obtain a Client-ID by registering your application
+- Obtain a Bearer token by creating an authenticated account and tying it to your API client
+- Configure MySQL to accept credentialed logins (just because you can access MySQL as root on Kali doesn't mean it's been configured!)
 
 ### Options
 As you can see we have several different modules and their descriptions of their functions. 
