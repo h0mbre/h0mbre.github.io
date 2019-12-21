@@ -1,6 +1,6 @@
 ---
 layout: single
-title: An Image-Based C2 Channel Proof-of-Concept 
+title: Image-Based C2 Channel Proof-of-Concept 
 date: 2019-12-20
 classes: wide
 header:
