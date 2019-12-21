@@ -107,9 +107,57 @@ command_encoded = base64.b64encode(command)
 command_encoded = command_encoded.decode("utf-8")
 ```
 
+Next, we grab our image and create a list of red pixel values using the `Image` object of the `PIL` library.
+```python
+img = Image.open("example.png")
+pixels = img.load()
 
+reds = []
+for i in range(img.size[0]): # for every pixel:
+    for j in range(img.size[1]):
+        reds.append(pixels[i,j][0])
+```
 
+Now reds consists of only the red pixel values in decimal `0`-`255`. We need to conver these to binary, remember?
+```python
+bytez = []
+for i in reds:
+   bytez.append('{:08b}'.format(i))
+```
 
+We can now subtract the last bit in all of these 8-digit binary numbers from their neighbors and iterate through the whole list of red values doing this until we have a new list consisting of only LSB differences. 
+```python
+differences = []
+counter = 0
+while counter < len(bytez):
+   differences.append(str(abs(int(bytez[counter][7]) - int(bytez[counter + 1][7]))))
+   counter += 2
+```
 
+Next we need to translate our base64 encoded command into our binary numbers in `encoded_keys` dictionary I shared earlier. 
+```python
+translation = []
+for x in command_encoded:
+   translation.append(encode_keys[x])
+```
+
+Now we need to make this new list `translation` of 8-digit binary numbers, into a list of single binary numbers just like our `differences` list so that we can compare the two. 
+```python
+final = []
+for x in translation:
+   final += (list(x))
+```
+
+Now that `differences`, the list of real value differences from the image, and `final`, the list of desired differences we need in the image are the same format, let's compare them and create a new list of the indexes where they differ called `mismatch`. 
+```python
+counter = 0
+mismatch = []
+while counter < len(final):
+   if final[counter] != differences[counter]:
+      mismatch.append(counter)
+      counter += 1
+   else:
+      counter += 1
+```
 
 
