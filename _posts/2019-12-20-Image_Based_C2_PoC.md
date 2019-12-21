@@ -225,5 +225,6 @@ As you can see we have several different modules and their descriptions of their
 
 ![](/assets/images/AWE/options.PNG)
 
+### Album Creation
 
 
