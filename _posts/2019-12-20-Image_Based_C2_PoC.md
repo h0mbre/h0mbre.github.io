@@ -269,4 +269,4 @@ kali
 ```
 
 ## Conclusion
-As you can see, we successfully retrieved a payload from our agent! Thanks for playing along. I had a lot of fun making this and will probably create something much more versatile and robust next year. Please visit the Dali repo for more information about the tool. Glad I got to do this, learned a lot of random things. Thank you and have a great end of the year, cheers!
+As you can see, we successfully retrieved a payload from our agent! Thanks for playing along. I had a lot of fun making this and will probably create something much more versatile and robust next year. Please visit the [Dali repo](https://github.com/h0mbre/Dali) for more information about the tool. Glad I got to do this, learned a lot of random things. Thank you and have a great end of the year, cheers!
