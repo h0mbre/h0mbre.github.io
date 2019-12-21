@@ -93,9 +93,19 @@ Here we have our command, and then pad it so that it's a multiple of `16` for en
 ```python
 command = 'hostname'
 while len(command) % 16 != 0:
-			command += "~"
+   command += "~"
 ```
 
+Next we hardcode some encryption keys and encrypt/base64 encode the string. Harcoding keys isn't ideal and for a more realistic implementation sometime in 2020 I will do it differently, but for a PoC it will suffice. 
+```python 
+key = 'dali melts clock'
+iv = 'this is an iv456'
+encryption_scheme = AES.new(key, AES.MODE_CBC, iv)
+command = encryption_scheme.encrypt(command)
+
+command_encoded = base64.b64encode(command)
+command_encoded = command_encoded.decode("utf-8")
+```
 
 
 
