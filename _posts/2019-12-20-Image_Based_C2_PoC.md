@@ -81,7 +81,9 @@ Ouput:
 ['00110111', '00010111', '00111000', '00011110', '00110100', '00010111', '00111100', '00110000', '00110110', '00000111', '00001001', '00000001']
 ```
 
-4. To arrive at these numbers, remember, we need the absolute value of the red pixel value least significant bits to match our list here. For instance, the first number, `00110111`, we would need differences of 
+4. To arrive at these numbers, remember, we need the absolute difference of the red pixel value least significant bits to match our list here. For instance, the first number, `00110111`, we would need a difference of `0` for the first two red pixel pairs. An easy way to think about the least significant bit (LSB) is that, if it is a `0`, this means the number is `EVEN`, if it is `1`, this means the number is `ODD`. If our first two pixel values in the image we're editing were `127` and `128`, we would need to add or subtract one from one of the numbers so that the difference in the right-most column was `0` since the first digit we need is `0` (`00110111`). 
+5. Our code will scan the image for all of its red pixel LSB differences and add them to a list. 
+6. 
 
 
 
