@@ -161,7 +161,7 @@ while counter < len(final):
 ```
 
 Now that we know the location of every pixel-pair that needs to be changed, we can alter those in our original `reds` list. If the starting value of the red pixel is `255` we obviously can't add to it if it needs changing, and if it's `0`, we can't subtract from it. Those things have been considered:
-```
+```python
 for x in mismatch:
    if reds[x*2] == 0:
       reds[x*2] = (reds[x*2] + 1)
