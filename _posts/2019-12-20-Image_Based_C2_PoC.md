@@ -258,6 +258,7 @@ Because you cannot see the top of the agent response in the video above, I've po
 Dali/Response> get response 1
 
 ---RESPONSE FROM AGENT 1 (received at: 2019-12-19 13:15:21)---
+
 uid=0(root) gid=0(root) groups=0(root)
 kali
   PID TTY          TIME CMD
