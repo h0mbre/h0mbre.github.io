@@ -27,6 +27,12 @@ This helped me solidify my goals:
 
 With those goals in mind, let's proceed!
 
-## 
+## Picking A Trusted Domain
+After some research, I settled on Imgur. Imgur has some advantages to it, you can upload images anonymously and also anonymously create albums that are not viewable to casual site-goers. 
+
+One large drawback is that anonymously uploaded images are not indexed and searchable in the 'Gallery.' This would mean that in order to complete tasking, the tasking-side of the framework would have to be authenticated. But we will make do! (There are lots of different ways you can configure this communication paradigm, my way is not the best. Maybe I'm saving something better for later...)
+
+## Creating A Steganography Method
+This is where I spent the most time. `JPEG` files are unreliable when uploaded to Imugr as they do not retain their binary integrity. This is by design obviously, so `JPEG` is out as a file format. (Though that didn't stop me from trying for multiple nights!) After some early research, I discovered that `PNG` files contain a fourth pixel value known as an 'alpha-channel'. This alpha-channel value determines the opacity of that specific pixel. In the around 30 `PNG` files I examined, all alpha-channels were set to `255`. 
 
 
