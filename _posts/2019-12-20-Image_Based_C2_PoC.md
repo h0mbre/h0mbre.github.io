@@ -83,7 +83,20 @@ Ouput:
 
 4. To arrive at these numbers, remember, we need the absolute difference of the red pixel value least significant bits to match our list here. For instance, the first number, `00110111`, we would need a difference of `0` for the first two red pixel pairs. An easy way to think about the least significant bit (LSB) is that, if it is a `0`, this means the number is `EVEN`, if it is `1`, this means the number is `ODD`. If our first two pixel values in the image we're editing were `127` and `128`, we would need to add or subtract one from one of the numbers so that the difference in the right-most column was `0` since the first digit we need is `0` (`00110111`). 
 5. Our code will scan the image for all of its red pixel LSB differences and add them to a list. 
-6. 
+6. Next, we will see where the differences of the original image differ from our required differences. Once we have identified the pixel value pairs that need to be changed, we can randomly select which one of the two numbers in the respective pairs gets added to or subtracted from so that our stego method remains as random as possible where pixels need changing, but keep original pixel values intact where possible. 
+7. Once we have altered those pixel values, our image has hidden our command string and we are ready to go. 
+
+#### Stego Code Dissected
+In this section I'm going to attempt to explain my horrible Python I used to stego the images. For simplicity sake, I will leave out unnecessary details about the actual implementation, suchas API tokens and such, so that we just cover the stego. 
+
+Here we have our command, and then pad it so that it's a multiple of `16` for encryption purposes. I realize the `while` loop here isn't efficient and we have the modulus operator already in play, why not use that? Because a friend suggested I change it, and I'm leaving it in there to annoy him. Thanks Jorge. 
+```python
+command = 'hostname'
+while len(command) % 16 != 0:
+			command += "~"
+```
+
+
 
 
 
