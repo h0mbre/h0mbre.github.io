@@ -226,5 +226,7 @@ As you can see we have several different modules and their descriptions of their
 ![](/assets/images/AWE/options.PNG)
 
 ### Album Creation
+We can create two different types of albums: authenticated and unauthenticated. For short responses from the client, we will use unauthenticated since this will limit our `PNG` size to `1MB`. If we were anticipating a long response, we would give the client the means to use an authenticated album which can handle `5MB` `PNG` files. We will create both types of albums here.
 
+---TO BE CONTINUED---
 
