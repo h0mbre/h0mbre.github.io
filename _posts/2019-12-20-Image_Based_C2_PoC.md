@@ -226,7 +226,14 @@ As you can see we have several different modules and their descriptions of their
 [![asciicast](https://asciinema.org/a/5oiw20WPEWP279f6gvKizo7hJ.svg)](https://asciinema.org/a/5oiw20WPEWP279f6gvKizo7hJ)
 
 ### Album Creation
-We can create two different types of albums: authenticated and unauthenticated. For short responses from the client, we will use unauthenticated since this will limit our `PNG` size to `1MB`. If we were anticipating a long response, we would give the client the means to use an authenticated album which can handle `5MB` `PNG` files. We will create both types of albums here.
+We can create two different types of albums: authenticated and unauthenticated. For short responses from the client, we will use unauthenticated since this will limit our `PNG` size to `1MB`. If we were anticipating a long response, we would give the client the means to use an authenticated album which can handle `5MB` `PNG` files. For the purposes of this demo will be making an unauthenticated album. I'm using a demo version of Dali so you will see generic values throughout the presentation.
+
+We set the album type to `unauth` and also provide a `title` for the album. This also then gives us the option to set a `Client-ID` value in the options for API usage. We are then given the album ID hash from Imgur along with the delete-hash for the album. Typically, delete-hashes are used for unauth accounts to prove ownership of an object on Imgur. 
+
+[![asciicast](https://asciinema.org/a/YmyjgMgTPbOVHgKrvEuTGYM9b.svg)](https://asciinema.org/a/YmyjgMgTPbOVHgKrvEuTGYM9b)
+
+### Image Creation
+Now that we've created an album, we're ready to create an image to actually upload and task our 
 
 ---TO BE CONTINUED---
 
