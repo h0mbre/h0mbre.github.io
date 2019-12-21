@@ -40,7 +40,23 @@ My first approach was to simply base64 encode a string, a command let's say, and
 There was also the problem of picking the right image size. Imgur has strict limits on what types of account are allowed to upload large files. Authenticated accounts can upload `5MB` `PNG` files and unauthenticated accounts can upload `1MB` `PNG` files, anything larger than these size-limits would be converted to `JPEG`. This threw a wrench in some of my early techniques. 
 
 ### Settling Down And Marrying Red Value Diffs
-Ultimately I came up with a method that would prioritize the normalcy of the image's appearance but also minimize the amount of pixel values changed. 
+Ultimately I came up with a method that would prioritize the normalcy of the image's appearance but also minimize the amount of pixel values changed. Here's how it works. 
+
+#### Pixels
+`PNG` pixel values can be represented with a tuple containing Red, Green, Blue, and Alpha values when using the `PIL` Python library. Using the library, we can gather all of an image's pixel values in a list of tuples. In a 2560x1440 resolution image, that is 3.6 million tuples in a list with four values per tuple. An example list of tuples would look something like this: `[(128, 0, 128, 255), (128, 0, 128, 255)...]`. This continues for 3.6 million tuples. 
+
+#### Trickery
+Red pixel values can range from `0-255` or `00000000-11111111` in binary. I decided to take the absolute difference between every neighboring red pixel's least significant bit and concatenate every group of 8 values into a new binary number. Let me show you. 
+
+Let's say we have neighboring red pixel values of `128` and `128` or `1000000` and `1000000`. The least significant bit in each value is the furthest right digit, or `0` in both cases. The absolute difference of `0` and `0` is `0` of course. So this absolute difference would form the first digit of our new binary number. Right now we have `0xxxxxxx` as our binary number. We would repeat this process, moving to the next two red values each time, until we had an 8-digit binary number. 
+
+#### Mapping Differences to Base64
+The next step, once we have our 8-digit binary number, is to somehow translate that into something meaningful. This was accomplished using a hardcoded dictionary, `encode_keys`, which looks like this:
+```encode_keys = {'=': '00000001', '/': '00000010', '+': '00000011', 'Z': '00000100', 'Y': '00000101', 'X': '00000110', 'W': '00000111', 'V': '00001000', 'U': '00001001', 'T': '00001010', 'S': '00001011', 'R': '00001100', 'Q': '00001101', 'P': '00001110', 'O': '00001111', 'N': '00010000', 'M': '00010001', 'L': '00010010', 'K': '00010011', 'J': '00010100', 'I': '00010101', 'H': '00010110', 'G': '00010111', 'F': '00011000', 'E': '00011001', 'D': '00011010', 'C': '00011011', 'B': '00011100', 'A': '00011101', 'z': '00011110', 'y': '00011111', 'x': '00100000', 'w': '00100001', 'v': '00100010', 'u': '00100011', 't': '00100100', 's': '00100101', 'r': '00100110', 'q': '00100111', 'p': '00101000', 'o': '00101001', 'n': '00101010', 'm': '00101011', 'l': '00101100', 'k': '00101101', 'j': '00101110', 'i': '00101111', 'h': '00110000', 'g': '00110001', 'f': '00110010', 'e': '00110011', 'd': '00110100', 'c': '00110101', 'b': '00110110', 'a': '00110111', '9': '00111000', '8': '00111001', '7': '00111010', '6': '00111011', '5': '00111100', '4': '00111101', '3': '00111110', '2': '00111111', '1': '01000000', '0': '01000001'}```
+
+
+
+
 
 
 
