@@ -253,5 +253,20 @@ Since we're authenticated when we post to Imgur's Gallery, we can post large `PN
 
 [![asciicast](https://asciinema.org/a/Q5v6vsJWQsMtqRPOii4xpVCmp.svg)](https://asciinema.org/a/Q5v6vsJWQsMtqRPOii4xpVCmp)
 
+Because you cannot see the top of the agent response in the video above, I've posted it here in plain-text.
+```terminal_session
+Dali/Response> get response 1
+
+---RESPONSE FROM AGENT 1 (received at: 2019-12-19 13:15:21)---
+uid=0(root) gid=0(root) groups=0(root)
+kali
+  PID TTY          TIME CMD
+    1 ?        00:00:02 systemd
+    2 ?        00:00:00 kthreadd
+    3 ?        00:00:00 rcu_gp
+    4 ?        00:00:00 rcu_par_gp
+--snip--
+```
+
 ## Conclusion
 As you can see, we successfully retrieved a payload from our agent! Thanks for playing along. I had a lot of fun making this and will probably create something much more versatile and robust next year. Please visit the Dali repo for more information about the tool. Thank you and have a great end of the year, cheers!
