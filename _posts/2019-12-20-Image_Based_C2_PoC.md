@@ -160,4 +160,39 @@ while counter < len(final):
       counter += 1
 ```
 
+Now that we know the location of every pixel-pair that needs to be changed, we can alter those in our original `reds` list. If the starting value of the red pixel is `255` we obviously can't add to it if it needs changing, and if it's `0`, we can't subtract from it. Those things have been considered:
+```
+for x in mismatch:
+   if reds[x*2] == 0:
+      reds[x*2] = (reds[x*2] + 1)
+   elif reds[x*2] == 255:
+      reds[x*2] = (reds[x*2] - 1)
+   else:
+      reds[x*2] = (reds[x*2] + (random.choice([-1, 1])))
+```
 
+But how will our agent/implant know when to stop reading into the pixel values? How will it know when to stop? If you look closely at the encoding dictionary, you'll see none of the keys start with a `1`. Therefore, if our agent/implant sees a `1` as the first digit of an 8-digit binary number, it knows to stop. Let's ensure that happens my making the very first number after our command payload is a `1`. This portion checks that absolute difference, if it's already `1`, do nothing. If it's `0`, make it a `1` by changing the first operand in the pair by one. 
+```python
+terminator_index = len(command_encoded) * 8 * 2
+term_diff = abs(reds[terminator_index] - reds[terminator_index + 1])
+if term_diff % 2 == 0:
+   if reds[terminator_index] == 255:
+      reds[terminator_index] = 254
+   elif reds[terminator_index] == 0:
+      reds[terminator_index] = 1
+   else:
+      reds[terminator_index] = reds[terminator_index] + random.choice([-1,1])
+```
+
+Finally, we save the pixel values into actual `Image` object we created!
+```python
+counter = 0
+for i in range(img.size[0]): # for every pixel:
+   for j in range(img.size[1]):
+      pixels[i,j] = (reds[counter], pixels[i,j][1], pixels[i,j][2])
+      counter += 1
+```
+
+Our image now holds the red pixel values it needs so that when the client looks at all the absolute LSB differences in red pixels, it comes out with our command string. 
+
+## Introducing Dali
