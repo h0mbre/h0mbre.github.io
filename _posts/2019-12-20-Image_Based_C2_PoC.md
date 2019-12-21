@@ -224,7 +224,7 @@ Here I will show you step by step how to create unauth/short-response tasking fo
 ### Options
 As you can see we have several different modules and their descriptions of their functions. 
 
-[![asciicast](https://asciinema.org/a/5oiw20WPEWP279f6gvKizo7hJ.svg)](https://asciinema.org/a/5oiw20WPEWP279f6gvKizo7hJ)
+[![asciicast](https://asciinema.org/a/jQbdCGdCzZzDkIUNdNVjJ9YNw.svg)](https://asciinema.org/a/jQbdCGdCzZzDkIUNdNVjJ9YNw)
 
 ### Album Creation
 We can create two different types of albums: authenticated and unauthenticated. For short responses from the client, we will use unauthenticated since this will limit our `PNG` size to `1MB`. If we were anticipating a long response, we would give the client the means to use an authenticated album which can handle `5MB` `PNG` files. For the purposes of this demo will be making an unauthenticated album. I'm using a demo version of Dali so you will see generic values throughout the presentation.
