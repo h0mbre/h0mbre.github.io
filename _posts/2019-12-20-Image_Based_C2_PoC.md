@@ -217,3 +217,13 @@ Here is a high-level overview of how our process works. Keep in mind that we are
 
 ![](/assets/images/AWE/overview.JPG)
 
+## How To Use Dali
+Here I will show you step by step how to create tasking for 3 different agents for the 3 different types of tasking. 
+
+### Options
+As you can see we have several different modules and their descriptions of their functions. 
+
+![](/assets/images/AWE/options.PNG)
+
+
+
