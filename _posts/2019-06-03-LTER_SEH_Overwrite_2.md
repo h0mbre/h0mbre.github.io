@@ -180,7 +180,7 @@ Let's divide `f5` by two and see what we get. The Windows calc says the answer i
 
 Perfect. But since we have to use a couple `SUB` operations, we have to come up with a way to subtract from our `0d` value that was already ok and not restricted. We don't want to put any instructions in that are `00` since that's a null byte. We can simply subtract `01` the first sub operation and the leftover amount `c7` in the second operation. No division required to figure that out. 
 + Sub Operation 1 = subtract `01`
-+ Sub Operation 2 = subtract `c7`.
++ Sub Operation 2 = subtract `0c`.
 
 So all together our commands will look like: 
 ```nasm
