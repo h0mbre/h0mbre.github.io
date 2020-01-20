@@ -263,3 +263,15 @@ We also have to get a pointer to this character array so that we can put it in p
 ptr = addressof(usermode_addr)
 ```
 
+We should be able to put this `ptr` in our exploit code and have execution redirected to it; however, we still need to mark that area of memory with Read Write Execute privileges or else DEP will destroy us. We will use the API `VirtualProtect`, which you can read about [here](https://docs.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-virtualprotect). Go read my posts on ROP if you want more info on how to use this API. 
+
+Our code for this portion will be:
+```python
+result = kernel32.VirtualProtect(
+        usermode_addr,
+        c_int(len(shellcode)),
+        c_int(0x40),
+        byref(c_ulong())
+    )
+```
+
