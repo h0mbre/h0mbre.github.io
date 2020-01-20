@@ -212,6 +212,8 @@ hevd = create_file()
 send_buf(hevd)
 ```
 
+### Crash
+
 **READ AND UNDERSTAND THE LOGISTICS OF KERNEL DEBUGGING IN THE AFOREMENTIONED LAB SETUP BLOGS**
 
 We need to run this on the victim machine while it's being kernel debugged on our other Win7 host (the debugger). I like to run these commands in WinDBG once I have a connection to the victim on the debugger machine:
@@ -228,6 +230,6 @@ After entering those commands and having the symbols and paths load (it can take
 
 Awesome, we hit the right function, our IOCTL was correct. We can use `p` to step into this function one instruction at a time. Press `p` once, and then you can use `enter` afterwards as a shortcut as it will repeat your last command. We can also go to View, and then select disassembly which should follow the EIP and show you in real time the assembly instructions and also Registers. At some point, we should hopefully crash. 
 
-![](/assets/images/AWE/crash1.PNG)
+![](/assets/images/AWE/crash2.PNG)
 
 
