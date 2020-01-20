@@ -100,4 +100,34 @@ Next, is the `dwDesiredAccess` parameter. In Rootkit's [blog](https://rootkits.x
 
 I think you can figure out the other parameters. At this point, our `CreateFileA` and our exploit code looks like this:
 ```python
+import ctypes, sys, struct
+from ctypes import *
+from subprocess import *
 
+kernel32 = windll.kernel32
+
+def create_file():
+
+    hevd = kernel32.CreateFileA(
+        "\\\\.\\HackSysExtremeVulnerableDriver", 
+        0xC0000000, 
+        0, 
+        None, 
+        0x3, 
+        0, 
+        None)
+    
+    if (not hevd) or (hevd == -1):
+        print("[!] Failed to retrieve handle to device-driver with error-code: " + str(GetLastError()))
+        sys.exit(1)
+    else:
+        print("[*] Successfully retrieved handle to device-driver: " + str(hevd))
+        return hevd
+ ```
+ 
+ From the documentation, `CreateFileA` returns a handle to our device if successful and will give us an error code if it fails. We now have our handle, and we can finish our `DeviceIoControl` call. 
+ 
+ #### IOCTLs
+ 
+ The next thing we need after the handle (`hevd`), is our `dwIoControlCode`. Just a tip, if you see IOCTLs in IDA there's a good chance they are in decimal. This is a great [RE Stack Exchange](https://reverseengineering.stackexchange.com/questions/15283/ioctl-code-for-windows-driver) post which explains all of the nuance. 
+ 
