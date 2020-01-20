@@ -44,11 +44,16 @@ I used the following blogs as references:
 There are probably some I even forgot. Huge thanks to the blog authors, no way I could've finished these first two exploits without your help/wisdom. 
 
 ## Goal
-Our goal here is to complete an exploit for the HEVD stack overflow vuln on both Win7 x86 and Win7 x86-64. We will follow along closely with the aformentioned blog posts but will try slightly different methods to keep things interesting and to make sure we're actually learning and not just copy/pasting. 
+Our goal here is to complete an exploit for the HEVD stack overflow vuln on both Win7 x86 and Win7 x86-64. We will follow along closely with the aformentioned blog posts but will try slightly different methods to keep things interesting and to make sure we're actually learning. 
 
-Before this challenge, I had never worked with 64-bit architecture's before. I figured an old-fashioned stack overflow would be the best place to start for that, so we'll be completing that part second. 
+Before this challenge, I had never worked with 64-bit architectures before. I figured an old-fashioned stack overflow would be the best place to start for that, so we'll be completing that part second. 
 
 ## Windows 7 x86 Exploit
 
 ### Getting Started
+HEVD is an example of a [kernel-mode](https://docs.microsoft.com/en-us/windows-hardware/drivers/kernel/types-of-windows-drivers) driver meaning that it runs with kernel/ring-0 privileges. Exploitation of such a service may allow low priviliged users to elevate privileges to `nt authority/system` privileges. 
+
+You'll want to read over some of the [documentation on MSDN](https://docs.microsoft.com/en-us/windows-hardware/drivers/kernel/), especially the I/O portion, detailing how kernel-mode drivers are architected. 
+
+The [`DeviceIoControl`](https://docs.microsoft.com/en-us/windows/win32/devio/device-input-and-output-control-ioctl-) windows API allows userland applications to communicate directly with a device driver. One of the API's parameters is called an `IOCTL`. This is sort of like a system call from what I can tell that corresponds to certain programmatic functions and routines on the driver. If you send it a code of `1` from userland, for example, the device driver will have logic to parse that `IOCTL` and then execute the corresponding functionality. To interact with our driver 
 ![](/assets/images/AWE/DriverEntry.PNG)
