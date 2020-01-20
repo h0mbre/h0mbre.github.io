@@ -55,5 +55,21 @@ HEVD is an example of a [kernel-mode](https://docs.microsoft.com/en-us/windows-h
 
 You'll want to read over some of the [documentation on MSDN](https://docs.microsoft.com/en-us/windows-hardware/drivers/kernel/), especially the I/O portion, detailing how kernel-mode drivers are architected. 
 
-The [`DeviceIoControl`](https://docs.microsoft.com/en-us/windows/win32/devio/device-input-and-output-control-ioctl-) windows API allows userland applications to communicate directly with a device driver. One of the API's parameters is called an `IOCTL`. This is sort of like a system call from what I can tell that corresponds to certain programmatic functions and routines on the driver. If you send it a code of `1` from userland, for example, the device driver will have logic to parse that `IOCTL` and then execute the corresponding functionality. To interact with our driver 
+The [`DeviceIoControl`](https://docs.microsoft.com/en-us/windows/win32/devio/device-input-and-output-control-ioctl-) windows API allows userland applications to communicate directly with a device driver. One of the API's parameters is called an `IOCTL`. This is sort of like a system call from what I can tell that corresponds to certain programmatic functions and routines on the driver. If you send it a code of `1` from userland, for example, the device driver will have logic to parse that `IOCTL` and then execute the corresponding functionality. To interact with our driver, we'll need to use `DeviceIoControl`. 
+
+### `DeviceIoControl`
+Let' go ahead and take a look at the prototype API on MSDN:
+```cpp
+BOOL DeviceIoControl(
+  HANDLE       hDevice,
+  DWORD        dwIoControlCode,
+  LPVOID       lpInBuffer,
+  DWORD        nInBufferSize,
+  LPVOID       lpOutBuffer,
+  DWORD        nOutBufferSize,
+  LPDWORD      lpBytesReturned,
+  LPOVERLAPPED lpOverlapped
+);
+```
+
 ![](/assets/images/AWE/DriverEntry.PNG)
