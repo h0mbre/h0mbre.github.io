@@ -212,3 +212,18 @@ hevd = create_file()
 send_buf(hevd)
 ```
 
+**READ AND UNDERSTAND THE LOGISTICS OF KERNEL DEBUGGING IN THE AFOREMENTIONED LAB SETUP BLOGS**
+
+We need to run this on the victim machine while it's being kernel debugged on our other Win7 host (the debugger). I like to run these commands in WinDBG once I have a connection to the victim on the debugger machine:
++ `sympath\+ <path to the HEVD.pdb file>` <--- adds the symbols for HEVD to our symbols path
++ `.reload` <--- reloads symbols from path
++ `ed Kd_DEFAULT_Mask 8` <--- enables kernel debugging
++ `bp HEVD!TriggerStackOverflow` <--- sets a breakpoint on our desired function
+
+On the debugger press `ctrl` + `break` to pause the victim. Then enter those commands in the interactive `kd>` prompt. 
+
+After entering those commands and having the symbols and paths load (it can take a while), use `g` to resume execution on the victim. We'll run our code and we should hit our breakpoint since we're using the correct IOCTL. 
+
+![](/assets/images/AWE/crash1.PNG)
+
+
