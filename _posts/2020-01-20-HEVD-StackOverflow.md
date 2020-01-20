@@ -72,4 +72,32 @@ BOOL DeviceIoControl(
 );
 ```
 
+As you can see, `hDevice` is going to be a handle to our driver. We will need to use a separate API called [`CreateFileA`](https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilea) to open a handle to our driver. Let's take a look at that prototype:
+```cpp
+HANDLE CreateFileA(
+  LPCSTR                lpFileName,
+  DWORD                 dwDesiredAccess,
+  DWORD                 dwShareMode,
+  LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+  DWORD                 dwCreationDisposition,
+  DWORD                 dwFlagsAndAttributes,
+  HANDLE                hTemplateFile
+);
+```
+
+Typically, when interacting with these APIs you'd be writing applications in C or C++; however, we're going to be using Python with the help of a library called `ctypes`, which allows us to utilize several fine-grained data typing features of C. There's several ways of satisfying the parameters of `CreateFileA`; but we will be using hex codes. (I should also mention that we are using Python2.7 because I hate messing with the new `str` and `byte` data types in Python3 during exploit code development. Please don't yell at me. Also, if you were to port this to Python3, please be aware that these Windows APIs expect certain string encoding formats. `CreateFileA` will fail if you do not account for the fact that Python3 treats strings as Unicode.)
+
+I'll explain a couple of the parameters that I think need explaining and then I will leave the remainder to the sleuthing of the reader. It's important to not just be spoon fed these values and actually track down their meaning. I'm familiar with some of the APIs just by virtue of having done some intro-level shellcoding on Windows, but I'm far from an expert. I find it's most useful to track down examples of the API calls and see what they look like in code.
+
+The first value we need is the `lpFileName` value. We have access to the HEVD source code and could find it there; however, I think it's better to approach this as if the source code was a black box to us. We will open the `.sys` file in IDA Free 7.0 and see if we can track it down. 
+
+Once you open the file in IDA, you should be directed to the DriverEntry function. 
 ![](/assets/images/AWE/DriverEntry.PNG)
+
+As you can see, there is string right in this first function that has our `lpFileName`, `\\Device\\HackSysExtremeVulnerableDriver`. This will be formatted as `"\\\\.\\HackSysExtremeVulnerableDriver"` in our Python code. You can google to find out more about this value and how to format it. 
+
+Next, is the `dwDesiredAccess` parameter. In Rootkit's [blog](https://rootkits.xyz/blog/2017/08/kernel-stack-overflow/) we see that he has used the value `0xC0000000`. This can be explained by checking the [Access Mask Format](https://docs.microsoft.com/en-us/windows/win32/secauthz/access-mask-format?redirectedfrom=MSDN) documentation and looking up the corresponding potential values. We see that the most significat bit (most left) is set to `C` or `12` in decimal. We can look at [`winnt.h`](https://github.com/Alexpux/mingw-w64/blob/master/mingw-w64-tools/widl/include/winnt.h) to determine what this constant could mean. We see here that `GENERIC_READ` and `GENERIC_WRITE` are `0x80000000` and `0x40000000` respectively. `0xC0000000` is simply these two added together. It's actually intuitive! Wow!
+
+I think you can figure out the other parameters. At this point, our `CreateFileA` and our exploit code looks like this:
+```python
+
