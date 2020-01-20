@@ -143,3 +143,6 @@ def create_file():
 
 We now need to find what IOCTLs exist in the HEVD. Once again, we will use IDA. In the functions tab there is an `IrpDeviceIoCtlHandler` function which will need to untangle to determine what IOCTLs correspond to which function. Opening the function in IDA and drilling down until we find our desired function, we find it here: 
 ![](/assets/images/AWE/HACKSYS_EVD_STACKOVERFLOW.PNG)
+
+From here, all I did was just trace the path backwards until I found enough information to see what IOCTL needed to be sent to reach this spot. Going backwards one level, we reach this:
+![](/assets/images/AWE/IOCTL_OVERFLOW.PNG)
