@@ -193,7 +193,7 @@ def create_file():
 
 def send_buf(hevd):
 
-    buf = "A" * 5000
+    buf = "A" * 3000
     buf_length = len(buf)
     
     print("[*] Sending payload to driver...")
@@ -223,6 +223,10 @@ We need to run this on the victim machine while it's being kernel debugged on ou
 On the debugger press `ctrl` + `break` to pause the victim. Then enter those commands in the interactive `kd>` prompt. 
 
 After entering those commands and having the symbols and paths load (it can take a while), use `g` to resume execution on the victim. We'll run our code and we should hit our breakpoint since we're using the correct IOCTL. 
+
+![](/assets/images/AWE/crash1.PNG)
+
+Awesome, we hit the right function, our IOCTL was correct. We can use `p` to step into this function one instruction at a time. Press `p` once, and then you can use `enter` afterwards as a shortcut as it will repeat your last command. We can also go to View, and then select disassembly which should follow the EIP and show you in real time the assembly instructions and also Registers. At some point, we should hopefully crash. 
 
 ![](/assets/images/AWE/crash1.PNG)
 
