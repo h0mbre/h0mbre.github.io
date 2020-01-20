@@ -308,6 +308,7 @@ def send_buf(hevd):
 
     shellcode = bytearray(
     "\x90" * 100
+    "\xc3"
     )
 
     print("[*] Allocating shellcode character array...")
@@ -350,8 +351,10 @@ hevd = create_file()
 send_buf(hevd)
 ```
 
-Since our shellcode is just NOPs and we have our offset and EIP overwrite correct, this should just pass through execution and return back to the kernel and everything will be fine. If we get a crash here, something is wrong. A crash here means we corrupted some memory and didn't change it back to what it was supposed to be. Let's send this.
+Since our shellcode is just NOPs and the RET instruction we were trying execute when we crashed earlier, we have our offset and EIP overwrite correct, this should just pass through execution and return back to the kernel and everything will be fine. If we get a crash here, something is wrong. A crash here means we corrupted some memory and didn't change it back to what it was supposed to be. Let's send this.
 
 Not that I know what I'm doing, but I always resend those WinDBG commands each session. Just FYI.
 
 ![](/assets/images/AWE/crash3.PNG)
+
+Ok well that isn't good. We crashed because we went to some 
