@@ -232,4 +232,27 @@ Awesome, we hit the right function, our IOCTL was correct. We can use `p` to ste
 
 ![](/assets/images/AWE/crash2.PNG)
 
+We can see that when we crashed, we were executing a RET which will pop the top value on the stack (usually placed there by a CALL instruction) into EIP and return us to the address in EIP. In our case, that address was 0x41414141 which isn't mapped and caused us to Blue Screen of Death! We know that once we have EIP, we have a ton of power to redirect execution flow. You can use the `msf-pattern_create` utility in `/usr/bin` on Kali to create a pattern of 3000 bytes and find the offset. I'll leave that to you. Let's move onto the exploit now. 
+
+### Exploit
+
+Pattern create should've told you the offet we need to pad with junk to EIP is `2080`. The next 4 bytes should be a pointer to our shellcode. To make a buffer in memory and stuff it with our shellcode we will use some `ctypes` functions.
+
+We need to create a character array and fill it with our shellcode. Thanks to the Rootkit blog on this part. We will give our character array the name `usermode_addr` since it will end up informing a pointer to our shellcode in userland. Right now our driver is executing in kernel space, but we are going to create a buffer in userland and fill it with our shellcode, redirect execution to it, and then return execution back to the kernel space as if nothing ever happened. 
+
+Our code to create the buffer is:
+```python
+shellcode = bytearray(
+    "\x90" * 100
+    )
+
+usermode_addr = (c_char * len(shellcode)).from_buffer(shellcode)
+```
+
+I'm pretty sure this is the equivalent to:
+```c
+char usermode_addr[100] = { 0x90, 0x90, ... };
+```
+
+
 
