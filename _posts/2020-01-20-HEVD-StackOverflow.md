@@ -146,3 +146,6 @@ We now need to find what IOCTLs exist in the HEVD. Once again, we will use IDA. 
 
 From here, all I did was just trace the path backwards until I found enough information to see what IOCTL needed to be sent to reach this spot. Going backwards one level, we reach this:
 ![](/assets/images/AWE/IOCTL_OVERFLOW.PNG)
+
+We see that one of registers, EAX, is getting `0x222003` subtracted from it and if that result is zero, it's jumping to our desired function. From this we can basically tell that if we send the IOCTL `0x222003`, we will end up in our desired function. But that's too easy. Let's go all the way back to the `IrpDeviceIoCtlHandler` entry and see if we determine more about the IOCTL parsing logic. 
+![](/assets/images/AWE/Entry_tree.PNG)
