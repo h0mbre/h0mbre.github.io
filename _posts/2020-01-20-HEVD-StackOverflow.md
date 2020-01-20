@@ -249,10 +249,17 @@ shellcode = bytearray(
 usermode_addr = (c_char * len(shellcode)).from_buffer(shellcode)
 ```
 
-I'm pretty sure this is the equivalent to:
+I'm pretty sure this is the equivalent to the following in C:
 ```c
 char usermode_addr[100] = { 0x90, 0x90, ... };
 ```
 
+`(c_char * len(shellcode))` is saying "Give me an array of `c_char` type the length of `shellcode`. 
 
+`.from_buffer(shellcode)` is saying "Fill that array with the `shellcode` values. 
+
+We also have to get a pointer to this character array so that we can put it in place of EIP. To do this, we can create a variable called `ptr` and make it equal to the `addressof(usermode_addr)`. Adding this to our code:
+```python
+ptr = addressof(usermode_addr)
+```
 
