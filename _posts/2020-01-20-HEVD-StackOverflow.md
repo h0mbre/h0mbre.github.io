@@ -129,5 +129,17 @@ def create_file():
  
  #### IOCTLs
  
- The next thing we need after the handle (`hevd`), is our `dwIoControlCode`. Just a tip, if you see IOCTLs in IDA there's a good chance they are in decimal. This is a great [RE Stack Exchange](https://reverseengineering.stackexchange.com/questions/15283/ioctl-code-for-windows-driver) post which explains all of the nuance. 
+ The next thing we need after the handle (`hevd`), is our `dwIoControlCode`. Explicitly annotated IOCTLs in IDA are in decimal. This is a great [RE Stack Exchange](https://reverseengineering.stackexchange.com/questions/15283/ioctl-code-for-windows-driver) post which explains all of the nuance. 
+ 
+ There is a well-known macro called `CTL_CODE` on [MSDN](https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/d4drvif/nf-d4drvif-ctl_code) that driver developers can use to generate their full IOCTL codes. I've put together a small script that will reverse this process and take you from full IOCTL code to the `CTL_CODE` arguments. You can find that [here](https://github.com/h0mbre/ioctl.py). Using the example from the RE Stack Exchange post, we can demo the output of it here: 
+ ```
+ root@kali:~# ./ioctl.py 0x2222CE                                      
+[*] Device Type: FILE_DEVICE_UNKNOWN
+[*] Function Code: 0x8b3
+[*] Access Check: FILE_ANY_ACCESS
+[*] I/O Method: METHOD_OUT_DIRECT
+[*] CTL_CODE(FILE_DEVICE_UNKNOWN, 0x8b3, METHOD_OUT_DIRECT, FILE_ANY_ACCESS)
+```
+
+We now need to find what IOCTLs exist in the HEVD. Once again, we will use IDA. 
  
