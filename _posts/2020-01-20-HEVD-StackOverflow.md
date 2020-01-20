@@ -141,5 +141,5 @@ def create_file():
 [*] CTL_CODE(FILE_DEVICE_UNKNOWN, 0x8b3, METHOD_OUT_DIRECT, FILE_ANY_ACCESS)
 ```
 
-We now need to find what IOCTLs exist in the HEVD. Once again, we will use IDA. 
- 
+We now need to find what IOCTLs exist in the HEVD. Once again, we will use IDA. In the functions tab there is an `IrpDeviceIoCtlHandler` function which will need to untangle to determine what IOCTLs correspond to which function. Opening the function in IDA and drilling down until we find our desired function, we find it here: 
+![](/assets/images/AWE/HACKSYS_EVD_STACKOVERFLOW.PNG)
