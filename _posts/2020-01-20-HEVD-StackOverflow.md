@@ -141,22 +141,28 @@ def create_file():
 [*] CTL_CODE(FILE_DEVICE_UNKNOWN, 0x8b3, METHOD_OUT_DIRECT, FILE_ANY_ACCESS)
 ```
 
-We now need to find what IOCTLs exist in the HEVD. Once again, we will use IDA. In the functions tab there is an `IrpDeviceIoCtlHandler` function which will need to untangle to determine what IOCTLs correspond to which function. Opening the function in IDA and drilling down until we find our desired function, we find it here: 
+We now need to find what IOCTLs exist in the HEVD. Once again, we will use IDA. In the functions tab there is an `IrpDeviceIoCtlHandler` function which will need to untangle to determine what IOCTLs correspond to which function. Opening the function in IDA and drilling down until we find our desired function, we find it here:
+
 ![](/assets/images/AWE/HACKSYS_EVD_STACKOVERFLOW.PNG)
 
 From here, all I did was just trace the path backwards until I found enough information to see what IOCTL needed to be sent to reach this spot. Going backwards one level, we reach this:
+
 ![](/assets/images/AWE/IOCTL_OVERFLOW.PNG)
 
 We see that one of registers, EAX, is getting `0x222003` subtracted from it and if that result is zero, it's jumping to our desired function. From this we can basically tell that if we send the IOCTL `0x222003`, we will end up in our desired function. But that's too easy. Let's go all the way back to the `IrpDeviceIoCtlHandler` entry and see if we determine more about the IOCTL parsing logic and logically check our work without ever even interacting with the driver. 
+
 ![](/assets/images/AWE/Entry_tree.PNG)
 
 At some point, our IOCTL is loaded into ECX and then compared with `0x222027`. If the result is higher, we take the green branch (`JA` == jump if above), if our input is lower, we take the red branch. Our presumed IOCTL would be lower, so we're taking red and end up here:
+
 ![](/assets/images/AWE/path1.PNG)
 
 All this box does is if that comparison we just made between ECX and `0x222027` would've been equal, we'd take the green. We wouldn't be equal though, so once again let's take the red branch to here:
+
 ![](/assets/images/AWE/path2.PNG)
 
 This one is more tricky. We know that `0x222027` is in EAX, let's add `0xFFFFFFEC` to it to get `0x100222013`. This would be an extra byte though (9 bytes), I'm pretty sure that our register would ignore the `1`. So we'd up with `0x222013` in EAX. Comparing `0x222003` which is stored in ECX with this value would take us once again down the red path since we wouldn't be above the new value in EAX of `0x222013`. The next two boxes are thus:
+
 ![](/assets/images/AWE/path3.PNG)
 
 That previous comparison wouldn't end up with the ZERO FLAG being set, so from the first box we take the red to the 2nd box in the picture and voila! We are back to the box right above our desired function. We were able to logically follow the flow of the IOCTL being parsed without ever firing up the driver. Pretty awesome to see how powerful RE can be even for noobs like me. 
