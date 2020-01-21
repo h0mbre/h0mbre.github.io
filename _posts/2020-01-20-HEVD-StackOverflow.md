@@ -501,6 +501,6 @@ send_buf(hevd)
 The shellcode has been explained really well on Rootkit's blog, please go read it and understand what it's doing, we use a very similar shellcode approach when we port our exploit to x86-64. 
 
 ## Conclusion
-That was tons of fun. The hardest parts for me were tracking down documentation on the API calls, tracking down documenation for the `ctypes` functions, and then walking through the shellcode. This was a great way to start learning WinDBG. With the different views available, it really doesn't feel that different from debuggers im used to. Next we will port this exploit to Windows 7 x86-64, which has some more curveballs. 
+That was tons of fun. The hardest parts for me were tracking down documentation on the API calls, tracking down documentation for the `ctypes` functions, and then walking through the shellcode in the debugger. This was a great way to start learning WinDBG. With the different views available, it really doesn't feel that different from debuggers I'm used to. Next we will port this exploit to Windows 7 x86-64, which has some more curveballs. 
 
 Thanks to everyone mentioned in the blogpost, you've been hugely helpful I really appreciate everything. Truly. 
