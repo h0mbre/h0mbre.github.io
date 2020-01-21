@@ -352,7 +352,7 @@ send_buf(hevd)
 
 Since our shellcode is just NOPs and we don't really do anything to get execution flowing normally we will definitely BSOD and crash the kernel. Just to confirm we're hitting our shellcode though, let's go ahead and send it and we should see our NOPs just above where we fly off the end of our allocated buffer in userland.
 
-![](/assets/images/AWE/crash3.PNG)
+![](/assets/images/AWE/nops.PNG)
 
 Ok good, the NOPs are there. 
 
@@ -364,8 +364,13 @@ Now time to deal with this crash. The debug messages that print in WinDBG as you
 
 Stepping through after we hit our breakpoint, we get the debug message that our payload was the correct size `0x800`. 
 
-As we look at the disassembly pane, we can see in the next few images upon this highlighted `ret 8` command, we exit our `TriggerStackOverflow` function and go back into the 
+As we look at the disassembly pane, we can see in the next few images upon this highlighted `ret 8` command, we exit our `TriggerStackOverflow` function and go back into the `StackOverflowIoctlHandler` function.
+
+Inside of that function, we execute a `pop ebp` and a `ret 8`. 
 
 ![](/assets/images/AWE/ret8.PNG)
 
 ![](/assets/images/AWE/popebp.PNG)
+
+Because we have hijacked the execution after `TriggerStackOverflow` returns (it is this first `ret 8` where we place the pointer to our shellcode,  we will have to simulate these two operations, `popebp` and `ret 8` that we were supposed to execute upon returning to `StackOverflowIoctlHandler`.
+
