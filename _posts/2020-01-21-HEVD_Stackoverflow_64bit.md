@@ -44,6 +44,4 @@ I used the following blogs as references:
 There are probably some I even forgot. Huge thanks to the blog authors, no way I could've finished these first two exploits without your help/wisdom. 
 
 ## Goal
-Our goal here is to complete an exploit for the HEVD stack overflow vuln on both Win7 x86 and Win7 x86-64. We will follow along closely with the aformentioned blog posts but will try slightly different methods to keep things interesting and to make sure we're actually learning. 
-
-Before this challenge, I had never worked with 64-bit architectures before. I figured an old-fashioned stack overflow would be the best place to start for that, so we'll be completing that part second. 
+We just knocked out the Win7 x86 exploit last post, let's get the Win7 x86-64 exploit completed now.  
