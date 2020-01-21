@@ -367,4 +367,5 @@ Stepping through after we hit our breakpoint, we get the debug message that our 
 As we look at the disassembly pane, we can see in the next few images upon this highlighted `ret 8` command, we exit our `TriggerStackOverflow` function and go back into the 
 
 ![](/assets/images/AWE/ret8.PNG)
+
 ![](/assets/images/AWE/popebp.PNG)
