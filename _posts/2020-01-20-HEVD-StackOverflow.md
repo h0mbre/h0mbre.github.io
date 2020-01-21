@@ -232,7 +232,7 @@ Awesome, we hit the right function, our IOCTL was correct. We can use `p` to ste
 
 ![](/assets/images/AWE/crash2.PNG)
 
-We can see that when we crashed, we were executing a RET which will pop the top value on the stack (usually placed there by a CALL instruction) into EIP and return us to the address in EIP. In our case, that address was 0x41414141 which isn't mapped and caused us to Blue Screen of Death! We know that once we have EIP, we have a ton of power to redirect execution flow. You can use the `msf-pattern_create` utility in `/usr/bin` on Kali to create a pattern of 3000 bytes and find the offset. I'll leave that to you. Let's move onto the exploit now. 
+We can see that when we crashed, we were executing a RET 8 which will pop a value from the stack into EIP and return us to the address in EIP. In our case, that address was 0x41414141 which isn't mapped and caused us to Blue Screen of Death! We know that once we have EIP, we have a ton of power to redirect execution flow. You can use the `msf-pattern_create` utility in `/usr/bin` on Kali to create a pattern of 3000 bytes and find the offset. I'll leave that to you. Let's move onto the exploit now. 
 
 ### Exploit
 
@@ -310,10 +310,6 @@ def send_buf(hevd):
     "\x90" * 100
     )
 
-    shellcode = shellcode + bytearray(
-        "\xc3"
-    )
-
     print("[*] Allocating shellcode character array...")
     usermode_addr = (c_char * len(shellcode)).from_buffer(shellcode)
     ptr = addressof(usermode_addr)
@@ -354,10 +350,21 @@ hevd = create_file()
 send_buf(hevd)
 ```
 
-Since our shellcode is just NOPs and the RET instruction we were trying execute when we crashed earlier, we have our offset and EIP overwrite correct, this should just pass through execution and return back to the kernel and everything will be fine. If we get a crash here, something is wrong. A crash here means we corrupted some memory and didn't change it back to what it was supposed to be. Let's send this.
-
-Not that I know what I'm doing, but I always resend those WinDBG commands each session. Just FYI.
+Since our shellcode is just NOPs and we don't really do anything to get execution flowing normally we will definitely BSOD and crash the kernel. Just to confirm we're hitting our shellcode though, let's go ahead and send it and we should see our NOPs just above where we fly off the end of our allocated buffer in userland.
 
 ![](/assets/images/AWE/crash3.PNG)
 
-Ok well that isn't good. We crashed because we went to some 
+Ok good, the NOPs are there. 
+
+Now time to deal with this crash. The debug messages that print in WinDBG as you step through the `TriggerStackOverflow` function mention that the driver's buffer its copying memory into is only `0x800` bytes. We most likely corrupted some memory we didn't notice. Let's scale back our payload to just the expected `0x800` size buffer (`2048`) in decimal and rerun it. 
+
+`buf = "A" * 2048`
+
+![](/assets/images/AWE/debug1.PNG)
+
+Stepping through after we hit our breakpoint, we get the debug message that our payload was the correct size `0x800`. 
+
+As we look at the disassembly pane, we can see in the next few images upon this highlighted `ret 8` command, we exit our `TriggerStackOverflow` function and go back into the 
+
+![](/assets/images/AWE/ret8.PNG)
+![](/assets/images/AWE/popebp.PNG)
