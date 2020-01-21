@@ -125,7 +125,7 @@ def create_file():
         return hevd
  ```
  
- From the documentation, `CreateFileA` returns a handle to our device if successful and will give us an error code if it fails. We now have our handle, and we can finish our `DeviceIoControl` call. 
+ From the documentation, `CreateFileA` returns a handle to our device if successful and will give us an error code if it fails. We now have our handle, and we can finish our `DeviceIoControl` call.
  
  ### IOCTLs
  
