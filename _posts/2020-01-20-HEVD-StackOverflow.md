@@ -127,7 +127,7 @@ def create_file():
  
  From the documentation, `CreateFileA` returns a handle to our device if successful and will give us an error code if it fails. We now have our handle, and we can finish our `DeviceIoControl` call. 
  
- #### IOCTLs
+ ### IOCTLs
  
  The next thing we need after the handle (`hevd`), is our `dwIoControlCode`. Explicitly annotated IOCTLs in IDA are in decimal. This is a great [RE Stack Exchange](https://reverseengineering.stackexchange.com/questions/15283/ioctl-code-for-windows-driver) post which explains all of the nuance. 
  
