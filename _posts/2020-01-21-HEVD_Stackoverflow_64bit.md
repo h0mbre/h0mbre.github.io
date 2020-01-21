@@ -1,7 +1,7 @@
 ---
 layout: single
 title: HEVD Exploits -- Windows 7 x86-64 Stack Overflow
-date: 2020-01-20
+date: 2020-01-21
 classes: wide
 header:
   teaser: /assets/images/avatar.jpg
