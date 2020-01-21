@@ -387,3 +387,6 @@ shellcode = shellcode + bytearray(
 )
 ```
 
+This should run through clean and not crash the victim. Let's try it. 
+
+![](/assets/images/AWE/clean.PNG)
