@@ -378,7 +378,7 @@ Inside of that function, we execute a `pop ebp` and a `ret 8`.
 
 ![](/assets/images/AWE/popebp.PNG)
 
-Because we have hijacked the execution after `TriggerStackOverflow` returns (it is this first `ret 8` where we place the pointer to our shellcode,  we will have to simulate these two operations, `pop ebp` and `ret 8` that we were supposed to execute upon returning to `StackOverflowIoctlHandler`.
+Because we have hijacked the execution after `TriggerStackOverflow` returns (it is this first `ret 8` where we placed the pointer to our shellcode,  we will have to simulate these two operations, `pop ebp` and `ret 8`, that we were supposed to execute upon returning to `StackOverflowIoctlHandler`.)
 
 Let's add these to our shellcode and see if we can just send NOPs and the execution restoration and see if we can get the victim to stay running. Our new shellcode section will look like this:
 
