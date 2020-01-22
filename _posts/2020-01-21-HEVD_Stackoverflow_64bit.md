@@ -108,4 +108,10 @@ A tricky thing here is that when you `create_string_buffer`, your buffer is null
 
 Running this on the victim should get us a crash. 
 
+![](/assets/images/AWE/stack.PNG)
 
+You can see as we hit our breakpoint for `TriggerStackOverflow` and step through, we are about to hit a `ret` operation. So I took a look at the stack with the `k` command in WinDBG to see what address we would return to. You can see that the stack is full of our `A`s. We will definitely crash here since `0x4141414141414141` is not a valid address. 
+
+![](/assets/images/AWE/crash64.PNG)
+
+And as you can see, we crashed. 
