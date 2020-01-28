@@ -13,7 +13,7 @@ tags:
   - x86-64
   - Shellcoding
   - Kernel Exploitation
-  - Write,What,Where
+  - Write What Where
   - Arbitrary Overwrite
 ---
 
