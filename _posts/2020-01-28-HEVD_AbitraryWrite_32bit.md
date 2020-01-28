@@ -1,7 +1,7 @@
 ---
 layout: single
 title: HEVD Exploits -- Windows 7 x86 Arbitrary Write
-date: 2020-01-21
+date: 2020-01-28
 classes: wide
 header:
   teaser: /assets/images/avatar.jpg
@@ -13,7 +13,8 @@ tags:
   - x86-64
   - Shellcoding
   - Kernel Exploitation
-  - Stack Overflow
+  - Write,What,Where
+  - Arbitrary Overwrite
 ---
 
 ## Introduction
