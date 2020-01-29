@@ -47,3 +47,7 @@ For this post, I will only be concerned with creating a functional exploit. The 
 First and foremost, we need to use IDA to determine the IOCTL code we need to interact with our desired function. This actually isn't that hard this time since we already determined the IOCTL for the overflow last blog post and our new desired function is very close to that one. 
 
 ![](/assets/images/AWE/arboverwrite.PNG)
+
+So that's where we want to end up, let's backtrace a few steps and see what we can deduce about the IOCTL.
+
+![](/assets/images/AWE/arbflow.PNG)
