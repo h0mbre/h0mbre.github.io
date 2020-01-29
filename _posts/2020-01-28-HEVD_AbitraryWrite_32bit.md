@@ -184,7 +184,7 @@ We have a task ahead of us. We have to find the address of the `HalDispatchTable
 
 ### Finding Kernel Base
 This can apparently be accomplished by using `NtQuerySystemInformation` (which can be found somewhat documented [here](https://docs.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntquerysysteminformation)). The prototype is this:
-```C
+```c
 __kernel_entry NTSTATUS NtQuerySystemInformation(
   IN SYSTEM_INFORMATION_CLASS SystemInformationClass,
   OUT PVOID                   SystemInformation,
