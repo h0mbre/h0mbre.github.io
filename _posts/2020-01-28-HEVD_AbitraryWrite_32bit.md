@@ -44,4 +44,6 @@ Huge thanks to the blog authors, no way I could've finished these first two expl
 For this post, I will only be concerned with creating a functional exploit. The code will be ugly, but it will work. In the next post, when we port our exploit to x86-64, I will worry about cleaning the code up, utilizing classes to define data structures and maybe even make the portable for both 32 and 64-bit Windows 7. 
 
 ## Getting IOCTL with IDA
-First and foremost, we need to use IDA to determine the IOCTL code we need to interact with our desired function. 
+First and foremost, we need to use IDA to determine the IOCTL code we need to interact with our desired function. This actually isn't that hard this time since we already determined the IOCTL for the overflow last blog post and our new desired function is very close to that one. 
+
+![](/assets/images/AWE/arboverwrite.PNG)
