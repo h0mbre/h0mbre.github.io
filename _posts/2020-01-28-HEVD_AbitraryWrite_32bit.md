@@ -115,7 +115,7 @@ We can see that we hit our breakpoint! Awesome, let's actually analyze what this
 
 ![](/assets/images/AWE/bphit.PNG)
 
-## Analyzing Trigger Arbitrary Overwrite
+## Analyzing `TriggerArbitraryOverwrite`
 If we look at the debug statements, this is what we get: 
 ```
 kd> g
