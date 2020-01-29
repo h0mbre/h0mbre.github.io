@@ -172,7 +172,7 @@ So if we found the address of the `HalDispatchTable`, we could increase the addr
 This is great, but we still need a way to invoke the function. This can apparently be accomplished by leveraging the `KeQueryIntervalProfile` function which calls a DWORD pointer at `HalDispatchTable+0x4`. `KeQueryIntervalProfile` can be reached by calling `NtQueryIntervalProfile` a rarely used undocumented API. Thank you to Fuzzy and Abatchy for this portion. 
 
 ## Finding the Address of `HalDispatchTable+0x4`
-For this portion, I would've been utterly lost without two resources: FuzzySec's `Get-SystemModuleInformation` Windows Powershell script and a GradiusX [exploit code for a similar exploit that uses bitmaps to achieve the same end result.](https://github.com/GradiusX/HEVD-Python-Solutions/blob/master/Win10%20x64%20v1607/HEVD_arbitraryoverwrite.py)
+For this portion, I would've been utterly lost without two resources: FuzzySec's [`Get-SystemModuleInformation`](https://github.com/FuzzySecurity/PowerShell-Suite/blob/master/Get-SystemModuleInformation.ps1) Windows Powershell script and a GradiusX [exploit code for a similar exploit that uses bitmaps to achieve the same end result.](https://github.com/GradiusX/HEVD-Python-Solutions/blob/master/Win10%20x64%20v1607/HEVD_arbitraryoverwrite.py)
 
 Between these two examples, I was able to cobble together a Frankenstein Python script that took bits and pieces from both examples and then also things I came up with that made more sense to me. Because I couldn't just straight up use what they had written, I had to make my own way and that helped a lot. 
 
