@@ -36,6 +36,7 @@ I used the following blogs as references:
 + All of the blog posts referenced in the [previous post](https://github.com/h0mbre/h0mbre.github.io/blob/master/_posts/2020-01-21-HEVD_Stackoverflow_64bit.md),
 + FuzzySecurity's [tutorial on this very exploit](https://www.fuzzysecurity.com/tutorials/expDev/15.html),
 + GradiusX [exploit code for a similar exploit](https://github.com/GradiusX/HEVD-Python-Solutions/blob/master/Win10%20x64%20v1607/HEVD_arbitraryoverwrite.py),
++ Abatchy's [post on the subject](https://www.abatchy.com/2018/01/kernel-exploitation-7),
 + jNizM [documentation for the SystemInformationModule returned structures](https://gist.github.com/jNizM/ddf02494cd78e743eed776ce6164758f). 
 
 Huge thanks to the blog authors, no way I could've finished these first two exploits without your help/wisdom. 
@@ -133,6 +134,41 @@ We sent 1000 A chars, and we see that the `What` we are writing is `0x41414141`.
 We'll set a breakpoint on `bp HEVD!TriggerArbitraryOverwrite` and we'll resend the payload. Once we hit our break and then step through a bit we come upon the meat of the function, the highlighted line in the disassembler and the one after it. Let's take a look at these two operations and our register values. 
 
 ![](/assets/images/AWE/interesante.PNG)
+
+We can see we're about to execute a `mov eax, dword ptr [edi]` instruction. Looking at the registers, EDI is set currently to `0x41414141`. This operation will definitely fail. There is no mapped memory at `0x41414141` so there is no value there for it to be stored in EAX. This is very different from `mov eax, edi`. What we're doing here is taking a pointer, EDI, and moving the pointer value there to EAX. Very interesting, we can definitely leverage this to write whatever we want I think based on everything we learned last posts. We can simply have EDI point to a pointer that points to our shellcode. 
+
+The next instruction is `mov dword ptr [ebx], eax`. Wow ok, so this will then take that pointer we fed EAX and put it in the memory address EBX is pointing to. We can see from the register values we also control EBX since it's also `0x41414141`. So we not only control what will be written, but where it will be written. Let's go consult the smart people about how to use this to gain code execution. 
+
+Spoiler alert, these two 4-byte groupings are just the first 8 bytes of our buffer. 
+
+## Turning a Read and a Write into Code Execution
+After consulting the elders, (blog posts of FuzzySec, Abatchy, etc), we see that a way you can exploit this is to overwrite a function pointer that is called with ring 0 privileges and then invoke that function. Luckily, such a function exists and [this methodology](http://shinnai.altervista.org/papers_videos/ECFID.pdf) is pretty seasoned at this point. 
+
+I'm not going to spend a bunch of time explaining the underlying concepts here, the referenced blog posts do a great job of that. Please go read them, at a bare minimum read the FuzzySec and Abatchy blogs. At a high-level, we will use a routine within the `HalDispatchTable` (an abstraction layer for hardware interactions), `HaliQuerySystemInformation`, which is rarely used.
+
+This function resides at offset `0x4` within the `HalDispatchTable`. Abatchy breaks it down as follows:
+```
+kd> dd HalDispatchTable     
+82970430  00000004 828348a2 828351b4 82afbad7
+82970440  00000000 828455ba 829bc507 82afb3d8
+82970450  82afb683 8291c959 8295d757 8295d757
+82970460  828346ce 82834f30 82811178 82833dce
+82970470  82afbaff 8291c98b 8291caa1 828350f6
+82970480  8291caa1 8281398c 8281b4f0 82892c8c
+82970490  82af8d7f 00000000 82892c9c 829b3c1c
+829704a0  00000000 82892cac 82af8f77 00000000
+
+kd> ln 828348a2 
+Browse module
+Set bu breakpoint
+
+(828348a2)   hal!HaliQuerySystemInformation   |  (82834ad0)   hal!HalpAcpiTimerInit
+Exact matches:
+    hal!HaliQuerySystemInformation (<no parameter info>)
+```
+
+
+
 
 
 
