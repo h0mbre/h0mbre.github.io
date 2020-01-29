@@ -146,7 +146,7 @@ After consulting the elders, (blog posts of FuzzySec, Abatchy, etc), we see that
 
 I'm not going to spend a bunch of time explaining the underlying concepts here, the referenced blog posts do a great job of that. Please go read them, at a bare minimum read the FuzzySec and Abatchy blogs. At a high-level, we will use a routine within the `HalDispatchTable` (an abstraction layer for hardware interactions), `HaliQuerySystemInformation`, which is rarely used.
 
-This function resides at offset `0x4` within the `HalDispatchTable`. Abatchy breaks it down as follows:
+This function resides at offset `0x4` within the `HalDispatchTable`. Abatchy breaks it down as follows in WinDBG, this is straight from his blog:
 ```
 kd> dd HalDispatchTable     
 82970430  00000004 828348a2 828351b4 82afbad7
@@ -167,6 +167,14 @@ Exact matches:
     hal!HaliQuerySystemInformation (<no parameter info>)
 ```
 
+So if we found the address of the `HalDispatchTable`, we could increase the address by `0x4` and know exactly where `HaliQuerySystemInformation` resides and we could overwrite it. 
+
+This is great, but we still need a way to invoke the function. This can apparently be accomplished by leveraging the `KeQueryIntervalProfile` function which calls a DWORD pointer at `HalDispatchTable+0x4`. `KeQueryIntervalProfile` can be reached by calling `NtQueryIntervalProfile` a rarely used undocumented API. Thank you to Fuzzy and Abatchy for this portion. 
+
+## Finding the Address of `HalDispatchTable+0x4`
+For this portion, I would've been utterly lost without two resources: FuzzySec's `Get-SystemModuleInformation` Windows Powershell script and a GradiusX [exploit code for a similar exploit that uses bitmaps to achieve the same end result.](https://github.com/GradiusX/HEVD-Python-Solutions/blob/master/Win10%20x64%20v1607/HEVD_arbitraryoverwrite.py)
+
+Between these two examples, I was able to cobble together a Frankenstein Python script that took bits and pieces from both examples and then also things I came up with that made more sense to me. Because I couldn't just straight up use what they had written, I had to make my own way and that helped a lot. 
 
 
 
