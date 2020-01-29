@@ -130,6 +130,9 @@ kd> g
 
 We sent 1000 A chars, and we see that the `What` we are writing is `0x41414141`. Ok, this seems fine, its obviously taken 4 bytes out of our sent string and is treating them as a 4 byte object to write somewhere. The somewhere is also `0x41414141` as we see it is labeled as the `Where`. Let's step through the function to figure out how this works in the disassembly. 
 
-We'll set a breakpoint on `bp HEVD!TriggerArbitraryOverwrite` and we'll resend the payload. 
+We'll set a breakpoint on `bp HEVD!TriggerArbitraryOverwrite` and we'll resend the payload. Once we hit our break and then step through a bit we come upon the meat of the function, the highlighted line in the disassembler and the one after it. Let's take a look at these two operations and our register values. 
+
+![](/assets/images/AWE/interesante.PNG)
+
 
 
