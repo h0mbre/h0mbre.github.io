@@ -273,10 +273,10 @@ C:\Users\IEUser\Desktop>python address.py
 [*] Success, allocated 52828-byte result buffer.
 ```
 
-So we now have the length of the returned structure (52828 bytes). If we slice off the first eight bytes of this returned struct, which by the way, I treated as a long string in Python, we can actually store those 8 bytes in a buffer and get their decimal value with the following code thanks to GradiusX: 
+So we now have the length of the returned structure (52828 bytes). If we slice off the first four bytes of this returned struct, which by the way, I treated as a long string in Python, we can actually store those 4 bytes in a buffer and get their decimal value with the following code thanks to GradiusX: 
 ```python
 handle_num = c_ulong()
-memmove(addressof(handle_num), create_string_buffer(system_information[:8]), sizeof(handle_num))
+memmove(addressof(handle_num), create_string_buffer(system_information[:4]), sizeof(handle_num))
 print("[*] Result buffer contains {} SystemModuleInformation objects".format(str(handle_num.value)))
 ```
 If we append this to our script and run it, we get the following terminal output:
