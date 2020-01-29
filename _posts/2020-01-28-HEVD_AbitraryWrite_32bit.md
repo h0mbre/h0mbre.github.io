@@ -51,3 +51,27 @@ First and foremost, we need to use IDA to determine the IOCTL code we need to in
 So that's where we want to end up, let's backtrace a few steps and see what we can deduce about the IOCTL.
 
 ![](/assets/images/AWE/arbflow.PNG)
+
+This lower box here, is directly connected to our desired function. So in this lower box, if we hit that `jz` opcode, we will end up in our function. You can see that there are two `sub eax, 4` operations that lead to this `jz`. The box immediately out of frame and directly connected to the upper box is actually our `jz` to the stack overflow function. That IOCTL was `0x222003`. So we can summarize the flow as thus:
++ if we subtract `0x222003` from our IOCTL and we don't get `0x0`, 
++ subtract another `0x4`. If we don't get `0x0`,
++ subtract another `0x4`. If we get `0x0`, jump to the Arbitrary Write function.
+
+So we can deduce that `0x222003` + `0x4` + `0x4` is our desired IOCTL. This gives us `0x22200B`. Like we did last post, let's set a breakpoint on our function, send our IOCTL and see if we hit our breakpoint.
+
+Going to pause the debuggee, and rerun our standby commands we always run on our debugger:
++ `sympath\+ <path to the HEVD.pdb file>` <— adds the symbols for HEVD to our symbols path
++ `.reload` <— reloads symbols from path
++ `ed Kd_DEFAULT_Mask 8` <— enables kernel debugging
++ `bp HEVD!ArbitraryOverwriteIoctlHandler` <— sets a breakpoint on our desired function
+
+We'll use this script to send a buffer of 1000 `A` characters. 
+```python
+```
+
+We can see that we hit our breakpoint! Awesome, let's actually analyze what this function inside the IOCTL handler, `TriggerArbitraryOverwrite`, is doing now in WinDBG. 
+
+![](/assets/images/AWE/bphit.PNG)
+
+## Analyzing Trigger Arbitrary Overwrite
+
