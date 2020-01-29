@@ -237,7 +237,7 @@ Some parts that need explaining here: I just took the hardcoded error codes from
 FuzzySec accomplishes this by putting his API calls into a `while True` loop with a `break` on success and GradiusX does basically what I did and calls the API twice. 
 
 If you look at the MSDN and githubgist documentation, `system_information` is now a struct of type `_SYSTEM_MODULE_INFORMATION`. This prototype is broken down thusly:
-```C
+```c
 struct _SYSTEM_MODULE_INFORMATION // Size=284
 {
     ULONG Count; // Size=4 Offset=0
@@ -246,7 +246,7 @@ struct _SYSTEM_MODULE_INFORMATION // Size=284
 ```
 
 Nice, that's easy enough, let's take a look at this goddamn `SYSTEM_MODULE` member:
-```C
+```c
 typedef struct _SYSTEM_MODULE // Size=280
 {
     USHORT Reserved1; // Size=2 Offset=0
