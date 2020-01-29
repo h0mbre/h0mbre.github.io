@@ -792,6 +792,10 @@ target_hal = hal_calc(image_name, kernel_base)
 exploit(target_hal)
 ```
 
+## Conclusion
+If we run this exploit code, we get a `nt authority\system` shell for our efforts. Let me know if you have any questions about this one, it took me a whole Saturday to figure out. Thank you FuzzySec and GradiusX. We'll port this to x86-x64 and clean up the code a lot in the next post. Until next time. 
+
+![](/assets/images/AWE/successbaby.PNG)
 
 
 
