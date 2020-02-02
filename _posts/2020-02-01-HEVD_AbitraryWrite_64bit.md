@@ -381,3 +381,5 @@ Great, hit our breakpoint. Now let's check out our shellcode buffer so you can s
 ![](/assets/images/AWE/mem2.PNG)
 
 Houston, we have a problem. Look at the first two bytes there, `\x26\x00` have overwritten the first two bytes of our shellcode buffer. If we disassemble this, we can see how this is now being interpreted. 
+![](/assets/images/AWE/disasm.PNG)
+
