@@ -397,3 +397,14 @@ So if we add `0` to a byte pointer at `0x2408`, we're probably looking at an acc
 Let's do all of this again, except this time, we'll put an "access" breakpoint on the memory address of our shellcode buffer and we'll catch whoever the hell is writing to it! Let's first run the script again with our `HEVD!TriggerArbitraryOverwrite` breakpoint so we can get the console output, find our shellcode buffer pointer, and then set a breakpoint on it. 
 ![](/assets/images/AWE/newConsole.PNG)
 
+Perfect, now we set an access breakpoint on our shellcode buffer pointer with the following: `ba w1 0x1e864a0`.
+`ba` == access breakpoint
+`w` == watch for write operations
+`1` == on the first byte there
+`0x1e864a0` == address to monitor
+
+Hit `g` and we'll eventually hit our breakpoint. 
+![](/assets/images/AWE/culprit.PNG)
+![](/assets/images/AWE/culprit2.PNG)
+
+
