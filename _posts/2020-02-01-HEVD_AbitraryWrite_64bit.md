@@ -383,3 +383,17 @@ Great, hit our breakpoint. Now let's check out our shellcode buffer so you can s
 Houston, we have a problem. Look at the first two bytes there, `\x26\x00` have overwritten the first two bytes of our shellcode buffer. If we disassemble this, we can see how this is now being interpreted. 
 ![](/assets/images/AWE/disasm.PNG)
 
+Looking at the disassembly now, we see that the first 4 bytes of our overwritten shellcode, `26004153`, are being interpreted as `add byte ptr es:[rcx+53h],al`.
+
+Let's grab some register values and see if we can figure out what this would do. 
+```
+rax 0
+rcx 2408
+```
+
+So if we add `0` to a byte pointer at `0x2408`, we're probably looking at an access violation as that is probably not mapped memory. I'm going to manually change `\x26` to `\xc3` (the opcode for `RET`) so we can exit out of this shellcode safely and keep working with this session. To manually change the memory, in the Memory view, simply put your cursor infront of the 26 and type one letter/number at a time, be patient as this can take some time for WinDBG to register the change. One done, I'm going to go ahead and hit `g` in the console and let our script finish. 
+
+## Finding the Culprit
+Let's do all of this again, except this time, we'll put an "access" breakpoint on the memory address of our shellcode buffer and we'll catch whoever the hell is writing to it! Let's first run the script again with our `HEVD!TriggerArbitraryOverwrite` breakpoint so we can get the console output, find our shellcode buffer pointer, and then set a breakpoint on it. 
+![](/assets/images/AWE/newConsole.PNG)
+
