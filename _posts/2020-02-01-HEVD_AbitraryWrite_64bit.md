@@ -365,6 +365,11 @@ exploit()
 ## Roadblock
 Possibly related to how I'm allocating buffers for my shellcode in Python, I ran into an issue where everything worked perfectly but somewhere between me allocating my shellcode buffer and then arriving at our `NtQueryIntervalProfile` API call (which triggers a call for the function pointer at `HalDispatchTable+0x8`), the first two bytes of my shellcode buffer are overwritten with `\x26\x00`. Let's take a look in WinDBG and see what we can see. 
 
+Let's set a breakpoint on `HEVD!TriggerArbitraryOverwrite` to get the party started and then run our exploit. 
+![](/assets/images/AWE/bp1.PNG)
+
+We hit our breakpoint as planned, let's look at our debug messages in the console to get some more info. 
+![](/assets/images/AWE/shellcode.PNG)
 
 
 
