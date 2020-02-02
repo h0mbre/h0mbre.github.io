@@ -366,21 +366,27 @@ exploit()
 Possibly related to how I'm allocating buffers for my shellcode in Python, I ran into an issue where everything worked perfectly but somewhere between me allocating my shellcode buffer and then arriving at our `NtQueryIntervalProfile` API call (which triggers a call for the function pointer at `HalDispatchTable+0x8`), the first two bytes of my shellcode buffer are overwritten with `\x26\x00`. Let's take a look in WinDBG and see what we can see. 
 
 Let's set a breakpoint on `HEVD!TriggerArbitraryOverwrite` to get the party started and then run our exploit. 
+
 ![](/assets/images/AWE/bp1.PNG)
 
 We hit our breakpoint as planned, let's look at our debug messages in the console to get some more info. 
+
 ![](/assets/images/AWE/shellcode.PNG)
 
 We can see that our shellcode array is located at `0x1df64a0`. Let's check out our memory view of that location in memory. 
+
 ![](/assets/images/AWE/shellcode.PNG)
 
 Awesome, our shellcode looks exactly how we sent it. Let's now set a breakpoint on `NtQueryIntervalProfile` since that is our trigger and we'll know if everything is going to plan. (`bp !NtQueryIntervalProfile`)
+
 ![](/assets/images/AWE/ntquery.PNG)
 
 Great, hit our breakpoint. Now let's check out our shellcode buffer so you can see the problem! Let's look at the exact same memory view again.
+
 ![](/assets/images/AWE/mem2.PNG)
 
 Houston, we have a problem. Look at the first two bytes there, `\x26\x00` have overwritten the first two bytes of our shellcode buffer. If we disassemble this, we can see how this is now being interpreted. 
+
 ![](/assets/images/AWE/disasm.PNG)
 
 Looking at the disassembly now, we see that the first 4 bytes of our overwritten shellcode, `26004153`, are being interpreted as `add byte ptr es:[rcx+53h],al`.
@@ -395,6 +401,7 @@ So if we add `0` to a byte pointer at `0x2408`, we're probably looking at an acc
 
 ## Finding the Culprit
 Let's do all of this again, except this time, we'll put an "access" breakpoint on the memory address of our shellcode buffer and we'll catch whoever the hell is writing to it! Let's first run the script again with our `HEVD!TriggerArbitraryOverwrite` breakpoint so we can get the console output, find our shellcode buffer pointer, and then set a breakpoint on it. 
+
 ![](/assets/images/AWE/newConsole.PNG)
 
 Perfect, now we set an access breakpoint on our shellcode buffer pointer with the following: `ba w1 0x1e864a0`.
@@ -404,7 +411,9 @@ Perfect, now we set an access breakpoint on our shellcode buffer pointer with th
 `0x1e864a0` == address to monitor
 
 Hit `g` and we'll eventually hit our breakpoint. 
+
 ![](/assets/images/AWE/culprit.PNG)
+
 ![](/assets/images/AWE/culprit2.PNG)
 
 
