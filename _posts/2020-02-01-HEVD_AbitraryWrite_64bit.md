@@ -145,3 +145,11 @@ counter = 0
         counter += sizeof(tmp)
 ```
 
+We then check the `ImageName` member of the struct, and if it's a match for the kernel images we want to keep track of, we progress. We grab the name and the base address and return them. Function over, we just massively improved our code from the x86 version.
+
+I'm not going to paste the entire function this time; however, the next function we need to call both `LoadLibraryA` and `GetProcAddress` so that we can ultimately calculate the location of our target HDT function pointer. In order for those APIs to behave properly, we have to use the [`restype`](https://docs.python.org/3/library/ctypes.html) utility in `ctypes` for us to change the return type of a function. We do so accordingly to work with our 64-bit OS:
+```python
+kernel32.LoadLibraryA.restype = c_uint64
+kernel32.GetProcAddress.argtypes = [c_uint64, POINTER(c_char)]
+kernel32.GetProcAddress.restype = c_uint64
+```
