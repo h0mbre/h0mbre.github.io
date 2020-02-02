@@ -405,9 +405,13 @@ Let's do all of this again, except this time, we'll put an "access" breakpoint o
 ![](/assets/images/AWE/newConsole.PNG)
 
 Perfect, now we set an access breakpoint on our shellcode buffer pointer with the following: `ba w1 0x1e864a0`.
+
 `ba` == access breakpoint
+
 `w` == watch for write operations
+
 `1` == on the first byte there
+
 `0x1e864a0` == address to monitor
 
 Hit `g` and we'll eventually hit our breakpoint. 
@@ -416,4 +420,19 @@ Hit `g` and we'll eventually hit our breakpoint.
 
 ![](/assets/images/AWE/culprit2.PNG)
 
+We paused on `mov rax,r8` however; the real culprit proceeds this instruction: `mov word ptr [r8+10h],ax`.
+
+If we look at some register values:
+```
+rax a0026
+r8 1e86290
+```
+
+We can see how this would overwrite our first two bytes of our shellcode. `r8 + 0x10` is going to be `0x1e864a0` (psst, that's where our shellcode is) and we're writing a 2 byte value there (`word`) which is the lower two bytes of `rax` (`0026`). So now we see how our shellcode was overwritten. How can we alter our shellcode so that we can take this overwrite and still progress? 
+
+## Moving on Despite the Haters
+I'm honestly not sure why this is happening to us. I can't really determine what instructions are leading to these conditions. The call stack is empty and devoid of named functions so that's no help; futhermore, the address scheme is all userspace. It would be strange if it was my Python code causing the problems since this is happening temporally *between* the time my buffers are allocated and when `NtQueryIntervalProfile` is called. If you're an exploit god, please reach out and let me know why I suck so bad. 
+
+We can leverage the `ndisasm` utility on Linux to test out some alternative scenarios dealing with our overwrite. Our model shellcode is this: 
+```
 
