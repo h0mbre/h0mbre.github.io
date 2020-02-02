@@ -709,3 +709,6 @@ exploit()
 If we run our updated shellcode exploit script, we get our coveted `nt authority/system` shell!
 
 ![](/assets/images/AWE/wedidit.PNG)
+
+## Conclusion
+We learned a really useful WinDBG feature on this one, the access breakpoint. I feel like this is going to come in really handy going forward. It was fun troubleshooting this issue, discovering that with the my script there was an unavoidable overwrite, and then taking the overwite and progressing anyways. This is the type of thing that really builds skills in my opinion. We were forced to go off-plan and improvise and get into the debugger to figure out what's going on. Onto the next exploit! Thanks again to everyone that's published blogs on Windows exploit development, truly it's been so appreciated. 
