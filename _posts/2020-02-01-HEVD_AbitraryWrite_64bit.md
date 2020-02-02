@@ -1,6 +1,6 @@
 ---
 layout: single
-title: HEVD Exploits -- Windows 7 x64 Arbitrary Write
+title: HEVD Exploits -- Windows 7 x86-64 Arbitrary Write
 date: 2020-02-01
 classes: wide
 header:
