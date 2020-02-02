@@ -42,7 +42,7 @@ I used the following blogs as references:
 Huge thanks to the blog authors, no way I could've finished these first two exploits without your help/wisdom. 
 
 ## Goal
-For this post, I mostly relied on the GradiusX code mentioned above. He's doing a different technique in his (hopefully we'll try it at some point) but the way he deals with the `SystemModuleInformation` struct in Python was very crucial to how I ended up doing it in this post. As you may remember from the x86 version of this post, the goal of this post was to create a much more organized exploit code that utilized classes instead of treating the aforementioned struct as a long string. We were succesful in that. The only thing that really bugged me about this exploit was there was behavior where during my exploit, the first two bytes of my shellcode buffer would be overwritten. Besides the BSODs, this was frustrating mostly because I never really root caused the issue. The issue may in fact lie in the way I decided to allocate my userland string buffers in Python, but time will tell. Ultimately, I was able to overcome the overwrites and develop a reliable exploit.
+For this post, I mostly relied on the GradiusX code mentioned above. They're doing a different technique in their code (hopefully we'll try it at some point) but the way they deal with the `SystemModuleInformation` struct in Python was very crucial to how I ended up doing it in this post. As you may remember from the x86 version of this post, the goal of this post was to create a much more organized exploit code that utilized classes instead of treating the aforementioned struct as a long string. We were succesful in that. The only thing that really bugged me about this exploit was there was behavior where during my exploit, the first two bytes of my shellcode buffer would be overwritten. Besides the BSODs, this was frustrating mostly because I never really root caused the issue. The issue may in fact lie in the way I decided to allocate my userland string buffers in Python, but time will tell. Ultimately, I was able to overcome the overwrites and develop a reliable exploit.
 
 This exploit code will be very similar to the last post, so please read that one if you haven't. There's honestly not much difference. We'll only be talking about the differences and the shellcode overwrite issue and how I solved it. 
 
@@ -98,5 +98,5 @@ def base():
     print("[*] Result buffer contains {} SystemModuleInformation objects".format(str(handle_num.value)))
 ```
 
-The primary difference here 
+The primary difference here is going to be establishing a class for the `SYSTEM_MODULE_INFORMATION` structure. Its very similar to GradiusX's class in their exploit script; however, I changed the name of the last member so that it was more congruent with the FuzzySec's Powershell script. For more information about this struct, please see the [documenation I referenced throughout this bug class exploitation process](https://gist.github.com/jNizM/ddf02494cd78e743eed776ce6164758f).
 
