@@ -371,5 +371,12 @@ Let's set a breakpoint on `HEVD!TriggerArbitraryOverwrite` to get the party star
 We hit our breakpoint as planned, let's look at our debug messages in the console to get some more info. 
 ![](/assets/images/AWE/shellcode.PNG)
 
+We can see that our shellcode array is located at `0x1df64a0`. Let's check out our memory view of that location in memory. 
+![](/assets/images/AWE/shellcode.PNG)
 
+Awesome, our shellcode looks exactly how we sent it. Let's now set a breakpoint on `NtQueryIntervalProfile` since that is our trigger and we'll know if everything is going to plan. (`bp !NtQueryIntervalProfile`)
+![](/assets/images/AWE/ntquery.PNG)
+
+Great, hit our breakpoint. Now let's check out our shellcode buffer so you can see the problem! Let's look at the exact same memory view again.
+![](/assets/images/AWE/mem2.PNG)
 
