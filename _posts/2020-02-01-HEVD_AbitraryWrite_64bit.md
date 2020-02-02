@@ -115,3 +115,33 @@ def base():
 
 The primary difference here is going to be establishing a class for the `SYSTEM_MODULE_INFORMATION` structure. Its very similar to GradiusX's class in their exploit script; however, I changed the name of the last member so that it was more congruent with the FuzzySec's Powershell script. For more information about this struct, please see the [documenation I referenced throughout this bug class exploitation process](https://gist.github.com/jNizM/ddf02494cd78e743eed776ce6164758f).
 
+Let me break this down piece by piece. We declare a class that matches exactly with the aforementioned documentation that I referenced. We then create a `handle_num` variable of type `c_ulong()` which will be 8 bytes on x64 Windows. We create a string buffer and fill it with the first 8 bytes of our returned `sys_info` struct. We then move this buffer to the address of our `handle_num` variable which allows us to get the value in decimal of the number of `SystemModuleInformation` objects we returned with our `NtQuerySystemInformation` API call. You can see this here: 
+```python
+handle_num = c_ulong(0)
+handle_num_str = create_string_buffer(sys_info.raw[:8])
+memmove(addressof(handle_num), handle_num_str, sizeof(handle_num))
+
+print("[*] Result buffer contains {} SystemModuleInformation objects".format(str(handle_num.value)))
+```
+
+We then shorten the returned `sys_info` string by cutting off the first 8 bytes we just used and then interating through the string casting each `296` byte chunk as an instance of our class. You can see that we declare a `counter` variable which will increment each iteration by the size of our class (`296` bytes). The loop does the following:
++ While we haven't iterated through all of our returned modules (by getting the number of returned modules with `handle_num.value`),
++ create a temporary `SYSTEM_MODULE_INFORMATION` instance called `tmp`,
++ create a string buffer in a `0` to `296` byte chunk that contains one complete returned struct,
++ move that string buffer into our temporary `tmp` struct.
+You can see all of this happening here: 
+```python
+counter = 0
+    for x in range(handle_num.value):
+        tmp = SYSTEM_MODULE_INFORMATION()
+        tmp_si = create_string_buffer(sys_info[counter:counter + sizeof(tmp)])
+        memmove(addressof(tmp), tmp_si, sizeof(tmp))
+        if "ntoskrnl" or "ntkrnl" in tmp.ImageName:
+            img_name = tmp.ImageName.split("\\")[-1]
+            print("[*] Kernel Type: {}".format(img_name))
+            kernel_base = hex(tmp.ImageBase)[:-1]
+            print("[*] Kernel Base: {}".format(kernel_base))
+            return img_name, kernel_base
+        counter += sizeof(tmp)
+```
+
