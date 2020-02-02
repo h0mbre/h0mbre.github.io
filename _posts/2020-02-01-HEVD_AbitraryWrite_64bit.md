@@ -153,3 +153,5 @@ kernel32.LoadLibraryA.restype = c_uint64
 kernel32.GetProcAddress.argtypes = [c_uint64, POINTER(c_char)]
 kernel32.GetProcAddress.restype = c_uint64
 ```
+
+Everything else works pretty much the same, except our `target_hal` variable on this one will be the `HalDispatchTable+0x8` since we're dealing with 8-byte pointers now (previously, it was `HalDispatchTable+0x4`). 
