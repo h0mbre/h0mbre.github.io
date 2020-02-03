@@ -37,8 +37,12 @@ I used the following blogs as references:
 
 Huge thanks to the blog authors.
 
+Also, big thanks to @ihack4falafel for helping me figure out why I was having issues in my last blog post with the 2 byte overwrite of my shellcode buffer. I found a much more reliable way of allocating the buffers in Python this time around and everything worked as planned. 
+
 ## Goal
 This was a completely new bug class to me, and it was a ton of fun walking through the vulnerability in IDA. For this post, we're going to dissect exactly what is happening by stepping through the routine in WinDBG and tracking our progress in IDA to see how the code paths differ. We're going to finish by completing a reliable exploit script that calls our shellcode allocated in userspace from kernel space and then cleanly returns back to kernel space (the same thing we've been doing!).
 
 ## IOCTL
-First thing's first, we need to figure out what IOCTL is needed to reach our target routine `TriggerN
+First thing's first, we need to figure out what IOCTL is needed to reach our target routine `TriggerNullPointerDereference`. The function which eventually calls our target function is located in this code block within the `IrpDeviceIoCtlHandler` function in IDA:
+![](/assets/images/AWE/idaIOCTL.PNG)
+
