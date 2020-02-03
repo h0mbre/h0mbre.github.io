@@ -32,8 +32,13 @@ The reason for this is simple, the other blog posts do a much better job detaili
 This post/series will instead focus on my experience trying to craft the actual exploits. 
 
 I used the following blogs as references:
++ All of the previous referenced blog posts in the series (obviously I'm reusing code I learned from them every exploit),
 + [\@\_xpn\_'s blog on the same exploit](https://blog.xpnsec.com/hevd-null-pointer/)
 
-Huge thanks to the blog authors, no way I could've finished these first two exploits without your help/wisdom. 
+Huge thanks to the blog authors.
 
 ## Goal
+This was a completely new bug class to me, and it was a ton of fun walking through the vulnerability in IDA. For this post, we're going to dissect exactly what is happening by stepping through the routine in WinDBG and tracking our progress in IDA to see how the code paths differ. We're going to finish by completing a reliable exploit script that calls our shellcode allocated in userspace from kernel space and then cleanly returns back to kernel space (the same thing we've been doing!).
+
+## IOCTL
+First thing's first, we need to figure out what IOCTL is needed to reach our target routine `TriggerN
