@@ -44,9 +44,11 @@ This was a completely new bug class to me, and it was a ton of fun walking throu
 
 ## IOCTL
 First thing's first, we need to figure out what IOCTL is needed to reach our target routine `TriggerNullPointerDereference`. The function which eventually calls our target function is located in this code block within the `IrpDeviceIoCtlHandler` function in IDA:
+
 ![](/assets/images/AWE/idaIOCTL.PNG)
 
 We can see the `call` operation to `NullPointerDereferenceIoctlHandler` which looks like this:
+
 ![](/assets/images/AWE/idaIOCTL2.PNG)
 
 Ok, we see the eventual call to `TriggerNullPointerDereference` now, let's go back to `IrpDeviceIoCtlHandler` and determine the IOCTL required to reach this code path. Immediately above our `NullPointerDereferenceIoctlHandler` box, we see the logic detailing the IOCTL parsing.
