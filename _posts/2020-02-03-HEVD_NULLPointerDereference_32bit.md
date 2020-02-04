@@ -49,6 +49,7 @@ First thing's first, we need to figure out what IOCTL is needed to reach our tar
 We can see the `call` operation to `NullPointerDereferenceIoctlHandler` which looks like this:
 ![](/assets/images/AWE/idaIOCTL2.PNG)
 
-Ok, we see the eventual call to `TriggerNullPointerDereference` now, let's go back to `IrpDeviceIoCtlHandler` and determine the IOCTL required to reach this code path. Immediately above our `NullPointerDereferenceIoctlHandler` box, we see the logic detailing the IOCTL parsing. 
+Ok, we see the eventual call to `TriggerNullPointerDereference` now, let's go back to `IrpDeviceIoCtlHandler` and determine the IOCTL required to reach this code path. Immediately above our `NullPointerDereferenceIoctlHandler` box, we see the logic detailing the IOCTL parsing.
+
 ![](/assets/images/AWE/ioctlparse.PNG)
 
