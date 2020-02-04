@@ -55,3 +55,4 @@ Ok, we see the eventual call to `TriggerNullPointerDereference` now, let's go ba
 
 ![](/assets/images/AWE/ioctlparse.PNG)
 
+
