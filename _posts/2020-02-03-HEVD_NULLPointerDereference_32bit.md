@@ -102,3 +102,9 @@ def interact():
 
 interact()
 ```
+
+![](/assets/images/AWE/bpnull.PNG)
+
+Everything looks good to go. Let's look at some of our code paths from here in IDA. 
+
+## IDA Breakdown for Noobs by Noob
