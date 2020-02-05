@@ -143,3 +143,23 @@ This is a lot of [DbgPrint](https://docs.microsoft.com/en-us/windows-hardware/dr
 We can see that we `jnz` if those values do NOT match. So if our user-provided value is not `0xBAD0B0B0`, we're taking this green code path. 
 
 ![](/assets/images/AWE/code3.PNG)
+
+You can see my notes as blue comments. At the end of this block we're calling `ExFreePoolWithTag` with parameters to free the pool memory we just allocated by pushing the tag value onto the stack `kcaH` before calling the API. We can see the `push` operations before this API call:
++ `push 6B636148`
++ `push esi`
+
+Looking at the prototype for the API call:
+```c
+void ExFreePoolWithTag(
+  PVOID P,
+  ULONG Tag
+);
+```
+
+Looks like `esi` then would be a pointer to the memory address where our pool allocation would've started. Obviously we know the tag already. 
+
+After the call is the most important operation set: `xor esi, esi`. So we just took the pointer value after we freed the pool memory and we zeroed it out. `esi` is now `0`.  
+
+Looking at the next code block now. 
+
+![](/assets/images/AWE/code4.PNG)
