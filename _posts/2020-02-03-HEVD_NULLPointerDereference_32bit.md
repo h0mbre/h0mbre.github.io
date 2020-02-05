@@ -215,7 +215,7 @@ result = ntdll.NtAllocateVirtualMemory(
 If we get a `0` returned, it succeeded. 
 
 Next we'll:
-+ create a shellcode variable, fill it out with our reliable [Abatchy17's x64 Token Stealing Shellcode](https://www.abatchy.com/2018/01/kernel-exploitation-2) that we've modified slightly
++ create a shellcode variable, fill it out with our reliable [r0otki7's x32 Token Stealing Shellcode](https://rootkits.xyz/blog/2017/08/kernel-stack-overflow/) that we've modified slightly
 + place the shellcode into a string buffer with `create_string_buffer` from `ctypes`
 + allocate a RWX buffer the same size as our shellcode with `VirtualAlloc`
 + use `memmove()` from `ctypes` move our shellcode string buffer into our RWX buffer
