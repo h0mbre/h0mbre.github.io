@@ -163,3 +163,14 @@ After the call is the most important operation set: `xor esi, esi`. So we just t
 Looking at the next code block now. 
 
 ![](/assets/images/AWE/code4.PNG)
+
+This block is where the magic happens. We only have two calls in this block, one to a print statement and one to a function pointer at `[esi + 0x4]`. Well, we just established that `esi` was zero if we take our code path we've outlined, and so this pointer would lie at address: `0x00000004`. That's going to reside on the [NULL page](https://en.wikipedia.org/wiki/Zero_page). Our code at this point is [dereferencing](https://www.computerhope.com/jargon/d/dereference-operator.htm) a null pointer. 
+
+So we know we can get this driver to call a function located at `0x00000004`, let's try to weaponize this. 
+
+## Building an Exploit
+To reach this code path, let's provide a user value that isn't `0xBADB0B0`, and see what we can see in WinDBG after we step through. 
+
+The good news is, our first script PoC already met this criteria, we'll just resend it and step through it until we reach this `call dword ptr [esi+0x4]` instruction. 
+
+
