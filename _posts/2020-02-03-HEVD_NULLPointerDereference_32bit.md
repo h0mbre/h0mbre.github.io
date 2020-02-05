@@ -138,3 +138,8 @@ Checking out our green codepath here if our API didn't fail, this is our next bl
 
 ![](/assets/images/AWE/2ndblock.PNG)
 
+This is a lot of [DbgPrint](https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-dbgprint) calls which is kind of cheating, but at the bottom here we see something important. `mov eax, 0BAD0B0B0`. After that, we see a compare being performed with `cmp [ebp+UserValue], eax`. This is easy with all the symbols we're provided but, looks like our 'user provided' value is being compared with `0xBADB0B0`. One thing I did throughout this process was step through every instruction in `TriggerNullPointerDereference` while also consulting this IDA graphical representation of the code paths so I could orient myself. I definitely recommend doing that. 
+
+We can see that we `jnz` if those values do NOT match. So if our user-provided value is not `0xBAD0B0B0`, we're taking this green code path. 
+
+![](/assets/images/AWE/code3.PNG)
