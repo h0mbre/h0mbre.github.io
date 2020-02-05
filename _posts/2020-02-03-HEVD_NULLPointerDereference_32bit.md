@@ -334,5 +334,21 @@ If we run this code, we end up with our coveted `nt authority\\system` shell!
 
 ![](/assets/images/AWE/ntshell.PNG)
 
+## BONUS: x86-64 Exploit
+Since this exploit was relatively simple, we can also cover the x86-64 version of the exploit in the same post. 
+
+![](/assets/images/AWE/64npd.PNG)
+
+One of the most significant changes is our NULL pointer dereference has changed to an offset of `0x8` which you can see with the `call qword ptr [rdi+8]` instruction. 
+
+Besides that, we'll have to adapt our script in other simple ways to accommodate the 64 bit address space. 
+
+We'll also add our reliable [Abatchy17's Token Stealing Shellcode for x64](https://www.abatchy.com/2018/01/kernel-exploitation-2) that we've slightly modifed. 
+
+Our x86-64 exploit script will look like this:
+```python
+
+
+ 
 ## Conclusion
 Once we figured out what was happening in IDA and realized how much control we had over the code execution, this one wasn't as hard in my opinion as the last couple of exploits. 
