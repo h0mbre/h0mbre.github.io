@@ -173,7 +173,7 @@ To reach this code path, let's provide a user value that isn't `0xBADB0B0`, and 
 
 The good news is, our first script PoC already met this criteria, we'll just resend it and step through it until we reach this `call dword ptr [esi+0x4]` instruction. 
 
-![](/assets/images/AWE/code4.PNG)
+![](/assets/images/AWE/regcheck.PNG)
 
 You can see we're about to call that function pointer and `esi` is `0`. Let's step into this call and see what happens. 
 
