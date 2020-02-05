@@ -209,7 +209,7 @@ result = ntdll.NtAllocateVirtualMemory(
 + a pointer to a `PVOID` `0x1`,
 + `0` for `ZeroBits`,
 + `regionsize` of 4096 bytes,
-+ `0x3000` is the constant hex value for `MEM_RESERVE` [link](https://docs.microsoft.com/en-us/scripting/winscript/reference/ijsdebugdatatarget-allocatevirtualmemory-method),
++ `0x3000` is the constant hex value for `MEM_COMMIT | MEM_RESERVE` [link](https://docs.microsoft.com/en-us/scripting/winscript/reference/ijsdebugdatatarget-allocatevirtualmemory-method),
 + `0x40` is the constant hex value for [`PAGE_EXECUTE_READWRITE`](https://docs.microsoft.com/en-us/windows/win32/memory/memory-protection-constants)
 
 If we get a `0` returned, it succeeded. 
