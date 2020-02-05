@@ -1,6 +1,6 @@
 ---
 layout: single
-title: HEVD Exploits -- Windows 7 x86 NULL Pointer Dereference
+title: HEVD Exploits -- Windows 7 x86 AND x86-64 NULL Pointer Dereference
 date: 2020-02-03
 classes: wide
 header:
