@@ -108,6 +108,33 @@ interact()
 Everything looks good to go. Let's look at some of our code paths from here in IDA. 
 
 ## IDA Breakdown for Noobs by Noob
-Looking at the first block of instructions in IDA for the `TriggerNullPointerDereference` function, there are a few things that jumped out. 
+Looking at the first block of instructions in IDA for the `TriggerNullPointerDereference` function, we can try our best to figure out what's going on. 
 
 ![](/assets/images/AWE/sycall.PNG)
+
+Looks like we're pushing a weird constant value onto the stack with `push 6B636148`, so let's look that value up and see if that's some ASCII. Throwing that into an ASCII converter gets us `kcaH`, which is Hack backwards obviously. So that's on the stack now. Next we `push 8` and then `push edi`. 
+
+Early on in the block we see `xor edi, edi` and then its value never changes so we know it's `0` right now. And then we call `ExAllocatePoolWithTag`. So our arguments/parameters for this API call would be: `0`, `8`, and `kcaH`. Let's look up the prototype and see what to make of that:
+```c
+PVOID ExAllocatePoolWithTag(
+  __drv_strictTypeMatch(__drv_typeExpr)POOL_TYPE PoolType,
+  SIZE_T                                         NumberOfBytes,
+  ULONG                                          Tag
+);
+```
+
+So it looks like our `PoolType` is `0`. Finally found some [constant values for this parameter](https://www.vergiliusproject.com/kernels/x86/Windows%208/RTM/_POOL_TYPE) and it looks like this constant is `NonPagedPool`. You can read about paged vs. non-paged memory [here](https://answers.microsoft.com/en-us/windows/forum/all/whats-non-paged-pool-memory/46d33fe6-58d7-4c32-a37b-90b22789fd43). Our next argument is `NumberOfBytes` which we said was `8`. And then finally our `Tag` which is set to `kcaH`. 
+
+So we're allocating 8 bytes of non-paged pool memory with the tag `kcaH`. The last few instructions are also noteworthy:
++ `mov esi, eax`, the return value of the API will be stored in `eax` so we're moving the return value to `esi`
++ `cmp esi, edi`, we know already that `edi` is still `0`, so we're checking if the return value was `0`,
++ `jnz short loc_14E5B`, if the return code is not `0`, we're jumping to the green code path. 
+
+Checking the [MSDN Docs](https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-exallocatepoolwithtag), we see that: *ExAllocatePoolWithTag returns NULL if there is insufficient memory in the free pool to satisfy the request.*
+
+So we're just checking here at the end that the API succeeded. 
+
+Checking out our green codepath here if our API didn't fail, this is our next block of instructions:
+
+![](/assets/images/AWE/2ndblock.PNG)
+
