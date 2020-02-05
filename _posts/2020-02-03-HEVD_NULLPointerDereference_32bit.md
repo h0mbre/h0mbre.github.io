@@ -108,3 +108,6 @@ interact()
 Everything looks good to go. Let's look at some of our code paths from here in IDA. 
 
 ## IDA Breakdown for Noobs by Noob
+Looking at the first block of instructions in IDA for the `TriggerNullPointerDereference` function, there are a few things that jumped out. 
+
+![](/assets/images/AWE/sycall.PNG)
