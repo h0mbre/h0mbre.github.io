@@ -339,7 +339,7 @@ There isn't one! LOL.
 
 I tried porting this to Win7 x86-64, but I was blocked by the `NtAllocateVirtualMemory` API throwing a `STATUS_INVALID_PARAMETER_2` error for any `*BaseAddress` value less than `0x1000`. 
 
-I'm sorry that I've failed you and at some point Microsoft tried to ruin CTFs and my hobby.
+I'm sorry that I've failed you and at some point Microsoft tried to ruin CTFs and my hobby. Let me know if I'm badly mistaken here and it's still possible, thank you. 
  
 ## Conclusion
 Once we figured out what was happening in IDA and realized how much control we had over the code execution, this one wasn't as hard in my opinion as the last couple of exploits. 
