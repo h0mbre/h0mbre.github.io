@@ -33,7 +33,7 @@ This post/series will instead focus on my experience trying to craft the actual 
 
 I used the following blogs as references:
 + All of the previous referenced blog posts in the series (obviously I'm reusing code I learned from them every exploit),
-+ [\@\_xpn\_'s blog on the same exploit](https://blog.xpnsec.com/hevd-null-pointer/)
++ [@\_xpn\_'s blog on the same exploit](https://blog.xpnsec.com/hevd-null-pointer/)
 
 Huge thanks to the blog authors.
 
