@@ -330,7 +330,7 @@ interact()
 shell()
 ```
 
-If we run this code, we end up with our coveted `nt authority\\system` shell!
+If we run this code, we end up with our coveted `nt authority\system` shell!
 
 ![](/assets/images/AWE/ntshell.PNG)
 
