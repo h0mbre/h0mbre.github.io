@@ -1,6 +1,6 @@
 ---
 layout: single
-title: HEVD Exploits -- Windows 7 x86 AND x86-64 NULL Pointer Dereference
+title: HEVD Exploits -- Windows 7 x86 NULL Pointer Dereference
 date: 2020-02-03
 classes: wide
 header:
@@ -335,20 +335,11 @@ If we run this code, we end up with our coveted `nt authority\\system` shell!
 ![](/assets/images/AWE/ntshell.PNG)
 
 ## BONUS: x86-64 Exploit
-Since this exploit was relatively simple, we can also cover the x86-64 version of the exploit in the same post. 
+There isn't one! LOL.
 
-![](/assets/images/AWE/64npd.PNG)
+I tried porting this to Win7 x86-64, but I was blocked by the `NtAllocateVirtualMemory` API throwing a `STATUS_INVALID_PARAMETER_2` error for any `*BaseAddress` value less than `0x1000`. 
 
-One of the most significant changes is our NULL pointer dereference has changed to an offset of `0x8` which you can see with the `call qword ptr [rdi+8]` instruction. 
-
-Besides that, we'll have to adapt our script in other simple ways to accommodate the 64 bit address space. 
-
-We'll also add our reliable [Abatchy17's Token Stealing Shellcode for x64](https://www.abatchy.com/2018/01/kernel-exploitation-2) that we've slightly modifed. 
-
-Our x86-64 exploit script will look like this:
-```python
-
-
+I'm sorry that I've failed you and at some point Microsoft tried to ruin CTFs and my hobby.
  
 ## Conclusion
 Once we figured out what was happening in IDA and realized how much control we had over the code execution, this one wasn't as hard in my opinion as the last couple of exploits. 
