@@ -11,8 +11,10 @@
 # https://mmistakes.github.io/minimal-mistakes/docs/quick-start-guide/#installing-the-theme
 
 # theme                  : "minimal-mistakes-jekyll"
-remote_theme             : "mmistakes/minimal-mistakes@4.15.1"
-minimal_mistakes_skin    : "contrast"
+# remote_theme             : "mmistakes/minimal-mistakes@4.15.1"
+# minimal_mistakes_skin    : "contrast"
+
+remote_theme             : "heiswayi/the-plain"
 
 # Site Settings
 locale                   : "en-US"
@@ -233,6 +235,7 @@ plugins:
   - jemoji
   - jekyll-include-cache
   - jekyll-seo-tag
+  - jekyll-remote-theme
 
 # mimic GitHub Pages with --safe
 whitelist:
