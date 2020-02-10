@@ -11,7 +11,7 @@
 # https://mmistakes.github.io/minimal-mistakes/docs/quick-start-guide/#installing-the-theme
 
 # theme                  : "minimal-mistakes-jekyll"
-remote_theme             : "b2a3e8/jekyll-theme-console"
+remote_theme:              : cetinajero/jekyll-theme-marketing
 # remote_theme             : "mmistakes/minimal-mistakes@4.15.1"
 # minimal_mistakes_skin    : "contrast"
 
