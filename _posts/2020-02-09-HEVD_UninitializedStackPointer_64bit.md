@@ -52,6 +52,81 @@ You'll notice from our image above that the targeted block of instructions is de
 
 Our code will look like this at this point:
 ```cpp
+#include <Windows.h>
+#include <winternl.h>
+#include <stdio.h>
+#include <iostream>
+
+#define DEVICE_NAME     "\\\\.\\HackSysExtremeVulnerableDriver"
+#define IOCTL           0x22202F
+
+// grabbing a handle to our driver with CreateFileA
+HANDLE get_handle(const char* device_name)
+{
+	// already a big advantage to using C++, we have access to the Windows constant values
+	HANDLE hevd = CreateFileA(device_name,
+		GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_READ | FILE_SHARE_WRITE,
+		NULL,
+		OPEN_EXISTING,
+		0,
+		NULL);
+	
+	// this will help us avoid lots of if statements as we can just loop until a condition is true, not particularly helpful here, but we'll be doing it more
+	do
+	{
+		if (hevd == INVALID_HANDLE_VALUE)
+		{
+			std::cout << "[!] Failed to retrieve handle to the device-driver with error-code:" << ("%x", GetLastError()) << "\n";
+			break;
+		}
+
+		std::cout << "[*] Successfully retrieved handle to device-driver:" << ("%p", hevd) << "\n";
+	
+	} while (0); 
+
+	return hevd;
+}
+
+void interact(HANDLE result)
+{
+	//specify the bytes we want to send, in this case 8 * \x41
+	BYTE inputBuff[] = "AAAAAAAA";
+	
+	//this parameter of DeviceIoControl has to actually exist so we have to make it, but we don't care about it
+	DWORD bytesRet = 0;
+
+	//calling DeviceIoControl, returns non-0 if success, which is a BOOL basically because it can be True (anything) or False (0)
+	//we're not specifying an output buffer in this case as we don't want any data returned from this IOCTL in particular, so that's null and it's size is 0
+	BOOL success = DeviceIoControl(result,
+		IOCTL,
+		inputBuff,
+		sizeof(inputBuff),
+		NULL,
+		0,
+		&bytesRet,
+		NULL);
+
+	if (success) 
+	{
+		std::cout << "[*] Payload sent to driver successfully.";
+	}
+	else
+	{
+		std::cout << "[!] Payload failed with error code: " << ("%x", GetLastError()) << "\n";
+	}
+}
+
+int main()
+{
+	// call our get_handle function with our hardcoded constant and return the result 
+	HANDLE result = get_handle(DEVICE_NAME);
+
+	// call our interact function which calls DeviceIoControl and requires our returned handle
+	interact(result);
+
+	return 0;
+}
 ```
 
 ![](/assets/images/AWE/wehit.PNG)
