@@ -174,7 +174,22 @@ BOOL MapUserPhysicalPages(
 );
 ```
 
-Let's add a function to our code that will spray the stack with our `41` values:
+Let's add a function to our code that will spray the stack with our `41` values. This part was tricky for me because I couldn't just import a header file with the `NtMapUserPhysicalPages` function prototype defined, I had to look at someone else's code for this part. I grabbed this from [tekwizz123's same exploit code](https://github.com/tekwizz123/HEVD-Exploit-Solutions/blob/master/HEVD-Unitialized-Stack-Variable/HEVD-Unitialized-Stack-Variable/HEVD-Unitialized-Stack-Variable.cpp). 
+
+They defined the function with a `typedef`:
+```cpp
+typedef NTSTATUS(WINAPI* _NtMapUserPhysicalPages)(
+	PINT BaseAddress,
+	UINT32 NumberOfPages,
+	PBYTE PageFrameNumbers);
+```
+
+Then they create an instance of the struct, then typecast the result of a `GetProcAddress` call grabbing a handle to `ntdll.dll` as a the struct. Thanks for the help tekwizz123!
+```cpp
+_NtMapUserPhysicalPages NtMapUserPhysicalPages = (_NtMapUserPhysicalPages) GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtMapUserPhysicalPages");
+```
+
+So besides the initial type
 
 
 
