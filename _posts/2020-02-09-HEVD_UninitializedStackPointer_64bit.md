@@ -31,7 +31,7 @@ The reason for this is simple, the other blog posts do a much better job detaili
 This post/series will instead focus on my experience trying to craft the actual exploits.
 
 ## HEVD Series Change
-I will no longer be using Python ctypes to write exploits. We will be using C++ from now on. 
+I will no longer be using Python ctypes to write exploits. We will be using C++ from now on. I realize this is a big change for people following along so I've commented the code heavily. 
 
 I will no longer be doing x86 exploits, only x86-64 from now on. 
 
@@ -44,4 +44,16 @@ Call graph for our desired function:
 
 ![](/assets/images/AWE/svioctl.PNG)
 
-We will be targeting a vulnerable function that triggers an uninitialized stack variable vulnerablity. We can see from the `IrpDeviceIoCtlHandler` function in IDA that we branch to our desired call in the bottom left after failing a `jz` after comparing our IOCTL value (`eax`) with `0x22202B` and then subtracting another `0x4` and successfully triggering a `jz`. So we can conclude that our desired IOCTL is `0x22202B` + `0x4`, which is `0x22202F
+We will be targeting a vulnerable function that triggers an uninitialized stack variable vulnerablity. We can see from the `IrpDeviceIoCtlHandler` function in IDA that we branch to our desired call in the bottom left after failing a `jz` after comparing our IOCTL value (`eax`) with `0x22202B` and then subtracting another `0x4` and successfully triggering a `jz`. So we can conclude that our desired IOCTL is `0x22202B` + `0x4`, which is `0x22202F.`
+
+We'll write some code that creates a handle to the driver and sends a phony payload just to see if we break on that memory location as anticipated. 
+
+You'll notice from our image above that the targeted block of instructions is denoted by a location of `loc_16A27`. We'll go the more realistic route here and pretend we don't have the driver symbols and just set a breakpoint on the loaded module name `HEVD` (if you're confused about this, enter `lm` to check the loaded modules in `kd>` and take a gander at the list), and then add a breakpoint at `!HEVD+0x6a27`, the `1` in the location is actually assuming a base address of  `0x0000000000010000`, so we can remove that and dynamically set the breakpoint at the offset. (I think?) BP is set, let's run our code and see if we hit it, we'll send a junk payload of `AAAAAAAA` right now for testing purposes. 
+
+Our code will look like this at this point:
+```cpp
+```
+
+![](/assets/images/AWE/wehit.PNG)
+
+As you can see, we hit our breakpoint so our IOCTL is correct. Let's figure out what this function actually does. 
