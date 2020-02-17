@@ -142,6 +142,11 @@ After that, we will fail the default `jz` case and end up calling `TriggerUninit
 
 ![](/assets/images/AWE/usvbeg.PNG)
 
+We see there's a `[ProbeForRead]`(https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-probeforread) call and then we're loading a value of `0xBAD0B0B0` into `edx` and then executing a `cmp` between that arbitrary static value and `ebx`. This is probably a compare between our user provided buffer and this static value. Obviously there are two branches from this.
+
+The red branch, which means the compare returned a `0` meaning the buffer matched the hardcoded value, looks to be taking the hardcoded value and loading it onto the stack and then also initializing a second variable called `UninitializedStackVariableObjectCallback` by loading it's value onto the stack as well. 
+
+The green bracnch simply takes whatever value is on the stack at `[rsp+0x128+var_108]` and loads it into `edx`. 
 
 
 
