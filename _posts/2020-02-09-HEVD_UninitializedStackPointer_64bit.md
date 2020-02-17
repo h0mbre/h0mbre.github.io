@@ -50,7 +50,7 @@ We'll write some code that creates a handle to the driver and sends a phony payl
 
 You'll notice from our image above that the targeted block of instructions is denoted by a location of `loc_16A27`. We'll go the more realistic route here and pretend we don't have the driver symbols and just set a breakpoint on the loaded module name `HEVD` (if you're confused about this, enter `lm` to check the loaded modules in `kd>` and take a gander at the list), and then add a breakpoint at `!HEVD+0x6a27`, the `1` in the location is actually assuming a base address of  `0x0000000000010000`, so we can remove that and dynamically set the breakpoint at the offset. (I think?) BP is set, let's run our code and see if we hit it, we'll send a junk payload of `AAAAAAAA` right now for testing purposes. 
 
-Our code will look like this at this point:
+Our code will look like this at this point, I lifted the do-while loop right out of @TheColonial's [Capcom.sys YouTube video (must see)](https://www.youtube.com/watch?v=pJZjWXxUEl4):
 ```cpp
 #include <Windows.h>
 #include <winternl.h>
