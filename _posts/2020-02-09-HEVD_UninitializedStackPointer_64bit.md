@@ -42,4 +42,6 @@ This one is pretty straightforward, we'll be attacking HEVD as normal, this time
 
 Call graph for our desired function:
 
+![](/assets/images/AWE/svioctl.PNG)
+
 We will be targeting a vulnerable function that triggers an uninitialized stack variable vulnerablity. We can see from the `IrpDeviceIoCtlHandler` function in IDA that we branch to our desired call in the bottom left after failing a `jz` after comparing our IOCTL value (`eax`) with `0x22202B` and then subtracting another `0x4` and successfully triggering a `jz`. So we can conclude that our desired IOCTL is `0x22202B` + `0x4`, which is `0x22202F
