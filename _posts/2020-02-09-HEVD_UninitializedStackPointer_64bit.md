@@ -150,8 +150,16 @@ The green bracnch simply takes whatever value is on the stack at `[rsp+0x128+var
 
 ![](/assets/images/AWE/uninit.PNG)
 
-Since a known value was never placed on the stack to be loaded into `r11`, we're calling a function pointer that could lead to undefined behavior. The source code might look something like this in pseudo code:
+Since a known value was never placed on the stack to be loaded into `r11`, we're calling a function pointer that could lead to undefined behavior. The source code might look something like this in pseudo:
+```cpp
+//our code, uninitialized, declared but not given a value 
+STRUCT variable;
+
+//a better way is to make it NULL initially and then you can check if its NULL before calling it 
+STRUCT variable = { 0 };
 ```
+
+
 
 
 
