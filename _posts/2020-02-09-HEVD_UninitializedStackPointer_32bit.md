@@ -1,6 +1,6 @@
 ---
 layout: single
-title: HEVD Exploits -- Windows 7 x86 Uninitialized Stack Variable
+title: HEVD Exploits -- Windows 7 x86-64 Uninitialized Stack Variable
 date: 2020-02-09
 classes: wide
 header:
@@ -33,4 +33,11 @@ This post/series will instead focus on my experience trying to craft the actual 
 I used the following blogs as references:
 + All of the previous referenced blog posts in the series (obviously I'm reusing code I learned from them every exploit),
 
+## HEVD Series Change
+I will no longer be using Python ctypes to write exploits. We will be using C++ from now on. 
+
+I will no longer be doing x86 exploits, only x86-64 from now on. 
+
 ## Goal
+This one is pretty straightforward, we'll be attacking HEVD as normal, this time looking at the uninitialized stack variable bug class. While this isn't super common (I don't think?), there is a very neat API we can leverage from userland to spray the kernel stack and set ourselves up nicely so that we can get control over a called function pointer value. 
+
