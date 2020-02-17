@@ -150,6 +150,8 @@ The green bracnch simply takes whatever value is on the stack at `[rsp+0x128+var
 
 ![](/assets/images/AWE/uninit.PNG)
 
+![](/assets/images/AWE/zecall.PNG)
+
 Since a known value was never placed on the stack to be loaded into `r11`, we're calling a function pointer that could lead to undefined behavior. The source code might look something like this in pseudo:
 ```cpp
 //our code, uninitialized, declared but not given a value 
