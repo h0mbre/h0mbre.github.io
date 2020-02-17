@@ -132,3 +132,12 @@ int main()
 ![](/assets/images/AWE/wehit.PNG)
 
 As you can see, we hit our breakpoint so our IOCTL is correct. Let's figure out what this function actually does. 
+
+## Breaking Down `TriggerUninitializedStackVariable`
+Once we hit our code block, there's a call to `UninitializedStackVariableIoctlHandler` which in turn calls `TriggerUninitializedStackVariable`. We can see a test inside this IOCTL handler to check whether or not our buffer was null. We can see this because it calls a `test rcx, rcx` after placing the user buffer into `rcx`. You can read more about [test here.](https://en.wikipedia.org/wiki/TEST_(x86_instruction)). 
+
+![](/assets/images/AWE/usvih.PNG)
+
+After that, we will fail the default `jz` case and end up calling `TriggerUninitializedStackVariable`.
+
+
