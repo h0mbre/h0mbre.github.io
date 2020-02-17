@@ -159,7 +159,7 @@ STRUCT variable;
 STRUCT variable = { 0 };
 ```
 
-
+Because it's never given a value explicitly before called, the value could end up being whatever is on the stack at the time the function pointer is called. This in and of itself isn't extremely useful to us since we haven't yet discovered a way to put pointers to our shellcode on the stack, until we read the [FuzzySec](https://www.fuzzysecurity.com/tutorials/expDev/17.html) and [j00ru](https://j00ru.vexillium.org/2011/05/windows-kernel-stack-spraying-techniques/) blogs. 
 
 
 
