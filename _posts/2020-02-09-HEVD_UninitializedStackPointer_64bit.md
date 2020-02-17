@@ -28,10 +28,7 @@ This series will be me attempting to run through every exploit on the [Hacksys E
 
 The reason for this is simple, the other blog posts do a much better job detailing this information than I could ever hope to. It feels silly writing this blog series in the first place knowing that there are far superior posts out there; I will not make it even more silly by shoddily explaining these things at a high-level in poorer fashion than those aforementioned posts. Those authors have way more experience than I do and far superior knowledge, I will let them do the explaining. :)
 
-This post/series will instead focus on my experience trying to craft the actual exploits. 
-
-I used the following blogs as references:
-+ All of the previous referenced blog posts in the series (obviously I'm reusing code I learned from them every exploit),
+This post/series will instead focus on my experience trying to craft the actual exploits.
 
 ## HEVD Series Change
 I will no longer be using Python ctypes to write exploits. We will be using C++ from now on. 
@@ -41,3 +38,8 @@ I will no longer be doing x86 exploits, only x86-64 from now on.
 ## Goal
 This one is pretty straightforward, we'll be attacking HEVD as normal, this time looking at the uninitialized stack variable bug class. While this isn't super common (I don't think?), there is a very neat API we can leverage from userland to spray the kernel stack and set ourselves up nicely so that we can get control over a called function pointer value. 
 
+## IOCTL Things
+
+Call graph for our desired function:
+
+We will be targeting a vulnerable function that triggers an uninitialized stack variable vulnerablity. We can see from the `IrpDeviceIoCtlHandler` function in IDA that we branch to our desired call in the bottom left after failing a `jz` after comparing our IOCTL value (`eax`) with `0x22202B` and then subtracting another `0x4` and successfully triggering a `jz`. So we can conclude that our desired IOCTL is `0x22202B` + `0x4`, which is `0x22202F
