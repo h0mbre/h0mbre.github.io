@@ -9,7 +9,7 @@ tags:
   - Exploit Dev
   - Drivers
   - Windows
-  - x86
+  - x86-64
   - Shellcoding
   - Kernel Exploitation
   - Uninitialized Stack Variable
@@ -146,7 +146,13 @@ We see there's a `[ProbeForRead]`(https://docs.microsoft.com/en-us/windows-hardw
 
 The red branch, which means the compare returned a `0` meaning the buffer matched the hardcoded value, looks to be taking the hardcoded value and loading it onto the stack and then also initializing a second variable called `UninitializedStackVariableObjectCallback` by loading it's value onto the stack as well. 
 
-The green bracnch simply takes whatever value is on the stack at `[rsp+0x128+var_108]` and loads it into `edx`. 
+The green bracnch simply takes whatever value is on the stack at `[rsp+0x128+var_108]` and loads it into `edx`. One of the biggest differneces here is that no value is placed on the stack at `[rsp+0x128+var_100]` from `rax`. This is curious because, in the next block of code, where the two paths converge, we see that stack value being loaded into `r11` and then a call to `r11`. 
+
+![](/assets/images/AWE/uninit.PNG)
+
+Since a known value was never placed on the stack to be loaded into `r11`, we're calling a function pointer that could lead to undefined behavior. The source code might look something like this in pseudo code:
+```
+
 
 
 
