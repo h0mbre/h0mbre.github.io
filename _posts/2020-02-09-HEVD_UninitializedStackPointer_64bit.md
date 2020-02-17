@@ -140,7 +140,7 @@ Once we hit our code block, there's a call to `UninitializedStackVariableIoctlHa
 
 After that, we will fail the default `jz` case and end up calling `TriggerUninitializedStackVariable`. This is what the beginning of the function looks like when we inspect in IDA.
 
-![](/assets/images/AWE/usbeg.PNG)
+![](/assets/images/AWE/usvbeg.PNG)
 
 
 
