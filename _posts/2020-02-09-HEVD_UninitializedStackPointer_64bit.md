@@ -108,47 +108,33 @@ int main()
 As you can see, we hit our breakpoint so our IOCTL is correct. Let's figure out what this function actually does. 
 
 ## Breaking Down `TriggerUninitializedStackVariable`
-Once we hit our code block, there's a call to `UninitializedStackVariableIoctlHandler` which in turn calls `TriggerUninitializedStackVariable`. We can see a test inside this IOCTL handler to check whether or not our buffer was null. We can see this because it calls a `test rcx, rcx` after placing the user buffer into `rcx`. You can read more about [test here.](https://en.wikipedia.org/wiki/TEST_(x86_instruction)). 
+Once we hit our code block, there's a call to `UninitializedStackVariableIoctlHandler` which in turn calls `TriggerUninitializedStackVariable`. We can see a test inside this IOCTL handler to check whether or not our buffer was null. We can see this because it calls a `test ecx, ecx` after placing the user buffer into `ecx`. You can read more about [test here.](https://en.wikipedia.org/wiki/TEST_(x86_instruction)). 
 
 ![](/assets/images/AWE/usvih.PNG)
 
-After that, we will fail the default `jz` case and end up calling `TriggerUninitializedStackVariable`. This is what the beginning of the function looks like when we inspect in IDA.
+After that, we will fail the default `jz` case and end up calling `TriggerUninitializedStackVariable`. This is what the function looks like when we inspect in IDA.
 
 ![](/assets/images/AWE/usvbeg.PNG)
 
-We see there's a `[ProbeForRead]`(https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-probeforread) call and then we're loading a value of `0xBAD0B0B0` into `edx` and then executing a `cmp` between that arbitrary static value and `ebx`. This is probably a compare between our user provided buffer and this static value. Obviously there are two branches from this.
+We see there's a `[ProbeForRead]`(https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-probeforread) call and then we're loading a value of `0xBAD0B0B0` into `eax` and then executing a `cmp` between that arbitrary static value and `esi`. This is probably a compare between our user provided buffer and this static value. Obviously there are two branches from this.
 
-The red branch, which means the compare returned a `0` meaning the buffer matched the hardcoded value, looks to be taking the hardcoded value and loading it onto the stack and then also initializing a second variable called `UninitializedStackVariableObjectCallback` by loading it's value onto the stack as well. 
+The shortest arrow will, which should be red, will be the code path we take if the zero flag is set, since `jnz` is the default case (green). So if our provided input is exactly `0xBAD0B0B0`, we will take this short jump and execute the next two instructions: 
 
-The green bracnch simply takes whatever value is on the stack at `[rsp+0x128+var_108]` and loads it into `edx`. One of the biggest differneces here is that no value is placed on the stack at `[rsp+0x128+var_100]` from `rax`. This is curious because, in the next block of code, where the two paths converge, we see that stack value being loaded into `r11` and then a call to `r11`. 
+```
+mov     [ebp+UninitializedStackVariable.Value], eax
+mov     [ebp+UninitializedStackVariable.Callback], offset _UninitializedStackVariableObjectCallback@0 ;UninitializedStackVariableObjectCallback()
+```
+This is interesting because you can see that there are two values being placed onto the stack, one from `eax` (which we already know would be `0xBAD0B0B0` in this code path) and one from this offset to the `UninitializedStackVariableObjectCallback` entity. You can right click that in IDA and change it to a hex value if you prefer, its the address of the `.Callback` function for this struct. So if we take this code path, two different variables are initialized with a value on the stack.
+
+However, if we do NOT take this code path, we see we eventually do a `cmp [ebp+UninitializedStackVariable.Callback], edi` operation. When I stepped through this in WinDBG, this was making sure that the pointer to this `.Callback` function was not `NULL`. As long as it's not `NULL` (our `jz` fails, and we take the red code path), we will call the function. Since our function pointer was never initialized to `NULL` because we didn't provide the magic value, we will end up calling whatever this function pointer happens to be pointing to on the stack. After I right-click on the offset and change the value to hex we see:
 
 ![](/assets/images/AWE/uninit.PNG)
 
-![](/assets/images/AWE/zecall.PNG)
+So it's going to call whatever is located at `ebp - 0x108`. That's really cool! What if we can get a pointer to shellcode at that address? That would require us to control a lot of values on the stack. Luckily, people way smarter than me have figured out how to do that via an API. 
 
-Since a known value was never placed on the stack to be loaded into `r11`, we're calling a function pointer that could lead to undefined behavior. The source code might look something like this in pseudo:
-```cpp
-//our code, uninitialized, declared but not given a value 
-STRUCT variable;
+As the [FuzzySec](https://www.fuzzysecurity.com/tutorials/expDev/17.html) and [j00ru](https://j00ru.vexillium.org/2011/05/windows-kernel-stack-spraying-techniques/) blogs point out, we can use [`NtMapUserPhyiscalPages`](https://docs.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-mapuserphysicalpages) to spray a pointer value onto the stack repeatedly. You can read j00ru's blog for a great breakdown of how the kernel stack works and is initialized and grows. 
 
-//a better way is to make it NULL initially and then you can check if its NULL before calling it 
-STRUCT variable = { 0 };
-```
-
-Because it's never given a value explicitly before called, the value could end up being whatever is on the stack at the time the function pointer is called. This in and of itself isn't extremely useful to us since we haven't yet discovered a way to put pointers to our shellcode on the stack, until we read the [FuzzySec](https://www.fuzzysecurity.com/tutorials/expDev/17.html) and [j00ru](https://j00ru.vexillium.org/2011/05/windows-kernel-stack-spraying-techniques/) blogs. 
-
-Apparently, we can use [`NtMapUserPhyiscalPages`](https://docs.microsoft.com/en-us/windows/win32/api/memoryapi/nf-memoryapi-mapuserphysicalpages) to spray a pointer value onto the stack repeatedly. You can read j00ru's blog for a great breakdown of how the kernel stack works and is initialized and grows. 
-
-Let's try to get a bunch of `41` values sprayed onto the stack. The prototype looks like this:
-```cpp
-BOOL MapUserPhysicalPages(
-  PVOID      VirtualAddress,
-  ULONG_PTR  NumberOfPages,
-  PULONG_PTR PageArray
-);
-```
-
-Let's add a function to our code that will spray the stack with our `41` values. This part was tricky for me because I couldn't just import a header file with the `NtMapUserPhysicalPages` function prototype defined, I had to look at someone else's code for this part. I grabbed this from [tekwizz123's same exploit code](https://github.com/tekwizz123/HEVD-Exploit-Solutions/blob/master/HEVD-Unitialized-Stack-Variable/HEVD-Unitialized-Stack-Variable/HEVD-Unitialized-Stack-Variable.cpp). 
+Let's add a function to our code that will spray the stack with the values required to get shellcode executed. This part was tricky for me because I couldn't just import a header file with the `NtMapUserPhysicalPages` function prototype defined, I had to look at someone else's code for this part. I grabbed this from [tekwizz123's same exploit code](https://github.com/tekwizz123/HEVD-Exploit-Solutions/blob/master/HEVD-Unitialized-Stack-Variable/HEVD-Unitialized-Stack-Variable/HEVD-Unitialized-Stack-Variable.cpp). 
 
 They defined the function with a `typedef`:
 ```cpp
@@ -158,12 +144,29 @@ typedef NTSTATUS(WINAPI* _NtMapUserPhysicalPages)(
 	PBYTE PageFrameNumbers);
 ```
 
-Then they create an instance of the struct, then typecast the result of a `GetProcAddress` call grabbing a handle to `ntdll.dll` as a the struct. Thanks for the help tekwizz123!
+Then they create an instance of the struct, then typecast the result of a `GetProcAddress` call grabbing a handle to `ntdll.dll` as the struct. Thanks for the help tekwizz123! Most of this code is literally just tekwizz's code, I was so helpless on this exploit, I could not get it working on my own.
 ```cpp
 _NtMapUserPhysicalPages NtMapUserPhysicalPages = (_NtMapUserPhysicalPages) GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "NtMapUserPhysicalPages");
 ```
 
-So besides the initial type
+Our code will be very similar. We can go ahead and basically finish our exploit from here. I will point out all the new code added and why. 
+
+We obviously add the `typedef` to the beginning of our code. 
+
+The most confusing part, will be this `PageFrameNumbers` parameter for our call to `NtMapUserPhysicalPages`. It takes a value of type `PBYTE`. We will satisfy this parameter as follows:
+1. Create a Shellcode `char` buffer;
+2. Create a RWX buffer the size of the Shellcode buffer with `VirtualAlloc`;
+3. Copy the Shellcode `char` buffer into the RWX buffer with `memcopy`;
+4. Create a pointer to the address of the RWX Shellcode buffer;
+5. Create a `char` array the size of a `PINT` on our system (4) times `1024` (this is the max size the API allows you to call) which is `4096`;
+6. Fill this newly created `4096` character long `char` array with this pointer to the address of the RWX Shellcode buffer;
+7. Pass a `PBYTE` typcasted *by reference* value to the `char` array to `NtMapUserPhysicalPages`. 
+
+Whew! That's quite a lot to take in, if you have to reread the code 100x, you are not alone. Thanks again to tekwizz123. 
+
+The rest of the code is similar to previous exploits, we lifted the token stealing shellcode straight from b33f's aforementioned blogpost. We call `DeviceIoControl` the same way we have been in Python. The only difference from there is really the use of the `CreateProcessA` API which we used to just gloss over in Python by calling `popen()`. This simply starts a `cmd.exe` shell as `nt authority/system` at the tail end of our exploit when our token has been overwritten. If you want more information about this API, refer back to my Win32 shellcoding [posts](https://h0mbre.github.io/Win32_Reverse_Shellcode/#)!
+
+
 
 
 
