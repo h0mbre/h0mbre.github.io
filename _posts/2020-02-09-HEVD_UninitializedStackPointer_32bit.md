@@ -50,7 +50,7 @@ We'll write some code that creates a handle to the driver and sends a phony payl
 
 You'll notice from our image above that the targeted block of instructions is denoted by a location of `loc_1571A`. We'll go the more realistic route here and pretend we don't have the driver symbols and just set a breakpoint on the loaded module name `HEVD` (if you're confused about this, enter `lm` to check the loaded modules in `kd>` and take a gander at the list), and then add a breakpoint at `!HEVD+0x571A`, the `1` in the location is actually assuming a base address of  `0x00010000`, so we can remove that and dynamically set the breakpoint at the offset. (I think?) BP is set, let's run our code and see if we hit it, we'll send a junk payload of `AAAA` right now for testing purposes. 
 
-Our code will look like this at this point, I lifted the do-while loop right out of @TheColonial's [Capcom.sys YouTube video (must see)](https://www.youtube.com/watch?v=pJZjWXxUEl4):
+Our code will look like this at this point:
 ```cpp
 #include <Windows.h>
 #include <winternl.h>
@@ -116,7 +116,7 @@ After that, we will fail the default `jz` case and end up calling `TriggerUninit
 
 ![](/assets/images/AWE/usvbeg.PNG)
 
-We see there's a `[ProbeForRead]`(https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-probeforread) call and then we're loading a value of `0xBAD0B0B0` into `eax` and then executing a `cmp` between that arbitrary static value and `esi`. This is probably a compare between our user provided buffer and this static value. Obviously there are two branches from this.
+We see there's a [`ProbeForRead`](https://docs.microsoft.com/en-us/windows-hardware/drivers/ddi/wdm/nf-wdm-probeforread) call and then we're loading a value of `0xBAD0B0B0` into `eax` and then executing a `cmp` between that arbitrary static value and `esi`. This is probably a compare between our user provided buffer and this static value. Obviously there are two branches from this.
 
 The shortest arrow will, which should be red, will be the code path we take if the zero flag is set, since `jnz` is the default case (green). So if our provided input is exactly `0xBAD0B0B0`, we will take this short jump and execute the next two instructions: 
 
