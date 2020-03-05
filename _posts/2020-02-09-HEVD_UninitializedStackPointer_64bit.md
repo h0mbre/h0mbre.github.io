@@ -297,6 +297,8 @@ int main()
 }
 ```
 
+![](/assets/images/AWE/wediditbb.PNG)
+
 ## Conclusion
 Figuring out how to deal with that `PageFrameNumbers` parameter of the `NtMapUserPhysicalPages` API was really hard for me as someone who is new to C++. In Python and Powershell it looked really straightforward but was definitely more cumbersome in C++. Couldn't have done this one without the tons of the help I got from the mentioned blog post authors, thanks a ton to them, I'd have been lost without their content. Thanks again for reading!
 
