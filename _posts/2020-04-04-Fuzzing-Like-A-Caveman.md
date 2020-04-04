@@ -22,7 +22,7 @@ The fuzzer we'll be creating is from just following along with [@gynvael's](http
 I must also mention that [Brandon Faulk's](https://twitter.com/gamozolabs) [fuzzing streams](https://www.youtube.com/user/gamozolabs/videos) are incredible. I don't understand roughly 99% of the things Brandon says, but these streams are captivating. My personal favorites so far have been his fuzzing of `calc.exe` and `c-tags`. He also has this wonderful introduction to fuzzing concepts video here: [NYU Fuzzing Talk](https://www.youtube.com/watch?v=SngK4W4tVc0). 
 
 ## Picking a Target
-I wanted to find a binary that was written in C or C++ and parsed data from a file. One of the first things I came across was binaries that parse Exif data out of images. 
+I wanted to find a binary that was written in C or C++ and parsed data from a file. One of the first things I came across was binaries that parse Exif data out of images. We also want to pick a target with virtually no security implications since I'm publishing these findings in real time.
 
 From `https://www.media.mit.edu/pia/Research/deepview/exif.html`, ***Basically, Exif file format is the same as JPEG file format. Exif inserts some of image/digicam information data and thumbnail image to JPEG in conformity to JPEG specification. Therefore you can view Exif format image files by JPEG compliant Internet browser/Picture viewer/Photo retouch software etc. as a usual JPEG image files.***
 
@@ -756,8 +756,305 @@ READ of size 4 at 0xb4d00758 thread T0
 
 Since this is all standard binary output now, we can actually triage these crashes and try to make sense of them. Let's first try to deduplicate the crashes. It's possible here that all 30 of our crashes are the same bug. It's also possible that we have 30 unique crashes (not likely lol). So we need to sort that out.
 
-Let's again appeal to a Python script, we'll iterate through this folder, run the ASan enabled binary against each crash and log where the crashing address is for each. So for example, for `crash.252.jpg`, we'll format the log file as: `crash.252.heap-buffer-overflow.b4d00758.log` and we'll write the ASan output to the log. This way we know the crash image that caused it, the bug class, and the address. 
+Let's again appeal to a Python script, we'll iterate through this folder, run the ASan enabled binary against each crash and log where the crashing address is for each. We'll also try to capture if it's a `'READ'` or `'WRITE'` operation as well. So for example, for `crash.252.jpg`, we'll format the log file as: `crash.252.HBO.b4f00758.READ` and we'll write the ASan output to the log. This way we know the crash image that caused it, the bug class, the address, and the operation before we even open the log. (I'll post the triage script at the end, it's so gross ugh, I hate it.)
+
+After running the triage script on our `crashes` folder, we can now see we have triaged our crashes and there is something very interesting. 
+```terminal_session
+crash.102.HBO.b4f006d4.READ
+crash.102.jpg
+crash.129.HBO.b4f005dc.READ
+crash.129.jpg
+crash.152.HBO.b4f005dc.READ
+crash.152.jpg
+crash.317.HBO.b4f005b4.WRITE
+crash.317.jpg
+crash.285.SEGV.00000000.READ
+crash.285.jpg
+------SNIP-----
+```
+
+After a big SNIP there, out of my 30 crashes, I only had one WRITE operation. You can't tell from the snipped output but I also had a lot of SEGV bugs where a NULL address was referenced (`0x00000000`). 
+
+Let's also check in on our modified fuzzer that was running only the `magic()` mutator for 100,000 iterations and see if it turned up any bugs. 
+```terminal_session
+root@kali:~/crashes2# ls
+crash.10354.jpg  crash.2104.jpg   crash.3368.jpg   crash.45581.jpg  crash.64750.jpg  crash.77850.jpg  crash.86367.jpg  crash.94036.jpg
+crash.12771.jpg  crash.21126.jpg  crash.35852.jpg  crash.46757.jpg  crash.64987.jpg  crash.78452.jpg  crash.86560.jpg  crash.9435.jpg
+crash.13341.jpg  crash.23547.jpg  crash.39494.jpg  crash.46809.jpg  crash.66340.jpg  crash.78860.jpg  crash.88799.jpg  crash.94770.jpg
+crash.14060.jpg  crash.24492.jpg  crash.40953.jpg  crash.49520.jpg  crash.6637.jpg   crash.79019.jpg  crash.89072.jpg  crash.95438.jpg
+crash.14905.jpg  crash.25070.jpg  crash.41505.jpg  crash.50723.jpg  crash.66389.jpg  crash.79824.jpg  crash.89738.jpg  crash.95525.jpg
+crash.18188.jpg  crash.27783.jpg  crash.41700.jpg  crash.52051.jpg  crash.6718.jpg   crash.81206.jpg  crash.90506.jpg  crash.96746.jpg
+crash.18350.jpg  crash.2990.jpg   crash.43509.jpg  crash.54074.jpg  crash.68527.jpg  crash.8126.jpg   crash.90648.jpg  crash.98727.jpg
+crash.19441.jpg  crash.30599.jpg  crash.43765.jpg  crash.55183.jpg  crash.6987.jpg   crash.82472.jpg  crash.90745.jpg  crash.9969.jpg
+crash.19581.jpg  crash.31243.jpg  crash.43813.jpg  crash.5857.jpg   crash.70713.jpg  crash.83282.jpg  crash.92426.jpg
+crash.19907.jpg  crash.31563.jpg  crash.44974.jpg  crash.59625.jpg  crash.77590.jpg  crash.83284.jpg  crash.92775.jpg
+crash.2010.jpg   crash.32642.jpg  crash.4554.jpg   crash.64255.jpg  crash.77787.jpg  crash.84766.jpg  crash.92906.jpg
+```
+
+That's a lot of crashes! 
+
+## Getting Serious, Conclusion
+The fuzzer could be optimized a ton, it's really crude at the moment and only meant to demonstrate very basic mutation fuzzing. The bug triaging process is also a mess and felt really hacky the whole way, I guess I need to watch some more @gamozolabs streams. Maybe next time we do fuzzing we'll try a harder target, write the fuzzer in a cool language like Rust or Go, and we'll try to really refine the triaging process/exploit one of the bugs!
+
+Thanks to everyone referenced in the blogpost, huge thanks. 
+
+Until next time!
+
+## Code
+
+`JPEGfuzz.py`
+```python
+#!/usr/bin/env python3
+
+import sys
+import random
+from pexpect import run
+from pipes import quote
+
+# read bytes from our valid JPEG and return them in a mutable bytearray 
+def get_bytes(filename):
+
+	f = open(filename, "rb").read()
+
+	return bytearray(f)
+
+def bit_flip(data):
+
+	num_of_flips = int((len(data) - 4) * .01)
+
+	indexes = range(4, (len(data) - 4))
+
+	chosen_indexes = []
+
+	# iterate selecting indexes until we've hit our num_of_flips number
+	counter = 0
+	while counter < num_of_flips:
+		chosen_indexes.append(random.choice(indexes))
+		counter += 1
+
+	for x in chosen_indexes:
+		current = data[x]
+		current = (bin(current).replace("0b",""))
+		current = "0" * (8 - len(current)) + current
+		
+		indexes = range(0,8)
+
+		picked_index = random.choice(indexes)
+
+		new_number = []
+
+		# our new_number list now has all the digits, example: ['1', '0', '1', '0', '1', '0', '1', '0']
+		for i in current:
+			new_number.append(i)
+
+		# if the number at our randomly selected index is a 1, make it a 0, and vice versa
+		if new_number[picked_index] == "1":
+			new_number[picked_index] = "0"
+		else:
+			new_number[picked_index] = "1"
+
+		# create our new binary string of our bit-flipped number
+		current = ''
+		for i in new_number:
+			current += i
+
+		# convert that string to an integer
+		current = int(current,2)
+
+		# change the number in our byte array to our new number we just constructed
+		data[x] = current
+
+	return data
+
+def magic(data):
+
+	magic_vals = [
+	(1, 255),
+	(1, 255),
+	(1, 127),
+	(1, 0),
+	(2, 255),
+	(2, 0),
+	(4, 255),
+	(4, 0),
+	(4, 128),
+	(4, 64),
+	(4, 127)
+	]
+
+	picked_magic = random.choice(magic_vals)
+
+	length = len(data) - 8
+	index = range(0, length)
+	picked_index = random.choice(index)
+
+	# here we are hardcoding all the byte overwrites for all of the tuples that begin (1, )
+	if picked_magic[0] == 1:
+		if picked_magic[1] == 255:			# 0xFF
+			data[picked_index] = 255
+		elif picked_magic[1] == 127:		# 0x7F
+			data[picked_index] = 127
+		elif picked_magic[1] == 0:			# 0x00
+			data[picked_index] = 0
+
+	# here we are hardcoding all the byte overwrites for all of the tuples that begin (2, )
+	elif picked_magic[0] == 2:
+		if picked_magic[1] == 255:			# 0xFFFF
+			data[picked_index] = 255
+			data[picked_index + 1] = 255
+		elif picked_magic[1] == 0:			# 0x0000
+			data[picked_index] = 0
+			data[picked_index + 1] = 0
+
+	# here we are hardcoding all of the byte overwrites for all of the tuples that being (4, )
+	elif picked_magic[0] == 4:
+		if picked_magic[1] == 255:			# 0xFFFFFFFF
+			data[picked_index] = 255
+			data[picked_index + 1] = 255
+			data[picked_index + 2] = 255
+			data[picked_index + 3] = 255
+		elif picked_magic[1] == 0:			# 0x00000000
+			data[picked_index] = 0
+			data[picked_index + 1] = 0
+			data[picked_index + 2] = 0
+			data[picked_index + 3] = 0
+		elif picked_magic[1] == 128:		# 0x80000000
+			data[picked_index] = 128
+			data[picked_index + 1] = 0
+			data[picked_index + 2] = 0
+			data[picked_index + 3] = 0
+		elif picked_magic[1] == 64:			# 0x40000000
+			data[picked_index] = 64
+			data[picked_index + 1] = 0
+			data[picked_index + 2] = 0
+			data[picked_index + 3] = 0
+		elif picked_magic[1] == 127:		# 0x7FFFFFFF
+			data[picked_index] = 127
+			data[picked_index + 1] = 255
+			data[picked_index + 2] = 255
+			data[picked_index + 3] = 255
+		
+	return data
+
+# create new jpg with mutated data
+def create_new(data):
+
+	f = open("mutated.jpg", "wb+")
+	f.write(data)
+	f.close()
+
+def exif(counter,data):
+
+    command = "exif mutated.jpg -verbose"
+
+    out, returncode = run("sh -c " + quote(command), withexitstatus=1)
+
+    if b"Segmentation" in out:
+    	f = open("crashes2/crash.{}.jpg".format(str(counter)), "ab+")
+    	f.write(data)
+
+    if counter % 100 == 0:
+    	print(counter, end="\r")
+
+if len(sys.argv) < 2:
+	print("Usage: JPEGfuzz.py <valid_jpg>")
+
+else:
+	filename = sys.argv[1]
+	counter = 0
+	while counter < 100000:
+		data = get_bytes(filename)
+		functions = [0, 1]
+		picked_function = random.choice(functions)
+		if picked_function == 0:
+			mutated = magic(data)
+			create_new(mutated)
+			exif(counter,mutated)
+		else:
+			mutated = bit_flip(data)
+			create_new(mutated)
+			exif(counter,mutated)
+
+		counter += 1
+```
+
+`triage.py`
+```python
+#!/usr/bin/env python3
+
+import os
+from os import listdir
+
+def get_files():
+
+	files = os.listdir("/root/crashes/")
+
+	return files
+
+def triage_files(files):
+
+	for x in files:
+
+		original_output = os.popen("exifsan " + x + " -verbose 2>&1").read()
+		output = original_output
+		
+		# Getting crash reason
+		crash = ''
+		if "SEGV" in output:
+			crash = "SEGV"
+		elif "heap-buffer-overflow" in output:
+			crash = "HBO"
+		else:
+			crash = "UNKNOWN"
+		
+
+		if crash == "HBO":
+			output = output.split("\n")
+			counter = 0
+			while counter < len(output):
+				if output[counter] == "=================================================================":
+					target_line = output[counter + 1]
+					target_line2 = output[counter + 2]
+					counter += 1
+				else:
+					counter += 1
+			target_line = target_line.split(" ")
+			address = target_line[5].replace("0x","")
+			
+
+			target_line2 = target_line2.split(" ")
+			operation = target_line2[0]
+			
+
+		elif crash == "SEGV":
+			output = output.split("\n")
+			counter = 0
+			while counter < len(output):
+				if output[counter] == "=================================================================":
+					target_line = output[counter + 1]
+					target_line2 = output[counter + 2]
+					counter += 1
+				else:
+					counter += 1
+			if "unknown address" in target_line:
+				address = "00000000"
+			else:
+				address = None
+
+			if "READ" in target_line2:
+				operation = "READ"
+			elif "WRITE" in target_line2:
+				operation = "WRITE"
+			else:
+				operation = None
+
+		log_name = (x.replace(".jpg","") + "." + crash + "." + address + "." + operation)
+		f = open(log_name,"w+")
+		f.write(original_output)
+		f.close()
 
 
 
-
+files = get_files()
+triage_files(files)
+```
