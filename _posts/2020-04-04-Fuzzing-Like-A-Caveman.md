@@ -314,3 +314,23 @@ a7b619028af3d8e5ac106a697b06efcde0649249  mutated.jpg
 This looks promising as they have different hashes now. We can further analyze by comparing them with a program called [Beyond Compare](https://www.scootersoftware.com/) or `bcompare`. We'll get two hexdumps with differences highlighted. 
 
 ![](/assets/images/AWE/bcompare.PNG)
+
+As you can see, in just this one screen share we have 3 different bytes that have had their bits flipped. The original is on the left, the mutated sample is on the right. 
+
+This mutation method appears to have worked. Let's move onto implementing our second mutation method
+
+## Gynvael's Magic Numbers
+During the aformentioned GynvaelColdwind ['Basics of fuzzing' stream](https://www.youtube.com/watch?v=BrDujogxYSk&t=2545), he enumerates several 'magic numbers' which can have devestating effects on programs. Typically, these numbers relate to data type sizes and arithmetic-induced errors. The numbers discussed were: 
++ `0xFF`
++ `0x7F`
++ `0x00`
++ `0xFFFF`
++ `0x0000`
++ `0xFFFFFFFF`
++ `0x00000000`
++ `0x80000000` <---- minimum 32-bit int
++ `0x40000000` <---- just half of that amount
++ `0x7FFFFFFF` <---- max 32-bit int
+
+If there is any kind of arithmetic performed on these types of values in the course of `malloc()` or other types of operations, overflows can be common. For instance if you add `0x1` to `0xFF` on a one-byte register, it would roll over to `0x00` this can be unintended behavior. HEVD actually has an integer overflow bug similar to this concept. 
+
