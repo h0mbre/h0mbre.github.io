@@ -56,4 +56,37 @@ root@kali:~# hexdump Canon
 0001f10 5aed 5158 d9ff 
 ```
 
+Another interesting piece of information in the specification overview is that 'markers' begin with `0xFF`. There are several known static markers such as: 
++ the 'Start of Image' (SOI) marker: `0xFFD8`
++ APP1 marker: `0xFFE1`
++ generic markers: `0xFFXX`
++ the 'End of Image' (EOI) marker: `0xFFD9`
+
+Since we don't want to change the image length or the file type, let's go ahead and plan to keep the SOI and EOI markers intact when possible. We don't want to insert `0xFFD9` into the middle of the image for example as that would truncate the image or cause the parser to misbehave in a non-crashy way. 'Non-crashy' is a real word. Also, this could be misguided and maybe we should be randomly putting EOI markers in the byte stream? Let's see. 
+
+## Starting Our Fuzzer
+The first thing we'll need to do is extract all of the bytes from the JPEG we want to use as our 'valid' input sample that we'll of course mutate. 
+
+Our code will start off like this:
+```python
+#!/usr/bin/env python3
+
+import sys
+
+# read bytes from our valid JPEG and return them in a mutable bytearray 
+def get_bytes(filename):
+
+	f = open(filename, "rb+")
+
+	return bytearray(f)
+
+if len(sys.argv) < 2:
+	print("Usage: JPEGfuzz.py <valid_jpg>")
+
+else:
+	filename = sys.argv[1]
+	data = get_bytes(filename)
+```
+
+
 
