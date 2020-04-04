@@ -746,6 +746,8 @@ Shadow byte legend (one shadow byte represents 8 application bytes):
 
 This is wonderful. Not only do we get detailed information but ASan also classifies the bug class for us and tells us the address. Since this is all standard binary output now, we can actually triage these crashes and try to make sense of them. Let's first try to deduplicate the crashes. It's possible here that all 30 of our crashes are the same bug. It's also possible that we have 30 unique crashes (not likely lol). So we need to sort that out.
 
-Let's again appeal to a Python script, 
+Let's again appeal to a Python script, we'll iterate through this folder, run the ASan enabled binary against each crash and log where the crashing address is for each. So for example, for `crash.252.jpg`, we'll format the log file as: `crash.252.heap-buffer-overflow.b4d00758.log` and we'll write the ASan output to the log. This way we know the crash image that caused it, the bug class, and the address. 
+
+
 
 
