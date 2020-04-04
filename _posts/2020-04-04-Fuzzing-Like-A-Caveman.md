@@ -26,4 +26,34 @@ I wanted to find a binary that was written in C or C++ and parsed data from a fi
 
 From `https://www.media.mit.edu/pia/Research/deepview/exif.html`, ***Basically, Exif file format is the same as JPEG file format. Exif inserts some of image/digicam information data and thumbnail image to JPEG in conformity to JPEG specification. Therefore you can view Exif format image files by JPEG compliant Internet browser/Picture viewer/Photo retouch software etc. as a usual JPEG image files.***
 
+So Exif inserts metadata type information into images in conformity with the JPEG spec, and there exists no shortage of programs/utilities which helpfully parse this data out. 
+
+## Getting Started
+We'll be using Python3 to build a rudimentary mutation fuzzer that subtly (or not so subtly) alters valid Exif-filled JPEGs and feeds them to a parser hoping for a crash. We'll also be working on an x86 Kali Linux distro. 
+
+First thing's first, we need a valid Exif-filled JPEG. A Google search for 'Sample JPEG with Exif' helpfully leads us to [this repo](https://github.com/ianare/exif-samples/tree/master/jpg). I'll be using the `Canon_40D.jpg` image for testing. 
+
+## Getting to Know the JPEG and EXIF Spec
+Before we start just scribbling Python into Sublime Text, let's first take some time to learn about the JPEG and Exif specification so that we can avoid some of the more obvious pitfalls of corrupting the image to the point that the parser doesn't attempt to parse it and wastes precious fuzzing cycles.
+
+One thing to know from the [previously referenced specification overview](https://www.media.mit.edu/pia/Research/deepview/exif.html), is that all JPEG images start with byte values `0xFFD8` and end with byte values `0xFFD9`. This first couple of bytes are what are known as ['magic bytes'](https://en.wikipedia.org/wiki/List_of_file_signatures). This allows for straightforward file-type identification on \*Nix systems. 
+```terminal_session
+root@kali:~# file Canon_40D.jpg 
+Canon_40D.jpg: JPEG image data, JFIF standard 1.01, resolution (DPI), density 72x72, segment length 16, Exif Standard: [TIFF image data, little-endian, direntries=11, manufacturer=Canon, model=Canon EOS 40D, orientation=upper-left, xresolution=166, yresolution=174, resolutionunit=2, software=GIMP 2.4.5, datetime=2008:07:31 10:38:11, GPS-Data], baseline, precision 8, 100x68, components 3
+```
+
+We can take the `.jpg` off and get the same output. 
+```terminal_session
+root@kali:~# file Canon
+Canon: JPEG image data, JFIF standard 1.01, resolution (DPI), density 72x72, segment length 16, Exif Standard: [TIFF image data, little-endian, direntries=11, manufacturer=Canon, model=Canon EOS 40D, orientation=upper-left, xresolution=166, yresolution=174, resolutionunit=2, software=GIMP 2.4.5, datetime=2008:07:31 10:38:11, GPS-Data], baseline, precision 8, 100x68, components 3
+```
+
+If we hexdump the image, we can see the first and last bytes are in fact `0xFFD8` and `0xFFD9`.
+```terminal_session
+root@kali:~# hexdump Canon
+0000000 d8ff e0ff 1000 464a 4649 0100 0101 4800
+------SNIP------
+0001f10 5aed 5158 d9ff 
+```
+
 
