@@ -458,5 +458,6 @@ def magic(data):
 ```
 
 ## Analyzing Mutation #2
+Running our script now and analyzing the results in Beyond Compare, we can see that a two byte value of `0xA6 0x76` was overwritten with `0xFF 0xFF`. 
 
-
+![](/assets/images/AWE/bcompare2.PNG)
