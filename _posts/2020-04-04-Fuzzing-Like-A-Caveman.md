@@ -134,14 +134,13 @@ c3d98686223ad69ea29c811aaab35d343ff1ae9e  mutated.jpg
 Awesome, we have two identical files. Now we can get into the business of mutating the data before creating our `mutated.jpg`. 
 
 ## Mutating
-We'll keep our fuzzer relatively simple and only implement three different mutation methods. These methods will be:
+We'll keep our fuzzer relatively simple and only implement two different mutation methods. These methods will be:
 + bit flipping
-+ random byte overwriting
 + overwriting byte sequences with Gynvael's 'Magic Numbers'
 
 Let's start with bit flipping. `255` (or `0xFF`) in binary would be `11111111` if we were to randomly flip a bit in this number, let say at index number 2, we'd end up with `11011111`. This new number would be `223` or `0xDF`. 
 
-I'm not entirely sure how different this mutation method is from randomly selecting a value from `0` - `255` and overwritng a random byte with it. But we'll implement both for good measure. My intuiton says that bit flipping is extremely similar and having our second mutation method is redundant, but oh well. 
+I'm not entirely sure how different this mutation method is from randomly selecting a value from `0` - `255` and overwritng a random byte with it. My intuiton says that bit flipping is extremely similar to randomly overwriting bytes with an arbitrary byte. 
 
 Let's go ahead and say we want to only flip a bit in 1% of the bytes we have. We can get to this number in Python by doing:
 ```python
@@ -218,5 +217,8 @@ root@kali:~# python3 fuzzer.py Canon_40D.jpg
 -----SNIP-----
 ```
 
+Now for each of these, we'll randomly select an index, and flip it. Take the first one, `10100110`, if select index 0, we have a `1`, we'll flip it to `0`. 
 
+Last considering for this code segment is that these are strings not integers remember. So the last thing we need to do is convert the flipped binary string to integer. 
 
+We'll create an empty list, add each digit to the list, flip the digit we randomly picked, and the construct a new string from all the list members. (We have to use this intermediate list step since strings are mutable). Finally, we convert it to an integer again. 
