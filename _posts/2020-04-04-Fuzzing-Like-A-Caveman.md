@@ -639,3 +639,113 @@ crash.252.jpg  crash.395.jpg  crash.590.jpg  crash.785.jpg  crash.985.jpg
 crash.285.jpg  crash.44.jpg   crash.610.jpg  crash.84.jpg   crash.987.jpg
 ```
 
+We can test this now with a quick one-liner to confirm the results: `root@kali:~/crashes# for i in *.jpg; do exif "$i" -verbose > /dev/null 2>&1; done`. Remember, we can route both STDOUT and STDERR to `/dev/null` because "Segmentation fault" comes from the shell, not from the binary. 
+
+We run this and this is the output:
+```
+root@kali:~/crashes# for i in *.jpg; do exif "$i" -verbose > /dev/null 2>&1; done
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+Segmentation fault
+```
+
+That's 30 segfaults, so everything appears to be working as planned!
+
+## Triaging Crashes
+Now that we have ~30 crashes and the JPEGs that caused them, the next step would be to analyze these crashes and figure out how many of them are unique. This is where we'll leverage some of the things I've learned watching Brandon Faulk's streams. A quick look at the crash samples in Beyond Compare tells me that most were caused by our `bit_flip()` mutation and not the `magic()` mutation method. Interesting. As a test, while we progress, we can turn off the randomness of the function selection and run let's say 100,000 iterations with just the `magic()` mutator and see if we get any crashes. 
+
+## Using ASan to Analyze Crashes
+ASan is the "Address Sanitizer" and it's a utility that comes with newer versions of gcc that allows users to compile a binary with the `-fsanitize=address` switch and get access to a very detailed information in the event that a memory access bug occurs, even those that cause a crash. Obviously we've pre-selected for crashing inputs here so we will miss out on that utility but perhaps we'll save it for another time. 
+
+To use ASan, I follwed along with [the Fuzzing Project](https://fuzzing-project.org/tutorial2.html) and recompiled `exif` with the flags: `cc -fsanitize=address -ggdb -o exifsan sample_main.c exif.c`.
+
+I then moved `exifsan` to `/usr/bin` for ease of use. If we run this newly compiled binary on a crash sample, let's see the output. 
+```terminal_session
+root@kali:~/crashes# exifsan crash.252.jpg -verbose
+system: little-endian
+  data: little-endian
+=================================================================
+==18831==ERROR: AddressSanitizer: heap-buffer-overflow on address 0xb4d00758 at pc 0x00415b9e bp 0xbf8c91f8 sp 0xbf8c91ec
+READ of size 4 at 0xb4d00758 thread T0                                                                                              
+    #0 0x415b9d in parseIFD /root/exif/exif.c:2356
+    #1 0x408f10 in createIfdTableArray /root/exif/exif.c:271
+    #2 0x4076ba in main /root/exif/sample_main.c:63
+    #3 0xb77d0ef0 in __libc_start_main ../csu/libc-start.c:308
+    #4 0x407310 in _start (/usr/bin/exifsan+0x2310)
+
+0xb4d00758 is located 0 bytes to the right of 8-byte region [0xb4d00750,0xb4d00758)
+allocated by thread T0 here:                                                                                                        
+    #0 0xb7aa2097 in __interceptor_malloc (/lib/i386-linux-gnu/libasan.so.5+0x10c097)
+    #1 0x415a9f in parseIFD /root/exif/exif.c:2348
+    #2 0x408f10 in createIfdTableArray /root/exif/exif.c:271
+    #3 0x4076ba in main /root/exif/sample_main.c:63
+    #4 0xb77d0ef0 in __libc_start_main ../csu/libc-start.c:308
+
+SUMMARY: AddressSanitizer: heap-buffer-overflow /root/exif/exif.c:2356 in parseIFD
+Shadow bytes around the buggy address:
+  0x369a0090: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x369a00a0: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x369a00b0: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x369a00c0: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x369a00d0: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+=>0x369a00e0: fa fa fa fa fa fa fa fa fa fa 00[fa]fa fa 04 fa
+  0x369a00f0: fa fa 00 06 fa fa 06 fa fa fa fa fa fa fa fa fa
+  0x369a0100: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x369a0110: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x369a0120: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x369a0130: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+  Shadow gap:              cc
+==18831==ABORTING
+```
+
+This is wonderful. Not only do we get detailed information but ASan also classifies the bug class for us and tells us the address. Since this is all standard binary output now, we can actually triage these crashes and try to make sense of them. Let's first try to deduplicate the crashes. It's possible here that all 30 of our crashes are the same bug. It's also possible that we have 30 unique crashes (not likely lol). So we need to sort that out.
+
+Let's again appeal to a Python script, 
+
+
