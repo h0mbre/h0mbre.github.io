@@ -115,4 +115,23 @@ root@kali:~# python3 fuzzer.py Canon_40D.jpg
 70
 ```
 
+Let's just quickly see if we can create a new valid JPEG from our byte array. We'll add this function to our code and run it.
+```python
+def create_new(data):
+
+	f = open("mutated.jpg", "wb+")
+	f.write(data)
+	f.close()
+```
+
+So now we have `mutated.jpg` in our directory, let's hash the two files and see if they match. 
+```terminal_session
+root@kali:~# shasum Canon_40D.jpg mutated.jpg 
+c3d98686223ad69ea29c811aaab35d343ff1ae9e  Canon_40D.jpg
+c3d98686223ad69ea29c811aaab35d343ff1ae9e  mutated.jpg
+```
+
+Awesome, we have two identical files. Now we can get into the business of mutating the data before creating our `mutated.jpg`. 
+
+## Mutating
 
