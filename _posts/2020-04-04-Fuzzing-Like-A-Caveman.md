@@ -76,7 +76,7 @@ import sys
 # read bytes from our valid JPEG and return them in a mutable bytearray 
 def get_bytes(filename):
 
-	f = open(filename, "rb+")
+	f = open(filename, "rb").read()
 
 	return bytearray(f)
 
