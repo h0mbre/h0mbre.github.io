@@ -134,4 +134,89 @@ c3d98686223ad69ea29c811aaab35d343ff1ae9e  mutated.jpg
 Awesome, we have two identical files. Now we can get into the business of mutating the data before creating our `mutated.jpg`. 
 
 ## Mutating
+We'll keep our fuzzer relatively simple and only implement three different mutation methods. These methods will be:
++ bit flipping
++ random byte overwriting
++ overwriting byte sequences with Gynvael's 'Magic Numbers'
+
+Let's start with bit flipping. `255` (or `0xFF`) in binary would be `11111111` if we were to randomly flip a bit in this number, let say at index number 2, we'd end up with `11011111`. This new number would be `223` or `0xDF`. 
+
+I'm not entirely sure how different this mutation method is from randomly selecting a value from `0` - `255` and overwritng a random byte with it. But we'll implement both for good measure. My intuiton says that bit flipping is extremely similar and having our second mutation method is redundant, but oh well. 
+
+Let's go ahead and say we want to only flip a bit in 1% of the bytes we have. We can get to this number in Python by doing:
+```python
+num_of_flips = int((len(data) - 4) * .01)
+```
+
+We want to subtract 4 from the length of our bytearray because we don't want to count the first 2 bytes or the last 2 bytes in our array as those were the SOI and EOI markers and we are aiming to keep those intact. 
+
+Next we'll want to randomly select that many indexes and target those indexes for bit flipping. We'll go ahead and create a range of possible indexes we can change and then choose `num_of_flips` of them to randomly bit flip. 
+```python
+indexes = range(4, (len(data) - 4))
+
+chosen_indexes = []
+
+# iterate selecting indexes until we've hit our num_of_flips number
+counter = 0
+while counter < num_of_flips:
+	chosen_indexes.append(random.choice(indexes))
+	counter += 1
+```
+
+Let's add `import random` to our script, and also add these debug print statements to make sure everything is working correctly. 
+```python
+
+print("Number of indexes chosen: " + str(len(chosen_indexes)))
+print("Indexes chosen: " + str(chosen_indexes))
+```
+
+Our function right now looks like this: 
+```python
+def bit_flip(data):
+
+	num_of_flips = int((len(data) - 4) * .01)
+
+	indexes = range(4, (len(data) - 4))
+
+	chosen_indexes = []
+
+	# iterate selecting indexes until we've hit our num_of_flips number
+	counter = 0
+	while counter < num_of_flips:
+		chosen_indexes.append(random.choice(indexes))
+		counter += 1
+
+	print("Number of indexes chosen: " + str(len(chosen_indexes)))
+	print("Indexes chosen: " + str(chosen_indexes))
+```
+
+If we run this, we get a nice output as expected:
+```terminal_session
+root@kali:~# python3 fuzzer.py Canon_40D.jpg 
+Number of indexes chosen: 79
+Indexes chosen: [6580, 930, 6849, 6007, 5020, 33, 474, 4051, 7722, 5393, 3540, 54, 5290, 2106, 2544, 1786, 5969, 5211, 2256, 510, 7147, 3370, 625, 5845, 2082, 2451, 7500, 3672, 2736, 2462, 5395, 7942, 2392, 1201, 3274, 7629, 5119, 1977, 2986, 7590, 1633, 4598, 1834, 445, 481, 7823, 7708, 6840, 1596, 5212, 4277, 3894, 2860, 2912, 6755, 3557, 3535, 3745, 1780, 252, 6128, 7187, 500, 1051, 4372, 5138, 3305, 872, 6258, 2136, 3486, 5600, 651, 1624, 4368, 7076, 1802, 2335, 3553]
+```
+
+Next we need to actually mutate the bytes at those indexes. We need to bit flip them. I chose to do this in a really hacky way, feel free to implement your own solution. We're going to covert the bytes at these indexes to binary strings and pad them so that they are 8 digits long. Let's add this code and see what I'm talking about. We'll be converting the byte value (which is in decimal remember) to a binary string and then padding it with leading zeroes if it's less than 8 digits long. The last line is a temporary print statement for debugging.
+```python
+for x in chosen_indexes:
+        current = data[x]
+        current = (bin(current).replace("0b",""))
+        current = "0" * (8 - len(current)) + current
+```
+
+As you can see, we have a nice output of binary numbers as strings. 
+```terminal_session
+root@kali:~# python3 fuzzer.py Canon_40D.jpg 
+10100110
+10111110
+10010010
+00110000
+01110001
+00110101
+00110010
+-----SNIP-----
+```
+
+
 
