@@ -24,6 +24,6 @@ I must also mention that [Brandon Faulk's](https://twitter.com/gamozolabs) [fuzz
 ## Picking a Target
 I wanted to find a binary that was written in C or C++ and parsed data from a file. One of the first things I came across was binaries that parse Exif data out of images. 
 
-From [https://www.media.mit.edu/pia/Research/deepview/exif.html], ***Basically, Exif file format is the same as JPEG file format. Exif inserts some of image/digicam information data and thumbnail image to JPEG in conformity to JPEG specification. Therefore you can view Exif format image files by JPEG compliant Internet browser/Picture viewer/Photo retouch software etc. as a usual JPEG image files.***
+From `https://www.media.mit.edu/pia/Research/deepview/exif.html`, ***Basically, Exif file format is the same as JPEG file format. Exif inserts some of image/digicam information data and thumbnail image to JPEG in conformity to JPEG specification. Therefore you can view Exif format image files by JPEG compliant Internet browser/Picture viewer/Photo retouch software etc. as a usual JPEG image files.***
 
 
