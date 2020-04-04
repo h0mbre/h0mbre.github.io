@@ -88,5 +88,31 @@ else:
 	data = get_bytes(filename)
 ```
 
+If we want to see how this data looks, we can print the first 10 or so byte values in the array and see how we'll be interacting with them. We'll just temporarily add something like:
+```python
+else:
+	filename = sys.argv[1]
+	data = get_bytes(filename)
+	counter = 0
+	for x in data:
+		if counter < 10:
+			print(x)
+		counter += 1
+```
+
+Running this shows that we're dealing with neatly converted decimal integers which makes everything much easier in my opinion.
+```terminal_session
+root@kali:~# python3 fuzzer.py Canon_40D.jpg 
+255
+216
+255
+224
+0
+16
+74
+70
+73
+70
+```
 
 
