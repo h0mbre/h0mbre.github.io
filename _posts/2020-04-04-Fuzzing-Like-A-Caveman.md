@@ -312,3 +312,5 @@ a7b619028af3d8e5ac106a697b06efcde0649249  mutated.jpg
 ```
 
 This looks promising as they have different hashes now. We can further analyze by comparing them with a program called [Beyond Compare](https://www.scootersoftware.com/) or `bcompare`. We'll get two hexdumps with differences highlighted. 
+
+![](/assets/images/AWE/bcompare.PNG)
