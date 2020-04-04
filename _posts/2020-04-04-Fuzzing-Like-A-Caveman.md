@@ -283,7 +283,7 @@ def bit_flip(data):
 		# change the number in our byte array to our new number we just constructed
 		data[x] = current
 
-		return data
+	return data
 
 
 # create new jpg with mutated data
@@ -302,3 +302,13 @@ else:
 	mutated_data = bit_flip(data)
 	create_new(mutated_data)
 ```
+
+## Analyzing Mutation
+If we run our script, we can `shasum` the output and compare to the original JPEG. 
+```terminal_session
+root@kali:~# shasum Canon_40D.jpg mutated.jpg 
+c3d98686223ad69ea29c811aaab35d343ff1ae9e  Canon_40D.jpg
+a7b619028af3d8e5ac106a697b06efcde0649249  mutated.jpg
+```
+
+This looks promising as they have different hashes now. We can further analyze by comparing them with a program called [Beyond Compare](https://www.scootersoftware.com/) or `bcompare`. We'll get two hexdumps with differences highlighted. 
