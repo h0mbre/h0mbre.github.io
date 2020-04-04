@@ -221,4 +221,4 @@ Now for each of these, we'll randomly select an index, and flip it. Take the fir
 
 Last considering for this code segment is that these are strings not integers remember. So the last thing we need to do is convert the flipped binary string to integer. 
 
-We'll create an empty list, add each digit to the list, flip the digit we randomly picked, and the construct a new string from all the list members. (We have to use this intermediate list step since strings are mutable). Finally, we convert it to an integer again. 
+We'll create an empty list, add each digit to the list, flip the digit we randomly picked, and the construct a new string from all the list members. (We have to use this intermediate list step since strings are mutable). Finally, we convert it to an integer and return the data to our `create_new()` function to create a new JPEG. 
