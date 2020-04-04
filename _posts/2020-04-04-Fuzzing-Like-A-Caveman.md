@@ -334,3 +334,129 @@ During the aformentioned GynvaelColdwind ['Basics of fuzzing' stream](https://ww
 
 If there is any kind of arithmetic performed on these types of values in the course of `malloc()` or other types of operations, overflows can be common. For instance if you add `0x1` to `0xFF` on a one-byte register, it would roll over to `0x00` this can be unintended behavior. HEVD actually has an integer overflow bug similar to this concept. 
 
+Let's say our fuzzer chooses `0x7FFFFFFF` as the magic number it wants to use, that value is 4 bytes long so we would have to find a byte index in our array, and overwrite that byte plus the next three. Let's go ahead and start implementing this in our fuzzer.
+
+## Implementing Mutation Method #2
+First we'll want to create a list of tuples like Gynvael did where the first number in the tuple is the byte-size of the magic number and the second number is the byte value in decimal of the first byte. 
+```python
+def magic(data):
+
+	magic_vals = [
+	(1, 255),
+	(1, 255),
+	(1, 127),
+	(1, 0),
+	(2, 255),
+	(2, 0),
+	(4, 255),
+	(4, 0),
+	(4, 128),
+	(4, 64),
+	(4, 127)
+	]
+
+	picked_magic = random.choice(magic_vals)
+
+	print(picked_magic)
+```
+
+If we run this we can see that it's randomly selecting a magic value tuple. 
+```terminal_session
+root@kali:~# python3 fuzzer.py Canon_40D.jpg 
+(4, 64)
+root@kali:~# python3 fuzzer.py Canon_40D.jpg 
+(4, 128)
+root@kali:~# python3 fuzzer.py Canon_40D.jpg 
+(4, 0)
+root@kali:~# python3 fuzzer.py Canon_40D.jpg 
+(2, 255)
+root@kali:~# python3 fuzzer.py Canon_40D.jpg 
+(4, 0)
+```
+
+We now need to overwrite a random 1 to 4 byte value in the JPEG with this new magic 1 to 4 byte value. We will set up our possible indexes the same as the previous method, select an index, and then overwrite the bytes at that index with our `picked_magic` number.
+
+So if we get `(4, 128)` for instance, we know its 4 bytes, and the magic number is `0x80000000`. So we'll do something like:
+```
+byte[x] = 128
+byte[x+1] = 0
+byte[x+2] = 0
+byte[x+3] = 0
+```
+
+All in all, our function will look like this:
+```python
+def magic(data):
+
+	magic_vals = [
+	(1, 255),
+	(1, 255),
+	(1, 127),
+	(1, 0),
+	(2, 255),
+	(2, 0),
+	(4, 255),
+	(4, 0),
+	(4, 128),
+	(4, 64),
+	(4, 127)
+	]
+
+	picked_magic = random.choice(magic_vals)
+
+	length = len(data) - 8
+	index = range(0, length)
+	picked_index = random.choice(index)
+
+	# here we are hardcoding all the byte overwrites for all of the tuples that begin (1, )
+	if picked_magic[0] == 1:
+		if picked_magic[1] == 255:			# 0xFF
+			data[picked_index] = 255
+		elif picked_magic[1] == 127:			# 0x7F
+			data[picked_index] = 127
+		elif picked_magic[1] == 0:			# 0x00
+			data[picked_index] = 0
+
+	# here we are hardcoding all the byte overwrites for all of the tuples that begin (2, )
+	elif picked_magic[0] == 2:
+		if picked_magic[1] == 255:			# 0xFFFF
+			data[picked_index] = 255
+			data[picked_index + 1] = 255
+		elif picked_magic[1] == 0:			# 0x0000
+			data[picked_index] = 0
+			data[picked_index + 1] = 0
+
+	# here we are hardcoding all of the byte overwrites for all of the tuples that being (4, )
+	elif picked_magic[0] == 4:
+		if picked_magic[1] == 255:			# 0xFFFFFFFF
+			data[picked_index] = 255
+			data[picked_index + 1] = 255
+			data[picked_index + 2] = 255
+			data[picked_index + 3] = 255
+		elif picked_magic[1] == 0:			# 0x00000000
+			data[picked_index] = 0
+			data[picked_index + 1] = 0
+			data[picked_index + 2] = 0
+			data[picked_index + 3] = 0
+		elif picked_magic[1] == 128:			# 0x80000000
+			data[picked_index] = 128
+			data[picked_index + 1] = 0
+			data[picked_index + 2] = 0
+			data[picked_index + 3] = 0
+		elif picked_magic[1] == 64:			# 0x40000000
+			data[picked_index] = 64
+			data[picked_index + 1] = 0
+			data[picked_index + 2] = 0
+			data[picked_index + 3] = 0
+		elif picked_magic[1] == 127:			# 0x7FFFFFFF
+			data[picked_index] = 127
+			data[picked_index + 1] = 255
+			data[picked_index + 2] = 255
+			data[picked_index + 3] = 255
+		
+	return data
+```
+
+
+
+
