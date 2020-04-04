@@ -461,3 +461,181 @@ def magic(data):
 Running our script now and analyzing the results in Beyond Compare, we can see that a two byte value of `0xA6 0x76` was overwritten with `0xFF 0xFF`. 
 
 ![](/assets/images/AWE/bcompare2.PNG)
+
+This is exactly what we wanted to accomplish. 
+
+## Starting to Fuzz
+Now that we have two reliable ways of mutating the data, we need to:
++ mutate the data with one of our functions,
++ create new picture with mutated data,
++ feed mutated picture to our binary for parsing,
++ catch any `Segmentation faults` and log the picture that caused it
+
+### Victim?
+For our victim program, we will search Google with `site:github.com "exif" language:c` to find Github projects written in C that have a reference to 'exif'. 
+
+A quick looksie brings us to https://github.com/mkttanabe/exif. 
+
+We can install by git cloning the repo, and using the `building with gcc` instructions included in the README. (I've placed the compiled binary in `/usr/bin` just for ease.)
+
+Let's first see how the program handles our valid JPEG. 
+```terminal_session
+root@kali:~# exif Canon_40D.jpg -verbose
+system: little-endian
+  data: little-endian
+[Canon_40D.jpg] createIfdTableArray: result=5
+
+{0TH IFD} tags=11
+tag[00] 0x010F Make
+        type=2 count=6 val=[Canon]
+tag[01] 0x0110 Model
+        type=2 count=14 val=[Canon EOS 40D]
+tag[02] 0x0112 Orientation
+        type=3 count=1 val=1 
+tag[03] 0x011A XResolution
+        type=5 count=1 val=72/1 
+tag[04] 0x011B YResolution
+        type=5 count=1 val=72/1 
+tag[05] 0x0128 ResolutionUnit
+        type=3 count=1 val=2 
+tag[06] 0x0131 Software
+        type=2 count=11 val=[GIMP 2.4.5]
+tag[07] 0x0132 DateTime
+        type=2 count=20 val=[2008:07:31 10:38:11]
+tag[08] 0x0213 YCbCrPositioning
+        type=3 count=1 val=2 
+tag[09] 0x8769 ExifIFDPointer
+        type=4 count=1 val=214 
+tag[10] 0x8825 GPSInfoIFDPointer
+        type=4 count=1 val=978 
+
+{EXIF IFD} tags=30
+tag[00] 0x829A ExposureTime
+        type=5 count=1 val=1/160 
+tag[01] 0x829D FNumber
+        type=5 count=1 val=71/10 
+tag[02] 0x8822 ExposureProgram
+        type=3 count=1 val=1 
+tag[03] 0x8827 PhotographicSensitivity
+        type=3 count=1 val=100 
+tag[04] 0x9000 ExifVersion
+        type=7 count=4 val=0 2 2 1 
+tag[05] 0x9003 DateTimeOriginal
+        type=2 count=20 val=[2008:05:30 15:56:01]
+tag[06] 0x9004 DateTimeDigitized
+        type=2 count=20 val=[2008:05:30 15:56:01]
+tag[07] 0x9101 ComponentsConfiguration
+        type=7 count=4 val=0x01 0x02 0x03 0x00 
+tag[08] 0x9201 ShutterSpeedValue
+        type=10 count=1 val=483328/65536 
+tag[09] 0x9202 ApertureValue
+        type=5 count=1 val=368640/65536 
+tag[10] 0x9204 ExposureBiasValue
+        type=10 count=1 val=0/1 
+tag[11] 0x9207 MeteringMode
+        type=3 count=1 val=5 
+tag[12] 0x9209 Flash
+        type=3 count=1 val=9 
+tag[13] 0x920A FocalLength
+        type=5 count=1 val=135/1 
+tag[14] 0x9286 UserComment
+        type=7 count=264 val=0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00 (omitted)
+tag[15] 0x9290 SubSecTime
+        type=2 count=3 val=[00]
+tag[16] 0x9291 SubSecTimeOriginal
+        type=2 count=3 val=[00]
+tag[17] 0x9292 SubSecTimeDigitized
+        type=2 count=3 val=[00]
+tag[18] 0xA000 FlashPixVersion
+        type=7 count=4 val=0 1 0 0 
+tag[19] 0xA001 ColorSpace
+        type=3 count=1 val=1 
+tag[20] 0xA002 PixelXDimension
+        type=4 count=1 val=100 
+tag[21] 0xA003 PixelYDimension
+        type=4 count=1 val=68 
+tag[22] 0xA005 InteroperabilityIFDPointer
+        type=4 count=1 val=948 
+tag[23] 0xA20E FocalPlaneXResolution
+        type=5 count=1 val=3888000/876 
+tag[24] 0xA20F FocalPlaneYResolution
+        type=5 count=1 val=2592000/583 
+tag[25] 0xA210 FocalPlaneResolutionUnit
+        type=3 count=1 val=2 
+tag[26] 0xA401 CustomRendered
+        type=3 count=1 val=0 
+tag[27] 0xA402 ExposureMode
+        type=3 count=1 val=1 
+tag[28] 0xA403 WhiteBalance
+        type=3 count=1 val=0 
+tag[29] 0xA406 SceneCaptureType
+        type=3 count=1 val=0 
+
+{Interoperability IFD} tags=2
+tag[00] 0x0001 InteroperabilityIndex
+        type=2 count=4 val=[R98]
+tag[01] 0x0002 InteroperabilityVersion
+        type=7 count=4 val=0 1 0 0 
+
+{GPS IFD} tags=1
+tag[00] 0x0000 GPSVersionID
+        type=1 count=4 val=2 2 0 0 
+
+{1ST IFD} tags=6
+tag[00] 0x0103 Compression
+        type=3 count=1 val=6 
+tag[01] 0x011A XResolution
+        type=5 count=1 val=72/1 
+tag[02] 0x011B YResolution
+        type=5 count=1 val=72/1 
+tag[03] 0x0128 ResolutionUnit
+        type=3 count=1 val=2 
+tag[04] 0x0201 JPEGInterchangeFormat
+        type=4 count=1 val=1090 
+tag[05] 0x0202 JPEGInterchangeFormatLength
+        type=4 count=1 val=1378 
+
+0th IFD : Model = [Canon EOS 40D]
+Exif IFD : DateTimeOriginal = [2008:05:30 15:56:01]
+```
+
+We see that the program is parsing out the tags and stating the byte values associated with them. This is pretty much exactly what we set out to find. 
+
+### Chasing Segfaults
+Ideally we'd like to feed this binary some mutated data and have it segfault meaning we have found a bug. The problem I ran into was that when I monitored stdout and stderr for the `Segmentation fault` message, it never appeared. That's because the `Segmentation fault` message comes from our command shell instead of the binary. It means the shell received a SIGSEGV signal and in response prints the message. 
+
+One way I found to monitor this was to use the `run()` method from the `pexpect` Python module and the `quote()` method from the `pipes` Python module.
+
+We'll add a new function, that will take in a `counter` parameter which will be what fuzzing iteration we're on and also the mutated `data` in another parameter. If we see `Segmentation` in the output of our `run()` command, we'll write the mutated data to a file and save it so that we have the JPEG image that crashed the binary.
+
+Let's create a new folder called `crashes` and we'll save JPEGs in there that cause crashes in the format `crash.<fuzzing iteration (counter)>.jpg`. So if fuzzing iteration 100 caused a crash, we should get a file like: `/crashes/crash.100.jpg`. 
+
+We'll keep printing to the same line in the terminal to keep a count of every 100 fuzzing iterations. Our function looks like this:
+```python
+def exif(counter,data):
+
+    command = "exif mutated.jpg -verbose"
+
+    out, returncode = run("sh -c " + quote(command), withexitstatus=1)
+
+    if b"Segmentation" in out:
+    	f = open("crashes/crash.{}.jpg".format(str(counter)), "ab+")
+    	f.write(data)
+
+    if counter % 100 == 0:
+    	print(counter, end="\r")
+```
+
+Next, we'll alter our execution stub at the bottom of our script to run on a counter. Once we hit 1000 iterations, we'll stop fuzzing. We'll also have our fuzzer randomly select one of our mutation methods. So it might bit-flip or it might use a magic number. Let's run it and then check our `crashes` folder when it completes.
+
+Once the fuzzer completes, you can see we got ~30 crashes!
+```terminal_session
+root@kali:~/crashes# ls
+crash.102.jpg  crash.317.jpg  crash.52.jpg   crash.620.jpg  crash.856.jpg
+crash.129.jpg  crash.324.jpg  crash.551.jpg  crash.694.jpg  crash.861.jpg
+crash.152.jpg  crash.327.jpg  crash.559.jpg  crash.718.jpg  crash.86.jpg
+crash.196.jpg  crash.362.jpg  crash.581.jpg  crash.775.jpg  crash.984.jpg
+crash.252.jpg  crash.395.jpg  crash.590.jpg  crash.785.jpg  crash.985.jpg
+crash.285.jpg  crash.44.jpg   crash.610.jpg  crash.84.jpg   crash.987.jpg
+```
+
