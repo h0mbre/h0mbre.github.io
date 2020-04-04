@@ -651,32 +651,10 @@ Segmentation fault
 Segmentation fault
 Segmentation fault
 Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
-Segmentation fault
+-----SNIP-----
 ```
 
-That's 30 segfaults, so everything appears to be working as planned!
+You can't see all of them, but that's 30 segfaults, so everything appears to be working as planned!
 
 ## Triaging Crashes
 Now that we have ~30 crashes and the JPEGs that caused them, the next step would be to analyze these crashes and figure out how many of them are unique. This is where we'll leverage some of the things I've learned watching Brandon Faulk's streams. A quick look at the crash samples in Beyond Compare tells me that most were caused by our `bit_flip()` mutation and not the `magic()` mutation method. Interesting. As a test, while we progress, we can turn off the randomness of the function selection and run let's say 100,000 iterations with just the `magic()` mutator and see if we get any crashes. 
