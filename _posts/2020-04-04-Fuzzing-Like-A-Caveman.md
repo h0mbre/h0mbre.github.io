@@ -37,19 +37,19 @@ First thing's first, we need a valid Exif-filled JPEG. A Google search for 'Samp
 Before we start just scribbling Python into Sublime Text, let's first take some time to learn about the JPEG and Exif specification so that we can avoid some of the more obvious pitfalls of corrupting the image to the point that the parser doesn't attempt to parse it and wastes precious fuzzing cycles.
 
 One thing to know from the [previously referenced specification overview](https://www.media.mit.edu/pia/Research/deepview/exif.html), is that all JPEG images start with byte values `0xFFD8` and end with byte values `0xFFD9`. This first couple of bytes are what are known as ['magic bytes'](https://en.wikipedia.org/wiki/List_of_file_signatures). This allows for straightforward file-type identification on \*Nix systems. 
-```terminal_session
+```
 root@kali:~# file Canon_40D.jpg 
 Canon_40D.jpg: JPEG image data, JFIF standard 1.01, resolution (DPI), density 72x72, segment length 16, Exif Standard: [TIFF image data, little-endian, direntries=11, manufacturer=Canon, model=Canon EOS 40D, orientation=upper-left, xresolution=166, yresolution=174, resolutionunit=2, software=GIMP 2.4.5, datetime=2008:07:31 10:38:11, GPS-Data], baseline, precision 8, 100x68, components 3
 ```
 
 We can take the `.jpg` off and get the same output. 
-```terminal_session
+```
 root@kali:~# file Canon
 Canon: JPEG image data, JFIF standard 1.01, resolution (DPI), density 72x72, segment length 16, Exif Standard: [TIFF image data, little-endian, direntries=11, manufacturer=Canon, model=Canon EOS 40D, orientation=upper-left, xresolution=166, yresolution=174, resolutionunit=2, software=GIMP 2.4.5, datetime=2008:07:31 10:38:11, GPS-Data], baseline, precision 8, 100x68, components 3
 ```
 
 If we hexdump the image, we can see the first and last bytes are in fact `0xFFD8` and `0xFFD9`.
-```terminal_session
+```
 root@kali:~# hexdump Canon
 0000000 d8ff e0ff 1000 464a 4649 0100 0101 4800
 ------SNIP------
@@ -101,7 +101,7 @@ else:
 ```
 
 Running this shows that we're dealing with neatly converted decimal integers which makes everything much easier in my opinion.
-```terminal_session
+```
 root@kali:~# python3 fuzzer.py Canon_40D.jpg 
 255
 216
@@ -125,7 +125,7 @@ def create_new(data):
 ```
 
 So now we have `mutated.jpg` in our directory, let's hash the two files and see if they match. 
-```terminal_session
+```
 root@kali:~# shasum Canon_40D.jpg mutated.jpg 
 c3d98686223ad69ea29c811aaab35d343ff1ae9e  Canon_40D.jpg
 c3d98686223ad69ea29c811aaab35d343ff1ae9e  mutated.jpg
@@ -190,7 +190,7 @@ def bit_flip(data):
 ```
 
 If we run this, we get a nice output as expected:
-```terminal_session
+```
 root@kali:~# python3 fuzzer.py Canon_40D.jpg 
 Number of indexes chosen: 79
 Indexes chosen: [6580, 930, 6849, 6007, 5020, 33, 474, 4051, 7722, 5393, 3540, 54, 5290, 2106, 2544, 1786, 5969, 5211, 2256, 510, 7147, 3370, 625, 5845, 2082, 2451, 7500, 3672, 2736, 2462, 5395, 7942, 2392, 1201, 3274, 7629, 5119, 1977, 2986, 7590, 1633, 4598, 1834, 445, 481, 7823, 7708, 6840, 1596, 5212, 4277, 3894, 2860, 2912, 6755, 3557, 3535, 3745, 1780, 252, 6128, 7187, 500, 1051, 4372, 5138, 3305, 872, 6258, 2136, 3486, 5600, 651, 1624, 4368, 7076, 1802, 2335, 3553]
@@ -205,7 +205,7 @@ for x in chosen_indexes:
 ```
 
 As you can see, we have a nice output of binary numbers as strings. 
-```terminal_session
+```
 root@kali:~# python3 fuzzer.py Canon_40D.jpg 
 10100110
 10111110
@@ -305,7 +305,7 @@ else:
 
 ## Analyzing Mutation
 If we run our script, we can `shasum` the output and compare to the original JPEG. 
-```terminal_session
+```
 root@kali:~# shasum Canon_40D.jpg mutated.jpg 
 c3d98686223ad69ea29c811aaab35d343ff1ae9e  Canon_40D.jpg
 a7b619028af3d8e5ac106a697b06efcde0649249  mutated.jpg
@@ -361,7 +361,7 @@ def magic(data):
 ```
 
 If we run this we can see that it's randomly selecting a magic value tuple. 
-```terminal_session
+```
 root@kali:~# python3 fuzzer.py Canon_40D.jpg 
 (4, 64)
 root@kali:~# python3 fuzzer.py Canon_40D.jpg 
@@ -479,7 +479,7 @@ A quick looksie brings us to https://github.com/mkttanabe/exif.
 We can install by git cloning the repo, and using the `building with gcc` instructions included in the README. (I've placed the compiled binary in `/usr/bin` just for ease.)
 
 Let's first see how the program handles our valid JPEG. 
-```terminal_session
+```
 root@kali:~# exif Canon_40D.jpg -verbose
 system: little-endian
   data: little-endian
@@ -629,7 +629,7 @@ def exif(counter,data):
 Next, we'll alter our execution stub at the bottom of our script to run on a counter. Once we hit 1000 iterations, we'll stop fuzzing. We'll also have our fuzzer randomly select one of our mutation methods. So it might bit-flip or it might use a magic number. Let's run it and then check our `crashes` folder when it completes.
 
 Once the fuzzer completes, you can see we got ~30 crashes!
-```terminal_session
+```
 root@kali:~/crashes# ls
 crash.102.jpg  crash.317.jpg  crash.52.jpg   crash.620.jpg  crash.856.jpg
 crash.129.jpg  crash.324.jpg  crash.551.jpg  crash.694.jpg  crash.861.jpg
@@ -665,7 +665,7 @@ ASan is the "Address Sanitizer" and it's a utility that comes with newer version
 To use ASan, I follwed along with [the Fuzzing Project](https://fuzzing-project.org/tutorial2.html) and recompiled `exif` with the flags: `cc -fsanitize=address -ggdb -o exifsan sample_main.c exif.c`.
 
 I then moved `exifsan` to `/usr/bin` for ease of use. If we run this newly compiled binary on a crash sample, let's see the output. 
-```terminal_session
+```
 root@kali:~/crashes# exifsan crash.252.jpg -verbose
 system: little-endian
   data: little-endian
@@ -737,7 +737,7 @@ Since this is all standard binary output now, we can actually triage these crash
 Let's again appeal to a Python script, we'll iterate through this folder, run the ASan enabled binary against each crash and log where the crashing address is for each. We'll also try to capture if it's a `'READ'` or `'WRITE'` operation as well. So for example, for `crash.252.jpg`, we'll format the log file as: `crash.252.HBO.b4f00758.READ` and we'll write the ASan output to the log. This way we know the crash image that caused it, the bug class, the address, and the operation before we even open the log. (I'll post the triage script at the end, it's so gross ugh, I hate it.)
 
 After running the triage script on our `crashes` folder, we can now see we have triaged our crashes and there is something very interesting. 
-```terminal_session
+```
 crash.102.HBO.b4f006d4.READ
 crash.102.jpg
 crash.129.HBO.b4f005dc.READ
@@ -754,7 +754,7 @@ crash.285.jpg
 After a big SNIP there, out of my 30 crashes, I only had one WRITE operation. You can't tell from the snipped output but I also had a lot of SEGV bugs where a NULL address was referenced (`0x00000000`). 
 
 Let's also check in on our modified fuzzer that was running only the `magic()` mutator for 100,000 iterations and see if it turned up any bugs. 
-```terminal_session
+```
 root@kali:~/crashes2# ls
 crash.10354.jpg  crash.2104.jpg   crash.3368.jpg   crash.45581.jpg  crash.64750.jpg  crash.77850.jpg  crash.86367.jpg  crash.94036.jpg
 crash.12771.jpg  crash.21126.jpg  crash.35852.jpg  crash.46757.jpg  crash.64987.jpg  crash.78452.jpg  crash.86560.jpg  crash.9435.jpg
