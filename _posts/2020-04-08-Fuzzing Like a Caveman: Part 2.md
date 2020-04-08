@@ -33,7 +33,6 @@ import sys
 import random
 from pexpect import run
 from pipes import quote
-import time
 
 # read bytes from our valid JPEG and return them in a mutable bytearray 
 def get_bytes(filename):
@@ -174,14 +173,9 @@ def exif(counter,data):
     out, returncode = run("sh -c " + quote(command), withexitstatus=1)
 
     if b"Segmentation" in out:
-    	f = open("pycrashes/crash.{}.jpg".format(str(counter)), "ab+")
+    	f = open("crashes2/crash.{}.jpg".format(str(counter)), "ab+")
     	f.write(data)
     	print("Segfault!")
-
-    elif b"Floating" in out:
-    	f = open("pycrashes/crash.{}.jpg".format(str(counter)), "ab+")
-    	f.write(data)
-    	print("Floatingpoint!")
 
     #if counter % 100 == 0:
     #	print(counter, end="\r")
@@ -190,11 +184,10 @@ if len(sys.argv) < 2:
 	print("Usage: JPEGfuzz.py <valid_jpg>")
 
 else:
-	start = time.time()
 	filename = sys.argv[1]
 	counter = 0
-	data = get_bytes(filename)
-	while counter < 10000:
+	while counter < 1000:
+		data = get_bytes(filename)
 		functions = [0, 1]
 		picked_function = random.choice(functions)
 		picked_function = 1
@@ -208,17 +201,20 @@ else:
 			exif(counter,mutated)
 
 		counter += 1
-	end = int((time.time() - start) * 1000)
-	print("Execution Time: {}ms".format(end))
 ```
 
 You may notice a few changes. We've:
 + commented out the print statement for  the iterations counter every 100 iterations,
-+ added print statements to notify us of any Segfaults or any Floating point exceptions,
-+ hardcoded 10k iterations,
++ added print statements to notify us of any Segfaults,
++ hardcoded 1k iterations,
 + added timing mechanisms that will print execution time when complete
 + added this line: `picked_function = 1` temporarily so that we eliminate any randomness in our testing and we only stick to one mutation method (`bit_flip()`)
 
 Let's run this version of our fuzzer with some profiling instrumentation and we can really analyze how much time we spend where in our program's execution. 
 
-We can make use of the `cProfile` Python module and see where we spend our time during 10,000 fuzzing iterations. 
+We can make use of the `cProfile` Python module and see where we spend our time during 10,000 fuzzing iterations. The program takes a filepath argument to a valid JPEG file if you remember, so our complete command line syntax will be: `python3 -m cProfile -s cumtime JPEGfuzzer.py ~/jpegs/Canon_40D.jpg`.
+
+After letting this run, we see our program output and we get to see where we spent the most time during execution. 
+```
+
+```
