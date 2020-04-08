@@ -212,9 +212,58 @@ You may notice a few changes. We've:
 
 Let's run this version of our fuzzer with some profiling instrumentation and we can really analyze how much time we spend where in our program's execution. 
 
-We can make use of the `cProfile` Python module and see where we spend our time during 10,000 fuzzing iterations. The program takes a filepath argument to a valid JPEG file if you remember, so our complete command line syntax will be: `python3 -m cProfile -s cumtime JPEGfuzzer.py ~/jpegs/Canon_40D.jpg`.
+We can make use of the `cProfile` Python module and see where we spend our time during 1,000 fuzzing iterations. The program takes a filepath argument to a valid JPEG file if you remember, so our complete command line syntax will be: `python3 -m cProfile -s cumtime JPEGfuzzer.py ~/jpegs/Canon_40D.jpg`.
 
 After letting this run, we see our program output and we get to see where we spent the most time during execution. 
 ```
+2476093 function calls (2474812 primitive calls) in 122.084 seconds
 
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+     33/1    0.000    0.000  122.084  122.084 {built-in method builtins.exec}
+        1    0.108    0.108  122.084  122.084 blog.py:3(<module>)
+     1000    0.090    0.000  118.622    0.119 blog.py:140(exif)
+     1000    0.080    0.000  118.452    0.118 run.py:7(run)
+     5432  103.761    0.019  103.761    0.019 {built-in method time.sleep}
+     1000    0.028    0.000  100.923    0.101 pty_spawn.py:316(close)
+     1000    0.025    0.000  100.816    0.101 ptyprocess.py:387(close)
+     1000    0.061    0.000    9.949    0.010 pty_spawn.py:36(__init__)
+     1000    0.074    0.000    9.764    0.010 pty_spawn.py:239(_spawn)
+     1000    0.041    0.000    8.682    0.009 pty_spawn.py:312(_spawnpty)
+     1000    0.266    0.000    8.641    0.009 ptyprocess.py:178(spawn)
+     1000    0.011    0.000    7.491    0.007 spawnbase.py:240(expect)
+     1000    0.036    0.000    7.479    0.007 spawnbase.py:343(expect_list)
+     1000    0.128    0.000    7.409    0.007 expect.py:91(expect_loop)
+     6432    6.473    0.001    6.473    0.001 {built-in method posix.read}
+     5432    0.089    0.000    3.818    0.001 pty_spawn.py:415(read_nonblocking)
+     7348    0.029    0.000    3.162    0.000 utils.py:130(select_ignore_interrupts)
+     7348    3.127    0.000    3.127    0.000 {built-in method select.select}
+     1000    0.790    0.001    1.777    0.002 blog.py:15(bit_flip)
+     1000    0.015    0.000    1.311    0.001 blog.py:134(create_new)
+     1000    0.100    0.000    1.101    0.001 pty.py:79(fork)
+     1000    1.000    0.001    1.000    0.001 {built-in method posix.forkpty}
+-----SNIP-----
 ```
+For this type of analysis, we don't really care about how many segfaults we had since we're not really tinkering much with the mutation methods or comparing different methods. Granted there will be some randomness here, as a crash would necessitate extra processing, but this will do for now. 
+
+I snipped only the sections of code where we spent more than 1.0 seconds cumulatively. You can see we spent by far the most time in `blog.py:140(exif)`. A whopping 118 seconds out of 122 seconds total. Our `exif()` function seems to be a major problem in our performance. 
+
+We can see that most of the time we spent underneath that function was directly related to the function, we see plenty of appeals to the `pty` module from our `pexpect` usage. Let's rewrite our function using `Popen` from the `subprocess` module and see if we can improve performance here!
+
+Here is our redefined `exif()` function:
+```python
+def exif(counter,data):
+
+    p = Popen(["exif", "mutated.jpg", "-verbose"], stdout=PIPE, stderr=PIPE)
+    (out,err) = p.communicate()
+
+    if p.returncode == -11:
+    	f = open("crashes2/crash.{}.jpg".format(str(counter)), "ab+")
+    	f.write(data)
+    	print("Segfault!")
+
+    #if counter % 100 == 0:
+    #	print(counter, end="\r")
+ ```
+
