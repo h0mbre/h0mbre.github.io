@@ -1,6 +1,6 @@
 ---
 layout: single
-title: Fuzzing Like A Caveman
+title: Fuzzing Like A Caveman: Part 2
 date: 2020-04-08
 classes: wide
 header:
