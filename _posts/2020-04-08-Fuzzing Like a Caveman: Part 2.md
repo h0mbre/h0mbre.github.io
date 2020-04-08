@@ -207,7 +207,6 @@ You may notice a few changes. We've:
 + commented out the print statement for  the iterations counter every 100 iterations,
 + added print statements to notify us of any Segfaults,
 + hardcoded 1k iterations,
-+ added timing mechanisms that will print execution time when complete
 + added this line: `picked_function = 1` temporarily so that we eliminate any randomness in our testing and we only stick to one mutation method (`bit_flip()`)
 
 Let's run this version of our fuzzer with some profiling instrumentation and we can really analyze how much time we spend where in our program's execution. 
