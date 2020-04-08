@@ -210,4 +210,11 @@ else:
 		counter += 1
 	end = int((time.time() - start) * 1000)
 	print("Execution Time: {}ms".format(end))
-	```
+```
+
+You may notice a few changes. We've:
++ commented out the print statement for  the iterations counter every 100 iterations,
++ added print statements to notify us of any Segfaults or any Floating point exceptions,
++ hardcoded 10k iterations,
++ added timing mechanisms that will print execution time when complete
++ added this line: `picked_function = 1` temporarily so that we eliminate any randomness in our testing and we only stick to one mutation method (`bit_flip()`)
