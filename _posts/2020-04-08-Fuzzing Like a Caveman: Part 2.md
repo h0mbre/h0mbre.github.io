@@ -219,4 +219,6 @@ You may notice a few changes. We've:
 + added timing mechanisms that will print execution time when complete
 + added this line: `picked_function = 1` temporarily so that we eliminate any randomness in our testing and we only stick to one mutation method (`bit_flip()`)
 
-Let's run this version of our fuzzer with some 
+Let's run this version of our fuzzer with some profiling instrumentation and we can really analyze how much time we spend where in our program's execution. 
+
+We can make use of the `cProfile` Python module and see where we spend our time during 10,000 fuzzing iterations. 
