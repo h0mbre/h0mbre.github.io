@@ -267,3 +267,19 @@ def exif(counter,data):
     #	print(counter, end="\r")
  ```
 
+Here is our performance report:
+```
+2065580 function calls (2065443 primitive calls) in 2.756 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+     15/1    0.000    0.000    2.756    2.756 {built-in method builtins.exec}
+        1    0.038    0.038    2.756    2.756 subpro.py:3(<module>)
+     1000    0.020    0.000    1.917    0.002 subpro.py:139(exif)
+     1000    0.026    0.000    1.121    0.001 subprocess.py:681(__init__)
+     1000    0.099    0.000    1.045    0.001 subprocess.py:1412(_execute_child)
+ -----SNIP-----
+ ```
+ 
+ What a difference. This fuzzer, with the redefined `exif()` function performed the same amount of work in only 2 seconds!! That's insane! The old fuzzer: 122 seconds, new fuzzer: 2 seconds. What an improvement. This is an insane performance increase. Our new fuzzer does the same amount of work in 1/60th of the time. 
