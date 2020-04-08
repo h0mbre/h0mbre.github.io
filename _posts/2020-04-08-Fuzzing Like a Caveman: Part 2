@@ -1,0 +1,19 @@
+---
+layout: single
+title: Fuzzing Like A Caveman: Part 2
+date: 2020-04-08
+classes: wide
+header:
+  teaser: /assets/images/avatar.jpg
+tags:
+  - fuzzing
+  - exif
+  - parsing
+  - Python
+  - jpeg
+  - mutation
+  - C++
+---
+
+## Introduction
+In this episode of 'Fuzzing like a Caveman' we'll just be looking at improving the performance of our previous fuzzer. This means there won't be any wholesale changes, we're simply looking to improve upon what we already had in the previous post. This means we'll still end up walking away from this blogpost with a very basic mutation fuzzer (please let it be faster!!) and hopefully some more bugs on a different target. 
