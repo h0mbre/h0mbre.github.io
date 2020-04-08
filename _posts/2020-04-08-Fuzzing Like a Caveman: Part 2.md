@@ -282,4 +282,7 @@ Here is our performance report:
  -----SNIP-----
  ```
  
- What a difference. This fuzzer, with the redefined `exif()` function performed the same amount of work in only 2 seconds!! That's insane! The old fuzzer: 122 seconds, new fuzzer: 2 seconds. What an improvement. This is an insane performance increase. Our new fuzzer does the same amount of work in 1/60th of the time. 
+ What a difference. This fuzzer, with the redefined `exif()` function performed the same amount of work in only 2 seconds!! That's insane! The old fuzzer: 122 seconds, new fuzzer: 2.7 seconds. What an improvement. This is an insane performance increase. Our new fuzzer does the same amount of work in 1/60th of the time. 
+ 
+## New Fuzzer in C++
+
