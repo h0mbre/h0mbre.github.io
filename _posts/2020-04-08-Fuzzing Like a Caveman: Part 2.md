@@ -693,4 +693,76 @@ int func_pick()
 
 These functions are pretty similar to our Python implementation as well. `vector_gen()` pretty much just creates our vector of 'magic values' and then subsequent functions like `magic()` use the vector to randomly pick an index and then overwrite data in the valid jpeg with mutated data accordingly. 
 
-`func_pick()` is very simple and just returns a `0` or a `1` so that our fuzzer can randomly `bit_flip()` or `magic()` mutate our valid jpeg. To keep things consistent, let's have our fuzzer only choose `bit_flip()` for the time being by adding a 
+`func_pick()` is very simple and just returns a `0` or a `1` so that our fuzzer can randomly `bit_flip()` or `magic()` mutate our valid jpeg. To keep things consistent, let's have our fuzzer only choose `bit_flip()` for the time being by adding a temporary line of `function = 1` to our program so that we match our Python testing. 
+
+Here is our `main()` function which executes all of our code so far:
+```cpp
+int main(int argc, char** argv)
+{
+
+	if (argc < 3)
+	{
+		std::cout << "Usage: ./cppfuzz <valid jpeg> <number_of_fuzzing_iterations>\n";
+		std::cout << "Usage: ./cppfuzz Canon_40D.jpg 10000\n";
+		return 1;
+	}
+
+	// start timer
+	auto start = std::chrono::high_resolution_clock::now();
+
+	// initialize our random seed
+	srand((unsigned)time(NULL));
+
+	// generate our vector of magic numbers
+	std::vector<std::string> magic_vector = vector_gen();
+
+	std::string filename = argv[1];
+	int iterations = atoi(argv[2]);
+
+	int counter = 0;
+	while (counter < iterations)
+	{
+
+		std::string data = get_bytes(filename);
+
+		int function = func_pick();
+		function = 1;
+		if (function == 0)
+		{
+			// utilize the magic mutation method; create new jpg; send to exiv2
+			std::string mutated = magic(data, magic_vector);
+			create_new(mutated);
+			exif(mutated,counter);
+			counter++;
+		}
+		else
+		{
+			// utilize the bit flip mutation; create new jpg; send to exiv2
+			std::string mutated = bit_flip(data);
+			create_new(mutated);
+			exif(mutated,counter);
+			counter++;
+		}
+	}
+
+	// stop timer and print execution time
+	auto stop = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+	std::cout << "Execution Time: " << duration.count() << "ms\n";
+
+	return 0;
+}
+```
+
+We get a valid JPEG to mutate and a number of fuzzing iterations from the command line arguments. We then have some timing mechanisms in place with the `std::chrono` namespace to time how long our program takes to execute. 
+
+We're kind of cheating here by only selecting `bit_flip()` type mutations, but that is what we did in Python as well so we want an 'Apples to Apples' comparison. 
+
+Let's go ahead and run this for 100,000 iterations and compare it our Python fuzzer benchmark of 256 seconds.
+
+Once we run our C++ fuzzer, we get a printed time spent in milleseconds of: `Execution Time: 172638ms
+` or 172 seconds.
+
+So we comfortably destroyed our Python fuzzer with our new C++ fuzzer! This is so exciting. Let's go ahead and do some math here: 172/256 = 67%. So we're roughly 33% faster with our C++ implementation. (God I hope you aren't some 200 IQ math genius reading this and throwing up on your keyboard).
+
+
