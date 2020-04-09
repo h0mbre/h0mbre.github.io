@@ -880,9 +880,9 @@ Looking at the help guidance, let's just go ahead and randomly take a crack at `
 
 Our command string now in our fuzzers will be something like `exiv2 pr -v mutated.jpg`. 
 
-Let's go ahead and update our fuzzers and see if we can find some more bugs on a much harder target. It's worth mentioning that this target is pre-installed on a major distro, is currently supported, and not a trivial binary for us to find bugs on like our last target (an unsupported 7 year old project on Github). 
+Let's go ahead and update our fuzzers and see if we can find some more bugs on a much harder target. It's worth mentioning that this target is currently supported, and not a trivial binary for us to find bugs on like our last target (an unsupported 7 year old project on Github). 
 
-This target has already been fuzzed by much more advanced fuzzers, you can simply google for something like 'ASan exiv2' and get plenty of hits of fuzzers creating segfaults in the binary and forwarding the ASan output to the github repository as a bug. This is a huge step up from our last target. 
+This target has already been fuzzed by much more advanced fuzzers, you can simply google for something like 'ASan exiv2' and get plenty of hits of fuzzers creating segfaults in the binary and forwarding the ASan output to the github repository as a bug. This is a significant step up from our last target. 
 
 [exiv2 on Github](https://github.com/Exiv2/exiv2)
 
@@ -996,6 +996,13 @@ We indeed found a new bug! This is super exciting. We should issue a bug report 
 
 ## Conclusion
 We first optimized our fuzzer in Python and then rewrote it in C++. We gained some massive performance advantages and even found some new bugs on a new harder target.
+
+For some fun, let's compare our original fuzzer's performance for 50,000 iterations:
+```
+123052109 function calls (123001828 primitive calls) in 6243.939 seconds
+```
+
+As you can see, 6,243 seconds is significantly slower than our C++ fuzzer benchmark of 170 seconds.
 
 In our a future post, which may be delayed a bit, we will be fuzzing again with Rust and on Windows kernel-mode device drivers. 
 
