@@ -283,8 +283,8 @@ Here is our performance report:
  
  What a difference. This fuzzer, with the redefined `exif()` function performed the same amount of work in only 2 seconds!! That's insane! The old fuzzer: 122 seconds, new fuzzer: 2.7 seconds. What an improvement. This is an insane performance increase. Our new fuzzer does the same amount of work in 1/60th of the time. 
  
-## New Fuzzer in C++
-Let's try and rewrite our fuzzer in a new language, C++. First, let's get a good benchmark for us to perform against. We'll get our optimized Python fuzzer to iterate through 50,000 fuzzing iterations and we'll use the `cProfile` module again to get some fine-grained statistics about where we spend our time. 
+## Improving Further in Python
+Let's try to continue improving our fuzzer all within Python. First, let's get a good benchmark for us to perform against. We'll get our optimized Python fuzzer to iterate through 50,000 fuzzing iterations and we'll use the `cProfile` module again to get some fine-grained statistics about where we spend our time. 
 ```
 102981395 function calls (102981258 primitive calls) in 141.488 seconds
 
@@ -328,4 +328,369 @@ Let's try and rewrite our fuzzer in a new language, C++. First, let's get a good
 
 Let's go ahead and repost what the old `bit_flip()` function looked like:
 ```python
+def bit_flip(data):
 
+	num_of_flips = int((len(data) - 4) * .01)
+
+	indexes = range(4, (len(data) - 4))
+
+	chosen_indexes = []
+
+	# iterate selecting indexes until we've hit our num_of_flips number
+	counter = 0
+	while counter < num_of_flips:
+		chosen_indexes.append(random.choice(indexes))
+		counter += 1
+
+	for x in chosen_indexes:
+		current = data[x]
+		current = (bin(current).replace("0b",""))
+		current = "0" * (8 - len(current)) + current
+		
+		indexes = range(0,8)
+
+		picked_index = random.choice(indexes)
+
+		new_number = []
+
+		# our new_number list now has all the digits, example: ['1', '0', '1', '0', '1', '0', '1', '0']
+		for i in current:
+			new_number.append(i)
+
+		# if the number at our randomly selected index is a 1, make it a 0, and vice versa
+		if new_number[picked_index] == "1":
+			new_number[picked_index] = "0"
+		else:
+			new_number[picked_index] = "1"
+
+		# create our new binary string of our bit-flipped number
+		current = ''
+		for i in new_number:
+			current += i
+
+		# convert that string to an integer
+		current = int(current,2)
+
+		# change the number in our byte array to our new number we just constructed
+		data[x] = current
+
+	return data
+```
+
+This function is admittedly a bit clumsy. We can simplify it greatly by utilizing better logic. I find this is often the case with programming in my limited experience, you can have all of the fancy esoteric programming knowledge you want, but if the logic behind your program is unsound, then the program's performance will suffer. 
+
+Let's reduce the amount of type conversions we do, for instance ints to str or vice versa, and let's just get less code into our editor. We can accomplish what we want with a re-defined `bit_flip()` function as follows: 
+```python
+def bit_flip(data):
+
+	length = len(data) - 4
+
+	num_of_flips = int(length * .01)
+
+	picked_indexes = []
+
+	counter = 0
+	while counter < num_of_flips:
+		picked_indexes.append(random.choice(range(0,length)))
+		counter += 1
+
+
+	for x in picked_indexes:
+		mask = random.choice(range(1,9))
+		data[x] = data[x] ^ mask
+
+	return data
+```
+
+If we employ this new function and monitor the results, we get a performance grade of:
+```
+59376275 function calls (59376138 primitive calls) in 135.582 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+     15/1    0.000    0.000  135.582  135.582 {built-in method builtins.exec}
+        1    1.940    1.940  135.582  135.582 subpro.py:3(<module>)
+    50000    0.978    0.000  107.857    0.002 subpro.py:111(exif)
+    50000    1.450    0.000   64.236    0.001 subprocess.py:681(__init__)
+    50000    5.566    0.000   60.141    0.001 subprocess.py:1412(_execute_child)
+    50000    0.534    0.000   42.259    0.001 subprocess.py:920(communicate)
+    50000    2.827    0.000   41.637    0.001 subprocess.py:1662(_communicate)
+   199549   38.249    0.000   38.249    0.000 {built-in method posix.read}
+   149537    0.555    0.000   30.376    0.000 selectors.py:402(select)
+   149537   29.722    0.000   29.722    0.000 {method 'poll' of 'select.poll' objects}
+    50000    3.993    0.000   14.471    0.000 subpro.py:14(bit_flip)
+  7950000    3.741    0.000   10.316    0.000 random.py:256(choice)
+    50000    9.973    0.000    9.973    0.000 {built-in method _posixsubprocess.fork_exec}
+    50000    0.163    0.000    7.034    0.000 subpro.py:105(create_new)
+  7950000    3.987    0.000    5.952    0.000 random.py:224(_randbelow)
+   202567    4.966    0.000    4.966    0.000 {built-in method io.open}
+    50000    4.042    0.000    4.042    0.000 {method 'close' of '_io.BufferedRandom' objects}
+    50000    1.539    0.000    3.828    0.000 os.py:617(get_exec_path)
+    50000    1.843    0.000    3.607    0.000 subpro.py:8(get_bytes)
+   100000    0.074    0.000    2.133    0.000 subprocess.py:1014(wait)
+   100000    0.463    0.000    2.059    0.000 subprocess.py:1621(_wait)
+   100000    0.274    0.000    2.046    0.000 selectors.py:351(register)
+   100000    0.782    0.000    1.702    0.000 selectors.py:234(register)
+    50000    0.055    0.000    1.507    0.000 subprocess.py:1608(_try_wait)
+    50000    1.452    0.000    1.452    0.000 {built-in method posix.waitpid}
+   350000    0.424    0.000    1.436    0.000 subprocess.py:1471(<genexpr>)
+ 12066317    1.339    0.000    1.339    0.000 {method 'getrandbits' of '_random.Random' objects}
+   100000    0.466    0.000    1.048    0.000 os.py:674(__getitem__)
+   100000    1.014    0.000    1.014    0.000 {method 'close' of '_io.BufferedReader' objects}
+-----SNIP-----
+```
+
+As you can see from the metrics, we only spend 14 cumulative seconds in `bit_flip()` at this point! In our last go-round, we spent 25 seconds here, this is almost twice as fast at this point. We're doing a good job of optimizing in my opinion here. 
+
+Now that we have our ideal Python benchmark (keep in mind there might be opportunities for multi-processing or multi-threading but let's save this idea for another time), let's go ahead and port our fuzzer to a new language, C++ and test the performance.
+
+## New Fuzzer in C++
+To get started, let's just go ahead and flat out run our newly optimized python fuzzer through 100,000 fuzzing iterations and see how long in total it takes. 
+```
+118749892 function calls (118749755 primitive calls) in 256.881 seconds
+```
+
+100k iterations in only 256 seconds! That destroys our previous fuzzer.
+
+That will be our benchmark we try to beat in C++. Now, as unfamiliar as I am with the nuances of Python development, multiply that by 10 and you'll have my unfamiliarity with C++. This code might be laughable to some, but it's the best I could manage at the present moment and we can explain each function as it relates to our previous Python code. 
+
+Let's go through, function by function, and describe their implementation. 
+
+```cpp
+//
+// this function simply creates a stream by opening a file in binary mode;
+// finds the end of file, creates a string 'data', resizes data to be the same
+// size as the file moves the file pointer back to the beginning of the file;
+// reads the data from the into the data string;
+//
+std::string get_bytes(std::string filename)
+{
+	std::ifstream fin(filename, std::ios::binary);
+
+	if (fin.is_open())
+	{
+		fin.seekg(0, std::ios::end);
+		std::string data;
+		data.resize(fin.tellg());
+		fin.seekg(0, std::ios::beg);
+		fin.read(&data[0], data.size());
+
+		return data;
+	}
+
+	else
+	{
+		std::cout << "Failed to open " << filename << ".\n";
+		exit(1);
+	}
+
+}
+```
+This function, as my comment says, simply retrives a byte string from our target file, which in the case of our testing will still be `Canon_40D.jpg`. 
+
+```
+//
+// this will take 1% of the bytes from our valid jpeg and
+// flip a random bit in the byte and return the altered string
+//
+std::string bit_flip(std::string data)
+{
+	
+	int size = (data.length() - 4);
+	int num_of_flips = (int)(size * .01);
+
+	// get a vector full of 1% of random byte indexes
+	std::vector<int> picked_indexes;
+	for (int i = 0; i < num_of_flips; i++)
+	{
+		int picked_index = rand() % size;
+		picked_indexes.push_back(picked_index);
+	}
+
+	// iterate through the data string at those indexes and flip a bit
+	for (int i = 0; i < picked_indexes.size(); ++i)
+	{
+		int index = picked_indexes[i];
+		char current = data.at(index);
+		int decimal = ((int)current & 0xff);
+		
+		int bit_to_flip = rand() % 8;
+		
+		decimal ^= 1 << bit_to_flip;
+		decimal &= 0xff;
+		
+		data[index] = (char)decimal;
+	}
+
+	return data;
+
+}
+```
+
+This function is a direct equivalent of our `bit_flip()` function in our Python script. 
+
+```cpp
+//
+// takes mutated string and creates new jpeg with it;
+//
+void create_new(std::string mutated)
+{
+	std::ofstream fout("mutated.jpg", std::ios::binary);
+
+	if (fout.is_open())
+	{
+		fout.seekp(0, std::ios::beg);
+		fout.write(&mutated[0], mutated.size());
+	}
+	else
+	{
+		std::cout << "Failed to create mutated.jpg" << ".\n";
+		exit(1);
+	}
+
+}
+```
+
+This function will simply create a temporary `mutated.jpg` file, similar to our `create_new()` function that we had in the Python script. 
+
+```cpp
+//
+// function to run a system command and store the output as a string;
+// https://www.jeremymorgan.com/tutorials/c-programming/how-to-capture-the-output-of-a-linux-command-in-c/
+//
+std::string get_output(std::string cmd)
+{
+	std::string output;
+	FILE * stream;
+	char buffer[256];
+
+	stream = popen(cmd.c_str(), "r");
+	if (stream)
+	{
+		while (!feof(stream))
+			if (fgets(buffer, 256, stream) != NULL) output.append(buffer);
+				pclose(stream);
+	}
+
+	return output;
+
+}
+
+//
+// we actually run our exiv2 command via the get_output() func;
+// retrieve the output in the form of a string and then we can parse the string;
+// we'll save all the outputs that result in a segfault or floating point except;
+//
+void exif(std::string mutated, int counter)
+{
+	std::string command = "exif mutated.jpg -verbose 2>&1";
+
+	std::string output = get_output(command);
+
+	std::string segfault = "Segmentation";
+	std::string floating_point = "Floating";
+
+	std::size_t pos1 = output.find(segfault);
+	std::size_t pos2 = output.find(floating_point);
+
+	if (pos1 != -1)
+	{
+		std::cout << "Segfault!\n";
+		std::ostringstream oss;
+		oss << "/root/cppcrashes/crash." << counter << ".jpg";
+		std::string filename = oss.str();
+		std::ofstream fout(filename, std::ios::binary);
+
+		if (fout.is_open())
+			{
+				fout.seekp(0, std::ios::beg);
+				fout.write(&mutated[0], mutated.size());
+			}
+		else
+		{
+			std::cout << "Failed to create " << filename << ".jpg" << ".\n";
+			exit(1);
+		}
+	}
+	else if (pos2 != -1)
+	{
+		std::cout << "Floating Point!\n";
+		std::ostringstream oss;
+		oss << "/root/cppcrashes/crash." << counter << ".jpg";
+		std::string filename = oss.str();
+		std::ofstream fout(filename, std::ios::binary);
+
+		if (fout.is_open())
+			{
+				fout.seekp(0, std::ios::beg);
+				fout.write(&mutated[0], mutated.size());
+			}
+		else
+		{
+			std::cout << "Failed to create " << filename << ".jpg" << ".\n";
+			exit(1);
+		}
+	}
+}
+```
+
+These two functions work together. `get_output` takes a C++ string as a parameter and will run that command on the operating system and capture the output. The function then returns the output as a string to the calling function `exif()`. 
+
+`exif()` will take the output and look for `Segmentation fault` or `Floating point exception` errors and then if found, will write those bytes to a file and save them as a `crash.<counter>.jpg` file. Very similar to our Python fuzzer.
+
+```cpp
+//
+// simply generates a vector of strings that are our 'magic' values;
+//
+std::vector<std::string> vector_gen()
+{
+	std::vector<std::string> magic;
+
+	using namespace std::string_literals;
+
+	magic.push_back("\xff");
+	magic.push_back("\x7f");
+	magic.push_back("\x00"s);
+	magic.push_back("\xff\xff");
+	magic.push_back("\x7f\xff");
+	magic.push_back("\x00\x00"s);
+	magic.push_back("\xff\xff\xff\xff");
+	magic.push_back("\x80\x00\x00\x00"s);
+	magic.push_back("\x40\x00\x00\x00"s);
+	magic.push_back("\x7f\xff\xff\xff");
+
+	return magic;
+}
+
+//
+// randomly picks a magic value from the vector and overwrites that many bytes in the image;
+//
+std::string magic(std::string data, std::vector<std::string> magic)
+{
+	
+	int vector_size = magic.size();
+	int picked_magic_index = rand() % vector_size;
+	std::string picked_magic = magic[picked_magic_index];
+	int size = (data.length() - 4);
+	int picked_data_index = rand() % size;
+	data.replace(picked_data_index, magic[picked_magic_index].length(), magic[picked_magic_index]);
+
+	return data;
+
+}
+
+//
+// returns 0 or 1;
+//
+int func_pick()
+{
+	int result = rand() % 2;
+
+	return result;
+}
+```
+
+These functions are pretty similar to our Python implementation as well. `vector_gen()` pretty much just creates our vector of 'magic values' and then subsequent functions like `magic()` use the vector to randomly pick an index and then overwrite data in the valid jpeg with mutated data accordingly. 
+
+`func_pick()` is very simple and just returns a `0` or a `1` so that our fuzzer can randomly `bit_flip()` or `magic()` mutate our valid jpeg. To keep things consistent, let's have our fuzzer only choose `bit_flip()` for the time being by adding a 
