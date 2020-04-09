@@ -18,7 +18,7 @@ tags:
 ## Introduction
 In this episode of 'Fuzzing like a Caveman' we'll just be looking at improving the performance of our previous fuzzer. This means there won't be any wholesale changes, we're simply looking to improve upon what we already had in the previous post. This means we'll still end up walking away from this blogpost with a very basic mutation fuzzer (please let it be faster!!) and hopefully some more bugs on a different target. We won't really tinker with multi-threading or multi-processing in this post, we will save that for subsequent fuzzing posts. 
 
-I feel the need to add a **DISCLAIMER** here that I am not a professional developer, far from it. I'm simply not experienced enough with programming at this point to recognize opportunities to improve performance the way a more seasoned programmer would. I'm going to use my crude skillset and my limited knowledge of programming to improve our previous fuzzer, that's it. The code produced will not be pretty, it will not be perfect, but it will be *better* than what we had in the previous post.  
+I feel the need to add a **DISCLAIMER** here that I am not a professional developer, far from it. I'm simply not experienced enough with programming at this point to recognize opportunities to improve performance the way a more seasoned programmer would. I'm going to use my crude skillset and my limited knowledge of programming to improve our previous fuzzer, that's it. The code produced will not be pretty, it will not be perfect, but it will be *better* than what we had in the previous post. It should also be mentioned that all testing was done on VMWare Workstation on an x86 Kali VM with 1 CPU and 1 Core. 
 
 Let's take a moment to define 'better' in the context of this blog post as well. What I mean by 'better' here is that we can iterate through n fuzzing iterations faster, that's it. We'll take the time to completely rewrite the fuzzer, use a cool language, pick a hardened target, and employ more advanced fuzzing techniques at a later date. :)
 
@@ -284,4 +284,48 @@ Here is our performance report:
  What a difference. This fuzzer, with the redefined `exif()` function performed the same amount of work in only 2 seconds!! That's insane! The old fuzzer: 122 seconds, new fuzzer: 2.7 seconds. What an improvement. This is an insane performance increase. Our new fuzzer does the same amount of work in 1/60th of the time. 
  
 ## New Fuzzer in C++
+Let's try and rewrite our fuzzer in a new language, C++. First, let's get a good benchmark for us to perform against. We'll get our optimized Python fuzzer to iterate through 50,000 fuzzing iterations and we'll use the `cProfile` module again to get some fine-grained statistics about where we spend our time. 
+```
+102981395 function calls (102981258 primitive calls) in 141.488 seconds
+
+   Ordered by: cumulative time
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+     15/1    0.000    0.000  141.488  141.488 {built-in method builtins.exec}
+        1    1.724    1.724  141.488  141.488 subpro.py:3(<module>)
+    50000    0.992    0.000  102.588    0.002 subpro.py:139(exif)
+    50000    1.248    0.000   61.562    0.001 subprocess.py:681(__init__)
+    50000    5.034    0.000   57.826    0.001 subprocess.py:1412(_execute_child)
+    50000    0.437    0.000   39.586    0.001 subprocess.py:920(communicate)
+    50000    2.527    0.000   39.064    0.001 subprocess.py:1662(_communicate)
+   208254   37.508    0.000   37.508    0.000 {built-in method posix.read}
+   158238    0.577    0.000   28.809    0.000 selectors.py:402(select)
+   158238   28.131    0.000   28.131    0.000 {method 'poll' of 'select.poll' objects}
+    50000   11.784    0.000   25.819    0.001 subpro.py:14(bit_flip)
+  7950000    3.666    0.000   10.431    0.000 random.py:256(choice)
+    50000    8.421    0.000    8.421    0.000 {built-in method _posixsubprocess.fork_exec}
+    50000    0.162    0.000    7.358    0.000 subpro.py:133(create_new)
+  7950000    4.096    0.000    6.130    0.000 random.py:224(_randbelow)
+   203090    5.016    0.000    5.016    0.000 {built-in method io.open}
+    50000    4.211    0.000    4.211    0.000 {method 'close' of '_io.BufferedRandom' objects}
+    50000    1.643    0.000    4.194    0.000 os.py:617(get_exec_path)
+    50000    1.733    0.000    3.356    0.000 subpro.py:8(get_bytes)
+ 35866791    2.635    0.000    2.635    0.000 {method 'append' of 'list' objects}
+   100000    0.070    0.000    1.960    0.000 subprocess.py:1014(wait)
+   100000    0.252    0.000    1.902    0.000 selectors.py:351(register)
+   100000    0.444    0.000    1.890    0.000 subprocess.py:1621(_wait)
+   100000    0.675    0.000    1.583    0.000 selectors.py:234(register)
+   350000    0.432    0.000    1.501    0.000 subprocess.py:1471(<genexpr>)
+ 12074141    1.434    0.000    1.434    0.000 {method 'getrandbits' of '_random.Random' objects}
+    50000    0.059    0.000    1.358    0.000 subprocess.py:1608(_try_wait)
+    50000    1.299    0.000    1.299    0.000 {built-in method posix.waitpid}
+   100000    0.488    0.000    1.058    0.000 os.py:674(__getitem__)
+   100000    1.017    0.000    1.017    0.000 {method 'close' of '_io.BufferedReader' objects}
+-----SNIP-----
+```
+
+50,000 iterations took us a grand total of 141 seconds, this is great performance compared to what we were dealing with. We previously took 122 seconds to do 1,000 iterations! Once again filtering on only time where we spent over 1.0 seconds, we see that we again spent most of our time in `exif()` but we also see some performance issues in `bit_flip()` as we spent 25 cumulative seconds there. Let's try to optimize that function a bit. 
+
+Let's go ahead and repost what the old `bit_flip()` function looked like:
+```python
 
