@@ -995,9 +995,9 @@ Floating point exception
 We indeed found a new bug! This is super exciting. We should issue a bug report to the `exiv2` developers on Github.
 
 ## Conclusion
-We first optimized our fuzzer in Python and then rewrote it in C++. We gained some massive performance advantages and even found some new bugs on a new harder target!
+We first optimized our fuzzer in Python and then rewrote it in C++. We gained some massive performance advantages and even found some new bugs on a new harder target.
 
-In our a future post, which may be delayed a bit, we will be fuzzing again I promise. That post will include generative fuzzing methods, Rust, and the Windows kernel :)
+In our a future post, which may be delayed a bit, we will be fuzzing again with Rust and on Windows kernel-mode device drivers. 
 
 ## Code
 `OptimizedFuzzer.py`
