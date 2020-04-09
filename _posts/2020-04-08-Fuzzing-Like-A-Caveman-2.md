@@ -760,8 +760,7 @@ We're kind of cheating here by only selecting `bit_flip()` type mutations, but t
 
 Let's go ahead and run this for 100,000 iterations and compare it our Python fuzzer benchmark of 256 seconds.
 
-Once we run our C++ fuzzer, we get a printed time spent in milleseconds of: `Execution Time: 172638ms
-` or 172 seconds.
+Once we run our C++ fuzzer, we get a printed time spent in milleseconds of: `Execution Time: 172638ms` or 172 seconds.
 
 So we comfortably destroyed our Python fuzzer with our new C++ fuzzer! This is so exciting. Let's go ahead and do some math here: 172/256 = 67%. So we're roughly 33% faster with our C++ implementation. (God I hope you aren't some 200 IQ math genius reading this and throwing up on your keyboard).
 
@@ -1443,5 +1442,3 @@ int main(int argc, char** argv)
 	return 0;
 }
 ```
-
-
