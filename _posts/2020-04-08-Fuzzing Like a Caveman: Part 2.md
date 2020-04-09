@@ -489,7 +489,7 @@ std::string get_bytes(std::string filename)
 ```
 This function, as my comment says, simply retrives a byte string from our target file, which in the case of our testing will still be `Canon_40D.jpg`. 
 
-```
+```cpp
 //
 // this will take 1% of the bytes from our valid jpeg and
 // flip a random bit in the byte and return the altered string
