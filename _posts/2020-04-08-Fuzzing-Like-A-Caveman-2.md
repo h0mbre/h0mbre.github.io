@@ -213,6 +213,8 @@ Let's run this version of our fuzzer with some profiling instrumentation and we 
 
 We can make use of the `cProfile` Python module and see where we spend our time during 1,000 fuzzing iterations. The program takes a filepath argument to a valid JPEG file if you remember, so our complete command line syntax will be: `python3 -m cProfile -s cumtime JPEGfuzzer.py ~/jpegs/Canon_40D.jpg`.
 
+**It should also be noted that adding this `cProfile` instrumentation could slow down performance. I tested without it and for the iteration sizes we use in this post, I didn't seem to make a significant difference.**
+
 After letting this run, we see our program output and we get to see where we spent the most time during execution. 
 ```
 2476093 function calls (2474812 primitive calls) in 122.084 seconds
