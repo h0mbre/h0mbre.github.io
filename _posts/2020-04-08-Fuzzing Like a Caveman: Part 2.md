@@ -882,5 +882,25 @@ Our command string now in our fuzzers will be something like `exiv2 pr -v mutate
 
 Let's go ahead and update our fuzzers and see if we can find some more bugs on a much harder target. It's worth mentioning that this target is pre-installed on a major distro, is currently supported, and not a trivial binary for us to find bugs on like our last target (an unsupported 7 year old project on Github). 
 
+[exiv2 on Github](https://github.com/Exiv2/exiv2)
+[exiv2 Website](https://www.exiv2.org/)
+
 ## Fuzzing Our New Target
+Let's start off with our new and improved Python fuzzer and monitor it's performance over 50,000 iterations. Let's add some code that monitors for Floating point exceptions in addition to our Segmentation fault detection (Call it a hunch!). Our new `exif()` function will look like this: 
+```python
+def exif(counter,data):
+
+    p = Popen(["exiv2", "pr", "-v", "mutated.jpg"], stdout=PIPE, stderr=PIPE)
+    (out,err) = p.communicate()
+
+    if p.returncode == -11:
+    	f = open("crashes2/crash.{}.jpg".format(str(counter)), "ab+")
+    	f.write(data)
+    	print("Segfault!")
+
+    elif p.returncode == -8:
+    	f = open("crashes2/crash.{}.jpg".format(str(counter)), "ab+")
+    	f.write(data)
+    	print("Floating Point!")
+```
 
