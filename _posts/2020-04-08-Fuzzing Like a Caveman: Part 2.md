@@ -883,6 +883,7 @@ Our command string now in our fuzzers will be something like `exiv2 pr -v mutate
 Let's go ahead and update our fuzzers and see if we can find some more bugs on a much harder target. It's worth mentioning that this target is pre-installed on a major distro, is currently supported, and not a trivial binary for us to find bugs on like our last target (an unsupported 7 year old project on Github). 
 
 [exiv2 on Github](https://github.com/Exiv2/exiv2)
+
 [exiv2 Website](https://www.exiv2.org/)
 
 ## Fuzzing Our New Target
