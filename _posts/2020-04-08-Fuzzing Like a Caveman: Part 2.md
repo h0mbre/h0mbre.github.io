@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "Fuzzing Like A Caveman: Part 2"
+title: "Fuzzing Like A Caveman 2: Improving Performance"
 date: 2020-04-08
 classes: wide
 header:
