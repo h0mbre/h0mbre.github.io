@@ -63,7 +63,7 @@ So we can deduce that `0x222003` + `0x4` + `0x4` is our desired IOCTL. This give
 Going to pause the debuggee, and rerun our standby commands we always run on our debugger:
 + `sympath\+ <path to the HEVD.pdb file>` <— adds the symbols for HEVD to our symbols path
 + `.reload` <— reloads symbols from path
-+ `ed Kd_DEFAULT_Mask 8` <— enables kernel debugging
++ `ed Kd_DEFAULT_Mask 8` <— enables debug string printing
 + `bp HEVD!ArbitraryOverwriteIoctlHandler` <— sets a breakpoint on our desired function
 
 We'll use this script to send a buffer of 1000 `A` characters. 
