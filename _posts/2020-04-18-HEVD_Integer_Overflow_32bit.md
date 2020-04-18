@@ -73,11 +73,10 @@ This series of operations is actually the interesting part. `eax` is given a poi
 Let's move on to the final puzzle piece. `mov [ebp+edi*4+KernelBuffer], eax` is kind of convoluted looking but what it's doing is placing the 4 byte value in `eax` into the kernel buffer at index `edi * 0x4`. Right now, `edi` is 0, so it's placing the 4 byte value right at the beginning of the kernel buffer. After this, the `dword ptr` value at `ebp+8` is incremented by `0x4`. This is interesting because we already know that `ebp+0x8` is where the pointer is to our input buffer. So now that we've placed the first four bytes from our input buffer into the kernel buffer, we move now to the next 4 bytes. We see also that `edi` incremented and we now understand what is taking place. 
 
 As long as:
-1- the length of our buffer + 4 is `< 0x800`,
 
-2- the `Counter` variable (`edi`) is `<` the length of our buffer divided by 4, 
-
-3- and the 4 byte value in `eax` is not `0BAD0B0B0`,
+1. the length of our buffer + 4 is `< 0x800`,
+2. the `Counter` variable (`edi`) is `<` the length of our buffer divided by 4, 
+3. and the 4 byte value in `eax` is not `0BAD0B0B0`,
 
 we will copy 4 bytes of our input buffer into the kernel buffer and then move onto the next 4 bytes in the input buffer to test criteria 2 and 3 again. 
 
