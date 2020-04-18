@@ -56,8 +56,27 @@ Here is the output:
 I actually learned about this concept from Gynvael Coldwind's [stream on fuzzing](https://www.youtube.com/watch?v=BrDujogxYSk). I also found the bug in my own code for an exploit on a real vulnerability I will hopefully be doing a write-up for soon (when the CVE gets published.) Now that we know how the bug occurs, let's go find the bug in the driver in IDA and figure out how we can take advantage. 
 
 ## Reversing the Function
-
-
 ![](/assets/images/AWE/IntOverflowFunc.PNG)
+
+With the benefit of the comments I made in IDA, we can kind of see how this works. I've annotated where everything is after stepping through in WinDBG. 
+
+The first thing we notice here is that `ebx` gets loaded with the length of our input buffer in `DeviceIoControl` when we do this operation here: `move ebx, [ebp+Size]`. This is kind of obvious, but I hadn't really given it much thought before. We allocate an input buffer in our code, usually its a character or byte array, and then we usually satisfy the `DWORD nInBufferSize` parameter by doing something like `sizeof(input_buffer)` because we actually want it to be accurate. Later, we might actually lie a little bit here. 
+
+Now that `ebx` is the length of our input buffer, we see that it gets `+4` added to it and then loaded into to `eax`. If we had an input buffer of `0x7FC`, adding `0x4` to it would make it `0x800`. A really important thing to note here is that we've essentially created a new length variable in `eax` and kept our old one in `ebx` intact. In this case, `eax` would be `0x800` and `ebx` would still hold `0x7FC`. 
+
+Next, `eax` is compared to `esi` which we can see holds `0x800`. If the `eax` is equal to or more than `0x800`, we can see that take the red path down to the `Invalid UserBuffer Size` debug message. We don't want that. We need to satisfy this `jbe` condition. 
+
+If we satisfy the `jbe` condition, we branch down to `loc_149A5`. We put our buffer length from `ebx` into `eax` and then we effectively divide it by 4 since we do a bit shift right of 2. We compare this to quotient to `edi` which was zeroed out previously and has remained up until now unchanged. If length/4 quotient is the same or more than the counter, we move to `loc_149F1` where we will end up exiting the function soon after. Right now, since our length is more than `edi`, we'll jump to `mov eax, [ebp+8]`. 
+
+This series of operations is actually the interesting part. `eax` is given a pointer to our input buffer and we compare the value there with `0BAD0B0B0`. If they are the same value, we move towards exiting the function. So, so far we have identified two conditions where we'll exit the function: if `edi` is ever equal to or more than the length of our input buffer divided by 4 ***OR*** if the 4 byte value located at `[ebp+8]` is equal to `0BAD0B0B0`.
+
+Let's move on to the final puzzle piece. `mov [ebp+edi*4+KernelBuffer], eax` is kind of convoluted looking but what it's doing is placing the 4 byte value in `eax` into the kernel buffer at index `edi * 0x4`. Right now, `edi` is 0, so it's placing the 4 byte value right at the beginning of the kernel buffer. After this, the `dword ptr` value at `ebp+8` is incremented by `0x4`. This is interesting because we already know that `ebp+0x8` is where the pointer is to our input buffer. So now that we've placed the first four bytes from our input buffer into the kernel buffer, we move now to the next 4 bytes. We see also that `edi` incremented and we now understand what is taking place. 
+
+As long as:
+1- the length of our buffer + 4 is `< 0x800`, 
+2- the `Counter` variable (`edi`) is `<` the length of our buffer divided by 4, 
+3- and the 4 byte value in `eax` is not `0BAD0B0B0`,
+
+we will copy 4 bytes of our input buffer into the kernel buffer and then move onto the next 4 bytes in the input buffer to test criteria 2 and 3 again. 
 
 ## Conclusion
