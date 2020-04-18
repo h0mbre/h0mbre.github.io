@@ -174,5 +174,19 @@ We resume from here, we hit our breakpoint.
 
 ![](/assets/images/AWE/intover2.PNG)
 
+Take a look at `edi`, we can see our counter has incremented `0x1d3` times at this point, which is very close to the length of our buffer (`0x750`) divided by `0x4` (`0x1d4`). We can see that right now, we're doing a comparison on the 4 byte value at this address to `ecx` or `bad0b0b0`. We won't hit that criteria but on the next iteration, our counter will be `==` to `0x1d4` and thus, we will be finished copying bytes into the kernel buffer. Everything worked as expected. Now let's send a fake `DWORD nInBufferSize` value of `0xFFFFFFFF` and watch us sail right through length check and see what else we bypass. 
+
+Our `DeviceIoControl` call now looks like this:
+```cpp
+int result = DeviceIoControl(hFile,
+        IOCTL,
+        &input_buff,
+        ULONG_MAX,
+        NULL,
+        0,
+        &bytes_ret,
+        NULL);
+```
+
 
 ## Conclusion
