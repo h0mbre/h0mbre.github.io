@@ -83,7 +83,7 @@ we will copy 4 bytes of our input buffer into the kernel buffer and then move on
 There can't really be a problem with copying bytes from the user buffer into the kernel buffer unless somehow the copying exceeds the space allocated in the kernel buffer. If that occurs, we'll begin overwriting adjacent memory with our user buffer. How can we fool this length + `0x4` check?
 
 ## Manipulating `DWORD nInBufferSize`
-First we'll send a vanilla payload to test our theories up to this point. Let's start by sending a buffer full of all `\x41` chars and it will be a length of `0x751` (null-terminated). We'll use the `sizeof()` method to form our `nInBufferSize` parameter as well so that everything is accurate and consistent. Our code will look like this at this point:
+First we'll send a vanilla payload to test our theories up to this point. Let's start by sending a buffer full of all `\x41` chars and it will be a length of `0x750` (null-terminated). We'll use the `sizeof() - 1` method to form our `nInBufferSize` parameter and account for the null terminator as well so that everything is accurate and consistent. Our code will look like this at this point:
 ```cpp
 #include <iostream>
 #include <string>
@@ -129,14 +129,14 @@ void send_payload(HANDLE hFile) {
         '\x41',
         0x750);
 
-    cout << "[>] Sending buffer of size: " << sizeof(input_buff) << "\n";
+    cout << "[>] Sending buffer of size: " << sizeof(input_buff) - 1  << "\n";
 
     DWORD bytes_ret = 0x0;
 
     int result = DeviceIoControl(hFile,
         IOCTL,
         &input_buff,
-        sizeof(input_buff),
+        sizeof(input_buff) - 1,
         NULL,
         0,
         &bytes_ret,
@@ -163,5 +163,16 @@ What are our predictions for this code? What conditions will we hit? The criteri
 We should pass the first check since our buffer is indeed small enough. This second check will eventually make us exit the function since our length divided by 4, will eventually be caught by the `Counter` as it increments every 4 byte copy. We don't have to worry about the third check as we don't have this string in our payload. Let's send it and step through it in WinDBG. 
 
 ![](/assets/images/AWE/intover1.PNG)
+
+This picture helps us a lot. I've set a breakpoint on the comparison between the length of our buffer + 4 and `0x800`. As you can see, `eax` holds `0x754` which is what we would expect since we sent a `0x750` byte buffer. 
+
+In the bottom right, we our user buffer was allocated at `0x0012f184`. Let's set a [break on access](https://docs.microsoft.com/en-us/windows-hardware/drivers/debugger/ba--break-on-access-) at `0x0012f8d0` since that is `0x74c` away from where we are now, which is `0x4` short of `0x750`. If this 4 byte address is accessed for a read-operation we should hit our breakpoint. This will occur when the program goes to copy the 4 byte value here to the kernel buffer. 
+
+The syntax is `ba r1 0x0012f8d0` which means "break on access if there is a read of at least 1 byte at that address."
+
+We resume from here, we hit our breakpoint. 
+
+![](/assets/images/AWE/intover2.PNG)
+
 
 ## Conclusion
