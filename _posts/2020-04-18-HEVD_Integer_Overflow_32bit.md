@@ -1,7 +1,7 @@
 ---
 layout: single
-title: HEVD Exploits -- Windows 7 x86 Uninitialized Stack Variable
-date: 2020-02-09
+title: HEVD Exploits -- Windows 7 x86 Integer Overflow
+date: 2020-04-20
 classes: wide
 header:
   teaser: /assets/images/avatar.jpg
@@ -12,7 +12,7 @@ tags:
   - x86
   - Shellcoding
   - Kernel Exploitation
-  - Uninitialized Stack Variable
+  - Integer Overflow
 ---
 
 ## Introduction
