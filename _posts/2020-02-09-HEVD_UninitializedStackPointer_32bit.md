@@ -33,8 +33,6 @@ This post/series will instead focus on my experience trying to craft the actual 
 ## HEVD Series Change
 I will no longer be using Python ctypes to write exploits. We will be using C++ from now on. I realize this is a big change for people following along so I've commented the code heavily. 
 
-I will try to avoid 32 bit exploits where possible and focus solely on 64 bit (except this one, I hated this one lol).  
-
 ## Goal
 This one is pretty straightforward, we'll be attacking HEVD as normal, this time looking at the uninitialized stack variable bug class. While this isn't super common (I don't think?), there is a very neat API we can leverage from userland to spray the kernel stack and set ourselves up nicely so that we can get control over a called function pointer value. 
 
