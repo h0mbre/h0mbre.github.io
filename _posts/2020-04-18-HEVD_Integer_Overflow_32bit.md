@@ -188,5 +188,25 @@ int result = DeviceIoControl(hFile,
         NULL);
 ```
 
+When we hit a breakpoint at the point where we see `eax` being loaded with our user buffer length + `0x4`, we see that right before the arithmetic, we are at a length of `0xffffffff` in `ebx`. 
+
+![](/assets/images/AWE/intover3.PNG)
+
+Then after the operation, we see `eax` rolls over to `0x3`.
+
+![](/assets/images/AWE/intover4.PNG)
+
+So we will pass the length check now for sure, which we saw coming, the **other** really interesting thing that we took note of previously but can see playing out here is that `ebx` has been left undisturbed and is at `0xffffffff` still. This is the register used in the arithmetic to determine whether or not the `Counter` should keep iterating or not. This value is eventually loaded into `eax` and divided by 4!. `0xfffffffff` divided by 4 will likely never cause us to exit the function. We will keep copying bytes from the user buffer to the kernel buffer basically forever now. 
+
+***THIS IS NOT GOOD***
+
+Overwriting arbitrary memory in the kernel space is dangerous business. We can't corrupt anything more than we absolutely have to. We need a way to terminate the copying function. In comes the terminator string of `0BAD0B0B0` to the rescue. If the 4 byte value in the user buffer is `0BAD0B0B0`, we cease copying and exit the function. Obviously we BSOD here. 
+
+So hopefully, we can copy `0x800` bytes, and then start overwriting kernel memory on the stack where we can strategically place a pointer to shellcode. Like I said previously, you don't want a huge overwrite here. I started at `0x800` and worked my way up 4 bytes at a time using a little pattern creating tool I made [here](https://github.com/h0mbre/Windows-Exploits/tree/master/Pattern) until I got a crash. 
+
+Incrementing 4 bytes at a time I finally got a crash with a `0x830` buffer length where the last 4 bytes are `0BAD0B0B0`.
+
+## Getting a Crash
+After incrementing methodically from a buffer size of `0x800`, and remember that this includes a 4 byte terminator string or else we'll never stop copying into kernel space and BSOD the host, we 
 
 ## Conclusion
