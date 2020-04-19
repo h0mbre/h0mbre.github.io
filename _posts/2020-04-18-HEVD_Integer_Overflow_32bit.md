@@ -245,7 +245,20 @@ I then added the terminator to the end like so.
 ...Lm0Ln0Lo0\xb0\xb0\xd0\xba";
 ```
 
-And we see I got an access violation at `306f4c30`. 
+And we see I got an access violation at `306f4c30`.
+
 ![](/assets/images/AWE/intover5.PNG)
+
+Using pattern again, I got the exact offset and we confirmed our suspicions. 
+```
+root@kali:~# python3 pattern.py -o 306f4c30
+Exact offset found at position: 2088
+```
+
+From here on out, this plays out just like stack buffer overflow post, so please reference those posts if you have any questions! We initialize our shellcode, create a RWX buffer for it, move it there, and then use the address of the buffer to overwrite `eip` at that offset we found. 
+
+## Final Code
+```cpp
+
 
 ## Conclusion
