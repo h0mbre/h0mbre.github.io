@@ -387,4 +387,4 @@ int main()
 ## Conclusion
 This should net you a system shell. 
 
-![](/assets/images/AWE/intover5.PNG)
+![](/assets/images/AWE/intover6.PNG)
