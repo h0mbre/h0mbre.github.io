@@ -60,7 +60,7 @@ I actually learned about this concept from Gynvael Coldwind's [stream on fuzzing
 
 With the benefit of the comments I made in IDA, we can kind of see how this works. I've annotated where everything is after stepping through in WinDBG. 
 
-The first thing we notice here is that `ebx` gets loaded with the length of our input buffer in `DeviceIoControl` when we do this operation here: `move ebx, [ebp+Size]`. This is kind of obvious, but I hadn't really given it much thought before. We allocate an input buffer in our code, usually its a character or byte array, and then we usually satisfy the `DWORD nInBufferSize` parameter by doing something like `sizeof(input_buffer)` because we actually want it to be accurate. Later, we might actually lie a little bit here. 
+The first thing we notice here is that `ebx` gets loaded with the length of our input buffer in `DeviceIoControl` when we do this operation here: `move ebx, [ebp+Size]`. This is kind of obvious, but I hadn't really given it much thought before. We allocate an input buffer in our code, usually its a character or byte array, and then we usually satisfy the `DWORD nInBufferSize` parameter by doing something like `sizeof(input_buffer)` or `sizeof(input_buffer) - 1` because we actually want it to be accurate. Later, we might actually lie a little bit here. 
 
 Now that `ebx` is the length of our input buffer, we see that it gets `+4` added to it and then loaded into to `eax`. If we had an input buffer of `0x7FC`, adding `0x4` to it would make it `0x800`. A really important thing to note here is that we've essentially created a new length variable in `eax` and kept our old one in `ebx` intact. In this case, `eax` would be `0x800` and `ebx` would still hold `0x7FC`. 
 
