@@ -184,7 +184,7 @@ We can see that the header values for the next chunk are: `40 00 04 04 52 65 54 
 The only other thing to pay attention to, was that the `!pool` command told us our chunk was `0x200` bytes long which makes sense when you add the size of the header `0x8` to our allocated buffer size of `0x1F8`. 
 
 ## Generic Attack Strategy
-Before we proceed, we have to understand how we're going to utilize this ability, via our oversized user buffer, to arbitrarily overwrite data in the adjacent pool allocation as an attack vector. What we have right now is the ability to overwrite pool memory. In order for this to be worth while for us, we have to find a way to get the pool into a state where what we're overwriting is **predictable**. If what we're overwriting is unpredictable, we can never form a reliable exploit. 
+Before we proceed, we have to understand how we're going to utilize this ability, via our oversized user buffer, to arbitrarily overwrite data in the adjacent pool allocation as an attack vector. What we have right now is the ability to overwrite pool memory. In order for this to be worth while for us, we have to find a way to get the pool into a state where what we're overwriting is **predictable**. If what we're overwriting is unpredictable, we can never form a reliable exploit. If we damage some of the fields here and aren't surgical in our overwrites, we'll easily get a BSOD. 
 
 Generically, in its organic state, the non-paged pool is fragmented, meaning there are holes in it from chunks being freed arbitrarily by other processes on the system. What we want to do is cover these holes by spraying a ton of objects into the non-paged pool so that the pool allocation mechanism places our chunks into those available slots. Once this is complete, we'll want to spray even more objects so that by far, the most common objects in the pool are the ones we have just sprayed.
 
@@ -205,6 +205,30 @@ We will use this ability to overwrite data to predictably overwrite a piece of d
 
 Next, we'll get to know the object we'll be using to spray the pool.
 
-## 
+## Event Objects
+The blogpost authors inform us that [Event Objects](https://docs.microsoft.com/en-us/windows/win32/sync/event-objects) are perfect for this job for a few reasons, but one of the main reasons is that it is `0x40` bytes in size. A quick Python interpreter check shows us that we can neatly free 8 Event Objects and have our `0x200` byte sized holes we wanted.
+```
+>>> 0x200 % 0x40
+0
+>>> 0x200 / 0x40
+8.0
+```
+
+We don't care much about the content of these events, so every parameter will be basically NULL when we use the `CreateEvent` API:
+```cpp
+HANDLE CreateEventA(
+  LPSECURITY_ATTRIBUTES lpEventAttributes,
+  BOOL                  bManualReset,
+  BOOL                  bInitialState,
+  LPCSTR                lpName
+);
+```
+
+What's most important for us now, is finding out what we need to overwrite in this object to get code execution when the corrupted Event Object is freed. We'll go ahead and spray the same amount of objects that FuzzySec and r0otki7 did, 
++ 10,000 to fill the holes in the fragmented pool
++ 5,000 to create a nice long contiguous block of Event Objects
+
+Our code now looks like this: 
+
 
 
