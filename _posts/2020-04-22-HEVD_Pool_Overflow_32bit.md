@@ -130,7 +130,36 @@ I set a breakpoint at offset 0x4D64 with this command in WinDBG: `bp !HEVD+4D64`
 
 ![](/assets/images/AWE/poolover2.PNG)
 
-
+```
+kd> !pool 85246430
+Pool page 85246430 region is Nonpaged pool
+ 85246000 size:   c8 previous size:    0  (Allocated)  Ntfx
+ 852460c8 size:   10 previous size:   c8  (Free)       .PZH
+ 852460d8 size:   20 previous size:   10  (Allocated)  ReTa
+ 852460f8 size:   20 previous size:   20  (Allocated)  ReTa
+ 85246118 size:   48 previous size:   20  (Allocated)  Vad 
+ 85246160 size:   68 previous size:   48  (Allocated)  NpFn Process: 8507a030
+ 852461c8 size:   20 previous size:   68  (Allocated)  ReTa
+ 852461e8 size:   20 previous size:   20  (Allocated)  ReTa
+ 85246208 size:  168 previous size:   20  (Free)       CcSc
+ 85246370 size:   b8 previous size:  168  (Allocated)  NbtD
+*85246428 size:  200 previous size:   b8  (Allocated) *Hack
+		Owning component : Unknown (update pooltag.txt)
+ 85246628 size:   20 previous size:  200  (Allocated)  ReTa
+ 85246648 size:   68 previous size:   20  (Allocated)  FMsl
+ 852466b0 size:   c8 previous size:   68  (Allocated)  Ntfx
+ 85246778 size:  180 previous size:   c8  (Free)       EtwG
+ 852468f8 size:   98 previous size:  180  (Allocated)  MmCa
+ 85246990 size:    8 previous size:   98  (Free)       Nb29
+ 85246998 size:   48 previous size:    8  (Allocated)  Vad 
+ 852469e0 size:  1b8 previous size:   48  (Allocated)  LSbf
+ 85246b98 size:   b8 previous size:  1b8  (Allocated)  File (Protected)
+ 85246c50 size:   60 previous size:   b8  (Free)       Clfs
+ 85246cb0 size:  1b0 previous size:   60  (Allocated)  NSIk
+ 85246e60 size:   20 previous size:  1b0  (Allocated)  ReTa
+ 85246e80 size:   b8 previous size:   20  (Allocated)  File (Protected)
+ 85246f38 size:   c8 previous size:   b8  (Allocated)  Ntfx
+```
 
 
 
