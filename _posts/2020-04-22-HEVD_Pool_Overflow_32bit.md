@@ -477,6 +477,78 @@ kd> dd nt!ObTypeIndexTable
 829977d0  85057590 850573a0 84ff3ca0 84ff3bd8
 ```
 
+If the first entry, `82997760`, is array index `0`, then `0xc` index is going to be `85053520`. Let's get WinDBG to spill the beans on this type and let's see if its indeed an Event Object. 
+
+```
+kd> dt nt!_OBJECT_TYPE 85053520 -b
+   +0x000 TypeList         : _LIST_ENTRY [ 0x85053520 - 0x85053520 ]
+      +0x000 Flink            : 0x85053520 
+      +0x004 Blink            : 0x85053520 
+   +0x008 Name             : _UNICODE_STRING "Event"
+      +0x000 Length           : 0xa
+      +0x002 MaximumLength    : 0xc
+      +0x004 Buffer           : 0x8ba06838  "Event"
+   +0x010 DefaultObject    : (null) 
+   +0x014 Index            : 0xc ''
+   +0x018 TotalNumberOfObjects : 0x6bbf
+   +0x01c TotalNumberOfHandles : 0x6c2b
+   +0x020 HighWaterNumberOfObjects : 0x6bbf
+   +0x024 HighWaterNumberOfHandles : 0x6c2b
+   +0x028 TypeInfo         : _OBJECT_TYPE_INITIALIZER
+      +0x000 Length           : 0x50
+      +0x002 ObjectTypeFlags  : 0 ''
+      +0x002 CaseInsensitive  : 0y0
+      +0x002 UnnamedObjectsOnly : 0y0
+      +0x002 UseDefaultObject : 0y0
+      +0x002 SecurityRequired : 0y0
+      +0x002 MaintainHandleCount : 0y0
+      +0x002 MaintainTypeList : 0y0
+      +0x002 SupportsObjectCallbacks : 0y0
+      +0x002 CacheAligned     : 0y0
+      +0x004 ObjectTypeCode   : 2
+      +0x008 InvalidAttributes : 0x100
+      +0x00c GenericMapping   : _GENERIC_MAPPING
+         +0x000 GenericRead      : 0x20001
+         +0x004 GenericWrite     : 0x20002
+         +0x008 GenericExecute   : 0x120000
+         +0x00c GenericAll       : 0x1f0003
+      +0x01c ValidAccessMask  : 0x1f0003
+      +0x020 RetainAccess     : 0
+      +0x024 PoolType         : 0 ( NonPagedPool )
+      +0x028 DefaultPagedPoolCharge : 0
+      +0x02c DefaultNonPagedPoolCharge : 0x40
+      +0x030 DumpProcedure    : (null) 
+      +0x034 OpenProcedure    : (null) 
+      +0x038 CloseProcedure   : (null) 
+      +0x03c DeleteProcedure  : (null) 
+      +0x040 ParseProcedure   : (null) 
+      +0x044 SecurityProcedure : 0x82abad90 
+      +0x048 QueryNameProcedure : (null) 
+      +0x04c OkayToCloseProcedure : (null) 
+   +0x078 TypeLock         : _EX_PUSH_LOCK
+      +0x000 Locked           : 0y0
+      +0x000 Waiting          : 0y0
+      +0x000 Waking           : 0y0
+      +0x000 MultipleShared   : 0y0
+      +0x000 Shared           : 0y0000000000000000000000000000 (0)
+      +0x000 Value            : 0
+      +0x000 Ptr              : (null) 
+   +0x07c Key              : 0x6e657645
+   +0x080 CallbackList     : _LIST_ENTRY [ 0x850535a0 - 0x850535a0 ]
+      +0x000 Flink            : 0x850535a0 
+      +0x004 Blink            : 0x850535a0 
+```
+
+Using `-b` option here really saves us because it displays all levels of sub-structures within their parent structures. So, we absolutely have honed in on the pointer to Event objects as evidenced by this:
+```
++0x008 Name             : _UNICODE_STRING "Event"
+```
+
+What gets cool here, is that at offset `0x28` we see the `TypeInfo` structure. One of it's members, the `CloseProcedure` is `0x38` deep into that `TypeInfo` structure. So starting from offset `0x0` of the data referenced by the `OBJECT_TYPE` pointer we found in the table, the `CloseProcedure` is located at offset `0x28` + `0x38`, or `0x60`. **THIS** is the function pointer that is called when use `CloseHandle` API to free these Event Objects from the non-paged pool. So this is our target. 
+
+If that is complicated I've tried to create a helpful diagram: 
+![](/assets/images/AWE/poolover4.PNG)
+
 Now the adjustment we need to make is to poke holes in this contiguous block so that when we get our buffer allocated the allocator slides it right between Event Objects. We know that it takes 8 Event Objects being freed to make a `0x200`-sized hole, so 
 
 
