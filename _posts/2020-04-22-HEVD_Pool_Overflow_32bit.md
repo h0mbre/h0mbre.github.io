@@ -161,7 +161,22 @@ Pool page 85246430 region is Nonpaged pool
  85246f38 size:   c8 previous size:   b8  (Allocated)  Ntfx
 ```
 
+We that even though our pointer in `eax` to our kernel buffer was `0x85246430`, the allocation actually begins at `0x85246428` which is `0x8` before. This is because there is a 4 byte `ULONG` value and our pool tag placed before our actually buffer begins. Using some of the commands from the aforementioned blogposts goes a long way in WinDBG to being able to clearly think about these data structures.
 
+```
+kd> dt nt!_POOL_HEADER 85246428
+   +0x000 PreviousSize     : 0y000010111 (0x17)
+   +0x000 PoolIndex        : 0y0000000 (0)
+   +0x002 BlockSize        : 0y001000000 (0x40)
+   +0x002 PoolType         : 0y0000010 (0x2)
+   +0x000 Ulong1           : 0x4400017
+   +0x004 PoolTag          : 0x6b636148
+   +0x004 AllocatorBackTraceIndex : 0x6148
+   +0x006 PoolTagHash      : 0x6b63
+```
 
+This shows us the makeup of the pool header. We can see it spans 8 total bytes which we knew. The numbers that begin `0y` are binary. But, you can see that `PreviousSize`, `PoolIndex`, `BlockSize`, and `PoolType` all get their values smushed together and form this `Ulong1` member which begins at offset `0x000`. Then, from that offset, we get our pool tag. So that's all 8 bytes accounted for. We can use the memory pane to scroll to the bottom of our buffer and spy on the next memory chunk's header as well. 
+
+![](/assets/images/AWE/poolover2.PNG)
 
 
