@@ -179,4 +179,32 @@ This shows us the makeup of the pool header. We can see it spans 8 total bytes w
 
 ![](/assets/images/AWE/poolover3.PNG)
 
+We can see that the header values for the next chunk are: `40 00 04 04 52 65 54 61`.
+
+The only other thing to pay attention to, was that the `!pool` command told us our chunk was `0x200` bytes long which makes sense when you add the size of the header `0x8` to our allocated buffer size of `0x1F8`. 
+
+## Generic Attack Strategy
+Before we proceed, we have to understand how we're going to utilize this ability, via our oversized user buffer, to arbitrarily overwrite data in the adjacent pool allocation as an attack vector. What we have right now is the ability to overwrite pool memory. In order for this to be worth while for us, we have to find a way to get the pool into a state where what we're overwriting is **predictable**. If what we're overwriting is unpredictable, we can never form a reliable exploit. 
+
+Generically, in its organic state, the non-paged pool is fragmented, meaning there are holes in it from chunks being freed arbitrarily by other processes on the system. What we want to do is cover these holes by spraying a ton of objects into the non-paged pool so that the pool allocation mechanism places our chunks into those available slots. Once this is complete, we'll want to spray even more objects so that by far, the most common objects in the pool are the ones we have just sprayed.
+
+By way of analogy, if you had a bag of a chess set's pieces, you would have low odds of pulling a King from the bag; however, if you then added 15,000 Kings to the bag, your chances are much better! 
+
+So we have two goals outlined so far:
++ spray the pool with objects until its organically existing holes are patched with our objects,
++ spray the pool again to increase the sheer number of objects we've allocated so that they'll be sequential in non-paged pool memory.
+
+What we'll do next, is take our pretty pool allocations that form a large solid block, and poke holes in it the size of our kernel buffer we can allocate with the driver routine. Our kernel buffer is `0x200` bytes remember. This way, when our kernel buffer is allocated in the pool, the allocator will place it in the newly freed `0x200` byte hole we have just created. Now what we have, is our alloaction completely surrounded by the objects we had sprayed. This is perfect because now when our buffer overwrites data in the adjacent pool allocation, we'll know exactly what we're overwriting because it will be a chunk that we allocated ourselves, not an arbitrary system process. 
+
+We will use this ability to overwrite data to predictably overwrite a piece of data in one of our allocated objects that will, once the allocation is freed, end up to the kernel executing a function pointer which we will have filled with shellcode. So now our generic gameplan is:
++ spray the pool with objects until its organically existing holes are patched with our objects,
++ spray the pool again to increase the sheer number of objects we've allocated so that they'll be sequential in non-paged pool memory,
++ poke some nice `0x200` byte-sized holes in the allocations,
++ use our driver routine to fit our kernel buffer in one of these new holes,
++ have that allocation predictably overwrite information in the adjacent allocation that leads to kernel execution of our shellcode when the corrupted allocation is freed. 
+
+Next, we'll get to know the object we'll be using to spray the pool.
+
+## 
+
 
