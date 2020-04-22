@@ -1,7 +1,7 @@
 ---
 layout: single
-title: HEVD Exploits -- Windows 7 x86 Integer Overflow
-date: 2020-04-20
+title: HEVD Exploits -- Windows 7 x86 Non-Paged Pool Overflow
+date: 2020-04-22
 classes: wide
 header:
   teaser: /assets/images/avatar.jpg
@@ -12,7 +12,7 @@ tags:
   - x86
   - Shellcoding
   - Kernel Exploitation
-  - Integer Overflow
+  - Pool Overflow
 ---
 
 ## Introduction
@@ -32,5 +32,9 @@ This post/series will instead focus on my experience trying to craft the actual 
 - To [@r0oki7](https://twitter.com/r0otki7) for their walkthrough: https://rootkits.xyz/blog/2017/11/kernel-pool-overflow/
 - To [@FuzzySec](https://twitter.com/FuzzySec) for their walkthrough: http://www.fuzzysecurity.com/tutorials/expDev/20.html
 - and finally to [@steventseeley](https://twitter.com/steventseeley) for his walkthrough of his exploit of a Jungo driver here: https://srcincite.io/blog/2017/09/06/sharks-in-the-pool-mixed-object-exploitation-in-the-windows-kernel-pool.html
+
+This exploit required a lot of insight into the non-paged pool internals of Windows 7. These walkthroughs/blogs were extremely well written and made everything very logical and clear. I really appreciate the authors' help! Again, I'm just recreating other people's exploits in this series trying to learn, not inventing new ways to exploit pool overflows for 32 bit Windows 7. The exploit also required allocating the NULL page, which isn't possible on x64 so this will be a 32 bit exploit only. 
+
+
 
 ![](/assets/images/AWE/intover6.PNG)
