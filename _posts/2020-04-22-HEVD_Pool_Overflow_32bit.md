@@ -177,6 +177,6 @@ kd> dt nt!_POOL_HEADER 85246428
 
 This shows us the makeup of the pool header. We can see it spans 8 total bytes which we knew. The numbers that begin `0y` are binary. But, you can see that `PreviousSize`, `PoolIndex`, `BlockSize`, and `PoolType` all get their values smushed together and form this `Ulong1` member which begins at offset `0x000`. Then, from that offset, we get our pool tag. So that's all 8 bytes accounted for. We can use the memory pane to scroll to the bottom of our buffer and spy on the next memory chunk's header as well. 
 
-![](/assets/images/AWE/poolover2.PNG)
+![](/assets/images/AWE/poolover3.PNG)
 
 
