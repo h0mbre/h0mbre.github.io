@@ -29,8 +29,8 @@ The reason for this is simple, the other blog posts do a much better job detaili
 This post/series will instead focus on my experience trying to craft the actual exploits.
 
 ## Thanks
-- To [@r0oki7](https://twitter.com/r0otki7) for their walkthrough: https://rootkits.xyz/blog/2017/11/kernel-pool-overflow/
-- To [@FuzzySec](https://twitter.com/FuzzySec) for their walkthrough: http://www.fuzzysecurity.com/tutorials/expDev/20.html
+- To [@r0oki7](https://twitter.com/r0otki7) for their [walkthrough,](https://rootkits.xyz/blog/2017/11/kernel-pool-overflow/)
+- To [@FuzzySec](https://twitter.com/FuzzySec) for their [walkthrough,](http://www.fuzzysecurity.com/tutorials/expDev/20.html)
 - and finally to [@steventseeley](https://twitter.com/steventseeley) for his walkthrough of his exploit of a Jungo driver [here.](https://srcincite.io/blog/2017/09/06/sharks-in-the-pool-mixed-object-exploitation-in-the-windows-kernel-pool.html)
 
 This exploit required a lot of insight into the non-paged pool internals of Windows 7. These walkthroughs/blogs were extremely well written and made everything very logical and clear. I really appreciate the authors' help! Again, I'm just recreating other people's exploits in this series trying to learn, not inventing new ways to exploit pool overflows for 32 bit Windows 7. The exploit also required allocating the NULL page, which isn't possible on x64 so this will be a 32 bit exploit only. 
@@ -61,7 +61,7 @@ If we call the function with the following skeleton code, we will see in WinDBG 
 using namespace std;
 
 #define DEVICE_NAME         "\\\\.\\HackSysExtremeVulnerableDriver"
-#define IOCTL               0x22200B
+#define IOCTL               0x22200F
 
 
 HANDLE grab_handle() {
@@ -101,7 +101,7 @@ void send_payload(HANDLE hFile) {
     DWORD bytes_ret = 0;
 
     int result = DeviceIoControl(hFile,
-        0x22200F,
+        IOCTL,
         input_buff,
         payload_len,
         NULL,
@@ -237,7 +237,7 @@ Our code now looks like this:
 using namespace std;
 
 #define DEVICE_NAME         "\\\\.\\HackSysExtremeVulnerableDriver"
-#define IOCTL               0x22200B
+#define IOCTL               0x22200F
 
 vector<HANDLE> defragment_handles;
 vector<HANDLE> sequential_handles;
@@ -316,7 +316,7 @@ void send_payload(HANDLE hFile) {
     DWORD bytes_ret = 0;
 
     int result = DeviceIoControl(hFile,
-        0x22200F,
+        IOCTL,
         input_buff,
         payload_len,
         NULL,
@@ -568,7 +568,7 @@ The adjustment we need to make is to poke holes in this contiguous block so that
 using namespace std;
 
 #define DEVICE_NAME         "\\\\.\\HackSysExtremeVulnerableDriver"
-#define IOCTL               0x22200B
+#define IOCTL               0x22200F
 
 vector<HANDLE> defragment_handles;
 vector<HANDLE> sequential_handles;
@@ -659,7 +659,7 @@ void send_payload(HANDLE hFile) {
     DWORD bytes_ret = 0;
 
     int result = DeviceIoControl(hFile,
-        0x22200F,
+        IOCTL,
         input_buff,
         payload_len,
         NULL,
