@@ -131,3 +131,11 @@ Not a whole lot here, we can see though that there is no effort made to NULL the
 
 ![](/assets/images/AWE/5uaf.PNG)
 
+## Allocating a Fake Object
+Now let's see how much freedom we have to allocate arbitrary objects in the non-paged pool. Looking at the function, it uses the same APIs we're familiar with, does a probe for read to make sure the buffer is in user land (I think?), and then builds our chunk to our specifications. 
+
+![](/assets/images/AWE/6uaf.PNG)
+
+I just sent a buffer of size `0x58` with all `A` characters for testing. It even appends a null-terminator to the end like the real UAF object allocator, but we control the contents of this one. This is good since we'll have full control over the pointer value at prepended to the chunk that serves as the call back function pointer. 
+
+![](/assets/images/AWE/7uaf.PNG)
