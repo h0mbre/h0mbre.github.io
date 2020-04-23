@@ -446,7 +446,7 @@ When we run our final code, we get our system shell!
 
 ![](/assets/images/AWE/11uaf.PNG)
 
-Complete exploit [code]()
+Complete exploit [code.](https://github.com/h0mbre/Windows-Exploits/blob/master/Exploit-Code/HEVD/x86_UseAfterFree.cpp)
 
 ## Conclusion
-That was a pretty exaggerated exploit scenario I would guess but it was perfect for me since I had never done a UAF exploit before. Next we'll be doing the stack overflow again but this time on Windows 10 where we'll have to bypass SMEP. Until next time.
+That was a pretty exaggerated exploit scenario I would guess, but it was perfect for me since I had never done a UAF exploit before. Next we'll be doing the stack overflow again but this time on Windows 10 where we'll have to bypass SMEP. Until next time.
