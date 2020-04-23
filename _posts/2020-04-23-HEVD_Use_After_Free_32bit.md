@@ -127,3 +127,7 @@ Now, lets try interacting with the driver routine which allows us to free our ob
 
 ![](/assets/images/AWE/4uaf.PNG)
 
+Not a whole lot here, we can see though that there is no effort made to NULL the global variable `g_UserAfterFreeObject`. You can see that even after we run the routine, the vairable still holds the value of our freed allocation address: 
+
+![](/assets/images/AWE/5uaf.PNG)
+
