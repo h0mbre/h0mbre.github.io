@@ -46,3 +46,5 @@ What do we need in order to exploit a use-after-free bug? Well, it seems like af
 + finally, the ability to **use** the no-longer valid reference to our freed chunk. 
 
 ## Allocating the UAF Object in the Pool
+Let's take a look at the UAF object allocation routine in the driver in IDA. 
+![](/assets/images/AWE/uaf1.PNG)
