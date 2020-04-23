@@ -868,7 +868,7 @@ Here is the call stack:
 
 ![](/assets/images/AWE/poolover6.PNG)
 
-
+See if you can figure out from here why we need the return 0x10 at the bottom portion of our shellcode. A good excercise is to set a breakpoint at the beginning of your shellcode, take a screen cap of the registers and their states, then step through the shellcode and see what 
 
 
 
