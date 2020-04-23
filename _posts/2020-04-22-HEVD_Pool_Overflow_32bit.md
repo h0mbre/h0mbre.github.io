@@ -864,6 +864,9 @@ Here is the disassembly pane after we hit our access breakpoint a few times (rem
 
 ![](/assets/images/AWE/poolover5.PNG)
 
+Here is the call stack: 
+
+![](/assets/images/AWE/poolover6.PNG)
 
 
 
