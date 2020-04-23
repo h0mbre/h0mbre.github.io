@@ -550,7 +550,8 @@ If that is complicated I've tried to create a helpful diagram:
 ![](/assets/images/AWE/poolover4.PNG)
 
 So what happens when we free the chunk with `CloseHandle` is the kernel goes to the address referenced by the array index value `0xc` and looks at offset `0x60` from there for a function pointer and calls the function. Looking back at that table:
-```kd> dd nt!ObTypeIndexTable
+```
+kd> dd nt!ObTypeIndexTable
 82997760  00000000 bad0b0b0 84f46728 84f46660
 ----SNIP----
 ```
