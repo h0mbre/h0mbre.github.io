@@ -33,3 +33,16 @@ This post/series will instead focus on my experience trying to craft the actual 
 - To [@FuzzySec](https://twitter.com/FuzzySec) for their [walkthrough,](http://www.fuzzysecurity.com/tutorials/expDev/19.html)
 
 ## UAF Setup
+I've never exploited a use-after-free bug on any system before. I vaguely understood the concept before starting this excercise. We need what, in my noob opinion, seems like quite a lot of primities in order to make this work. Obviously HEVD goes out of its way to be vulnerable in precisely the correct way for us to get an exploit working which is perfect for me since I have no experience with this bug class and we're just here to learn. I feel like although we have to utilize multiple functions via IOCTL, this is actually a more simple exploit to pull off than the pool overflow that we just did. 
+
+Also, I wanted to do this on 64 bit; however, most of the strategies I saw outlined required that we use `NtQuerySystemInformation`, which as far as I know requires your process to be elevated to an extent so I wanted to avoid that. On 64 bit, the pool header structure size changes from `0x8` bytes to `0x10` bytes which makes exploitation more cumbersome; however, there are some good walkthroughs out there about how to accomplish this. For now, let's stick to x86. 
+
+What do we need in order to exploit a use-after-free bug? Well, it seems like after doing this excercise we need to be able to do the following: 
++ allocate an object in the non-paged pool,
++ a mechansim that creates a reference to the object as a global variable, ie if our object is allocated at `0xFFFFFFFF`, there is some variable out there in the program that is storing that address for later use,
++ the ability to free the memory and not have the previously established reference NULLed out, ie when the chunk is freed the program author doesn't specify that the reference=NULL,
++ the ability to create "fake" objects that have the same size and **controllable** contents in the non-paged pool,
++ the ability to spray the non-paged pool and create perfectly sized holes so that our UAF and fake objects can be fitted in our created holes,
++ finally, the ability to **use** the no-longer valid reference to our freed chunk. 
+
+## Allocating the UAF Object in the Pool
