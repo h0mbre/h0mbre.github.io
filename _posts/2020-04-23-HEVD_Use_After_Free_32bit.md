@@ -113,3 +113,6 @@ int main() {
 You can see from the IDA screenshot that after the call to `ExAllocatePoolWithTag`, `eax` is placed in `esi`, this is about where I've placed the breakpoint, we can then take the value in `esi` which should be a pointer to our allocation, and go see what the allocation will look like after the subsequent `memset` operation completes. We can see some static values as well, such as waht appears to be the size of the allocation (`0x58`), which we know from our last post is actually undersold by `0x8` since we have to account also for the pool header, so our real allocation size in the pool is `0x60` bytes. 
 
 So we hit our breakpoint after `ExAllocatePoolWithTag` and then I just stepped through until the `memset` completed. 
+![](/assets/images/AWE/uaf2.PNG)
+
+
