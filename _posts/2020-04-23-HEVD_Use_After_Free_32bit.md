@@ -139,3 +139,8 @@ Now let's see how much freedom we have to allocate arbitrary objects in the non-
 I just sent a buffer of size `0x58` with all `A` characters for testing. It even appends a null-terminator to the end like the real UAF object allocator, but we control the contents of this one. This is good since we'll have full control over the pointer value at prepended to the chunk that serves as the call back function pointer. 
 
 ![](/assets/images/AWE/7uaf.PNG)
+
+## Executing UAF Object Callback
+This is where the "use" portion of "Use-After-Free" comes in. There is a driver routine that allows us to take the address which holds the callback function pointer of the UAF object and then call the function there. We can see this in IDA.
+
+![](/assets/images/AWE/8uaf.PNG)
