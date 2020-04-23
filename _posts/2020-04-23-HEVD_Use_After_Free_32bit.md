@@ -450,3 +450,5 @@ Complete exploit [code.](https://github.com/h0mbre/Windows-Exploits/blob/master/
 
 ## Conclusion
 That was a pretty exaggerated exploit scenario I would guess, but it was perfect for me since I had never done a UAF exploit before. Next we'll be doing the stack overflow again but this time on Windows 10 where we'll have to bypass SMEP. Until next time.
+
+Once again, big thanks to all the content producers out there for getting me through these exploits. 
