@@ -860,6 +860,10 @@ kd> bl
  1 e 00000060 r 1 0001 (0001) 
 ```
 
+Here is the disassembly pane after we hit our access breakpoint a few times (remember that that address will be accessed multiple times during our exploit):
+
+![](/assets/images/AWE/poolover5.PNG)
+
 
 
 
