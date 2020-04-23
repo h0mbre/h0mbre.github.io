@@ -555,6 +555,7 @@ kd> dd nt!ObTypeIndexTable
 82997760  00000000 bad0b0b0 84f46728 84f46660
 ----SNIP----
 ```
+
 The first function pointer is `0x00000000` and we already know from our NULL pointer dereference exploit that we can map the NULL page on Windows 7 x86. So thanks to the aforementioned bloggers, our path forward is clear. We'll **ONLY** corrupt the value `0xc` inside the `OBJECT_HEADER` so that it's set to `0x0` instead. We'll leave everything else the way it is with our overwrite. This way, when we free this chunk, the kernel will start looking for offset `0x60` for a function pointer from `0x00000000`. So we'll just map the NULL page and place a pointer to our shellcode at offset `0x60`. 
 
 ## Executing The Plan
