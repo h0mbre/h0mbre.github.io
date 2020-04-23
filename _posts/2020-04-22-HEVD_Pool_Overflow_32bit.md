@@ -736,6 +736,20 @@ Pool page 862740c8 region is Nonpaged pool
  86274fc0 size:   40 previous size:   40  (Allocated)  Even (Protected)
 ```
 
+## Memory Corruption Engaged
+Now that we can control the pool to a predictable degree, it's time to overwrite that type index and change it from `0xc` to `0x0`. Everything else in between our `0x200` allocation and this byte need to remain the same or we'll get a BSOD. 
+
+Let's just use the `dd` command to dump 32 `DWORD` values from the beginning of the Event Objects right after our kernel buffer real quick. 
+repaste in here the memory pane view of an Event Object, and you can see how I formulate the input buff in the exploit code. 
+```
+kd> dd 8627e780 
+8627e780  04080040 ee657645 00000000 00000040
+8627e790  00000000 00000000 00000001 00000001
+8627e7a0  00000000 0008000c 8637f940 00000000
+----SNIP----
+```
+
+Right. So we need to keep everything but the starred `0xc` intact and overwrite this single byte with `0x0`. Looks like we're overwriting 40 bytes in total or `0x28`, which gives us an input buffer size of `0x220`. 
 
 
 
