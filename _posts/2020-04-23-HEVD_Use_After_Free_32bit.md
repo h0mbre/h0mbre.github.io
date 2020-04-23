@@ -123,3 +123,4 @@ We can see that the `DWORD` value has been filled and also that a null terminato
 And lastly in the screenshot we can see that move `esi`, which is the location of our allocation, into the global variable `g_UseAfterFreeObject`. This is important because this is what makes this code vulnerable as this same variable will not be nulled out when the object is freed. 
 
 ## Freeing the UAF Object
+TEST
