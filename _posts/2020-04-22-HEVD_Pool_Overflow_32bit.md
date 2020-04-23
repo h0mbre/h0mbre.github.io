@@ -897,4 +897,13 @@ Here is the call stack:
 
 ![](/assets/images/AWE/poolover6.PNG)
 
+We can see in the memory pane that we're pushing 4 DWORDs onto the stack setting up our call to `dword ptr [esp+0x60]` which we would need to clean up in our subroutine (shellcode). So our shellcode will end with a `ret 0x10` instruction to compensate. 
 
+Getting an nt authority/system shell >>>
+
+![](/assets/images/AWE/poolover7.PNG)
+
+Full exploit code: [here](https://github.com/h0mbre/Windows-Exploits/blob/master/Exploit-Code/HEVD/x86_PoolOverflow.cpp)
+
+## Conclusion
+That was a really fun one. Thanks again to the aforementioned authors and exploit writers. Even though this exploit vector involved some relatively old techniques, it was still fun for me and I learned a lot just about memory management in general and got some more experience in WinDBG. Until next time!
