@@ -115,4 +115,12 @@ You can see from the IDA screenshot that after the call to `ExAllocatePoolWithTa
 So we hit our breakpoint after `ExAllocatePoolWithTag` and then I just stepped through until the `memset` completed. 
 ![](/assets/images/AWE/uaf2.PNG)
 
+Right after the `memset` completed, we look up our object in the pool and see that it's mostly been filled with `A` characters except for the first `DWORD` value has been left NULL. After stepping through the next two instructions:
+![](/assets/images/AWE/uaf3.PNG)
+
+We can see that the `DWORD` value has been filled and also that a null terminator has been added to the last byte of our allocation. This `DWORD` is the `UaFObjectCallback` which is a function pointer for a callback which gets used during a separate routine. 
+
+And lastly in the screenshot we can see that move `esi`, which is the location of our allocation, into the global variable `g_UseAfterFreeObject`. This is important because this is what makes this code vulnerable as this same variable will not be nulled out when the object is freed. 
+
+## Freeing the UAF Object
 
