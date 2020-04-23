@@ -47,7 +47,7 @@ What do we need in order to exploit a use-after-free bug? Well, it seems like af
 
 ## Allocating the UAF Object in the Pool
 Let's take a look at the UAF object allocation routine in the driver in IDA. 
-![](/assets/images/AWE/uaf1.PNG)
+![](/assets/images/AWE/uaf2.PNG)
 
 It may not be immediately clear what's going on without stepping through the routine in the debugger but we actually have very little control over what is taking place here. I've created a small skeleton exploit code and set a breakpoint towards the start of the routine. Here is our code at the moment:
 ```cpp
