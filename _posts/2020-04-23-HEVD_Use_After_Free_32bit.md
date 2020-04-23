@@ -144,3 +144,13 @@ I just sent a buffer of size `0x58` with all `A` characters for testing. It even
 This is where the "use" portion of "Use-After-Free" comes in. There is a driver routine that allows us to take the address which holds the callback function pointer of the UAF object and then call the function there. We can see this in IDA.
 
 ![](/assets/images/AWE/8uaf.PNG)
+
+We can see that as long as the value at `[eax]`, which holds the address of our UAF object (or what used to be our UAF object before we freed it) is not NULL, we'll go ahead and call the function pointer stored at that location (the callback function). Right now, if we called this, what would happen? Let's see!
+
+![](/assets/images/AWE/9uaf.PNG)
+
+Looking up the memory address of what was our freed chunk we see that it is NOT NULL. We would actually call something, but the address that would be called is `0x852c22f0`. Looking at that address, we see that there is just arbitrary code there. 
+
+![](/assets/images/AWE/10uaf.PNG)
+
+This is not what we want. We want this to be **predictable** just like our last exploit. We want the freed address of our UAF object to be filled with 
