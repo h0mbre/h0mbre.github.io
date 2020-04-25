@@ -494,6 +494,8 @@ Thanks to [Jackson T.](https://twitter.com/Jackson_T) for not only his blog post
 
 And finally thanks to all those cited blog authors [@rwfpl](https://twitter.com/rwfpl) and [@hatRiot](http://hatriot.github.io/blog/2018/05/17/dell-supportassist-local-privilege-escalation/). 
 
+**Please let me know if you find any errors.**
+
 ## Disclosure Timeline
 
 + February 25th 2020 -- Email, Customer Service Ticket, and Twitter DM sent to GIGABYTE USA
