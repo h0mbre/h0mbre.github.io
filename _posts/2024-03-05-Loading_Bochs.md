@@ -543,7 +543,7 @@ impl Mmu {
         // Straight-forward
         let length = (DEFAULT_BRK_SIZE + DEFAULT_MMAP_SIZE) as libc::size_t;
 
-        // No protections yet as it hasn't been asked for explicitly
+        // This is normal
         let prot = libc::PROT_WRITE | libc::PROT_READ;
 
         // This might change at some point?
