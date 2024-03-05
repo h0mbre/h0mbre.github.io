@@ -481,7 +481,7 @@ Luckily, there is an awesome project called the `musl-cross-make` [project](http
 - configure Bochs to use the new toolchain and set the `--static-pie` flag
 
 This is the Bochs configuration file that I used to build Bochs:
-```
+```bash
 #!/bin/sh
 
 CC="/home/h0mbre/musl_stuff/musl-cross-make/output/bin/x86_64-linux-musl-gcc"
