@@ -779,4 +779,194 @@ mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd
 ```
 
 ## File I/O
-With the MMU out of the way, we needed a way to do file input and output. 
+With the MMU out of the way, we needed a way to do file input and output. Bochs is trying to open its configuration file:
+```terminal
+open(".bochsrc", O_RDONLY|O_LARGEFILE)  = 3
+close(3)                                = 0
+writev(2, [{iov_base="00000000000i[      ] ", iov_len=21}, {iov_base=NULL, iov_len=0}], 200000000000i[      ] ) = 21
+writev(2, [{iov_base="reading configuration from .boch"..., iov_len=36}, {iov_base=NULL, iov_len=0}], 2reading configuration from .bochsrc
+) = 36
+open(".bochsrc", O_RDONLY|O_LARGEFILE)  = 3
+read(3, "# You may now use double quotes "..., 1024) = 1024
+read(3, "================================"..., 1024) = 1024
+read(3, "ig_interface: win32config\n#confi"..., 1024) = 1024
+read(3, "ace to AT&T's VNC viewer, cross "..., 1024) = 1024
+```
+
+The way I've approached this for now is to pre-read and store the contents of required files in memory when I initialize the Bochs execution context. This has some advantages, because I can imagine a future when we're fuzzing something and Bochs needs to do file I/O on a disk image file or something else, and it'd be nice to just already have that file read into memory and waiting for usage. Emulating the file I/O syscalls then becomes very straightforward, we really only need to keep a few metadata and the file contents themselves:
+```rust
+#[derive(Clone)]
+pub struct FileTable {
+    files: Vec<File>,
+}
+
+impl FileTable {
+    // We will attempt to open and read all of our required files ahead of time
+    pub fn new() -> Result<Self, LucidErr> {
+        // Retrieve .bochsrc
+        let args: Vec<String> = std::env::args().collect();
+
+        // Check to see if we have a "--bochsrc-path" argument
+        if args.len() < 3 || !args.contains(&"--bochsrc-path".to_string()) {
+            return Err(LucidErr::from("No `--bochsrc-path` argument"));
+        }
+
+        // Search for the value
+        let mut bochsrc = None;
+        for (i, arg) in args.iter().enumerate() {
+            if arg == "--bochsrc-path" {
+                if i >= args.len() - 1 {
+                    return Err(
+                        LucidErr::from("Invalid `--bochsrc-path` value"));
+                }
+            
+                bochsrc = Some(args[i + 1].clone());
+                break;
+            }
+        }
+
+        if bochsrc.is_none() { return Err(
+            LucidErr::from("No `--bochsrc-path` value provided")); }
+        let bochsrc = bochsrc.unwrap();
+
+        // Try to read the file
+        let Ok(data) = read(&bochsrc) else { 
+            return Err(LucidErr::from(
+                &format!("Unable to read data BLEGH from '{}'", bochsrc)));
+        };
+
+        // Create a file now for .bochsrc
+        let bochsrc_file = File {
+            fd: 3,
+            path: ".bochsrc".to_string(),
+            contents: data.clone(),
+            cursor: 0,
+        };
+
+        // Insert the file into the FileTable
+        Ok(FileTable {
+            files: vec![bochsrc_file],
+        })
+    }
+
+    // Attempt to open a file
+    pub fn open(&mut self, path: &str) -> Result<i32, ()> {
+        // Try to find the requested path
+        for file in self.files.iter() {
+            if file.path == path {
+                return Ok(file.fd);
+            }
+        }
+
+        // We didn't find the file, this really should never happen?
+        Err(())
+    }
+
+    // Look a file up by fd and then return a mutable reference to it
+    pub fn get_file(&mut self, fd: i32) -> Option<&mut File> {
+        self.files.iter_mut().find(|file| file.fd == fd)
+    }
+}
+
+#[derive(Clone)]
+pub struct File {
+    pub fd: i32,            // The file-descriptor Bochs has for this file
+    pub path: String,       // The file-path for this file
+    pub contents: Vec<u8>,  // The actual file contents
+    pub cursor: usize,      // The current cursor in the file
+}
+```
+
+So when Bochs asks to `read` a file and provides the `fd`, we just check the `FileTable` for the correct file and then read its contents from the `File::contents` buffer and then update the `cursor` struct member to keep track of where in the file our current offset is. 
+```rust
+// read
+        0x0 => {
+            // Check to make sure we have the requested file-descriptor
+            let Some(file) = context.files.get_file(a1 as i32) else {
+                println!("Non-existent file fd: {}", a1);
+                fault!(contextp, Fault::NoFile);
+            };
+
+            // Now we need to make sure the buffer passed to read isn't NULL
+            let buf_p = a2 as *mut u8;
+            if buf_p.is_null() {
+                context.tls.errno = libc::EINVAL;
+                return -1_i64 as u64;
+            }
+
+            // Adjust read size if necessary
+            let length = std::cmp::min(a3, file.contents.len() - file.cursor);
+
+            // Copy the contents over to the buffer
+            unsafe { 
+                std::ptr::copy(
+                    file.contents.as_ptr().add(file.cursor),    // src
+                    buf_p,                                      // dst
+                    length);                                    // len
+            }
+
+            // Adjust the file cursor
+            file.cursor += length;
+
+            // Success
+            length as u64
+        },
+```
+
+`open` calls are basically just handled as sanity checks at this point to make sure we know what Bochs is trying to access:
+```rust
+// open
+        0x2 => {
+            // Get pointer to path string we're trying to open
+            let path_p = a1 as *const libc::c_char;
+
+            // Make sure it's not NULL
+            if path_p.is_null() {
+                fault!(contextp, Fault::NullPath);
+            }            
+
+            // Create c_str from pointer
+            let c_str = unsafe { std::ffi::CStr::from_ptr(path_p) };
+
+            // Create Rust str from c_str
+            let Ok(path_str) = c_str.to_str() else {
+                fault!(contextp, Fault::InvalidPathStr);
+            };
+
+            // Validate permissions
+            if a2 as i32 != 32768 {
+                println!("Unhandled file permissions: {}", a2);
+                fault!(contextp, Fault::Syscall);
+            }
+
+            // Open the file
+            let fd = context.files.open(path_str);
+            if fd.is_err() {
+                println!("Non-existent file path: {}", path_str);
+                fault!(contextp, Fault::NoFile);
+            }
+
+            // Success
+            fd.unwrap() as u64
+        },
+```
+
+```rust
+// Attempt to open a file
+    pub fn open(&mut self, path: &str) -> Result<i32, ()> {
+        // Try to find the requested path
+        for file in self.files.iter() {
+            if file.path == path {
+                return Ok(file.fd);
+            }
+        }
+
+        // We didn't find the file
+        Err(())
+    }
+```
+
+And that's really the whole of file I/O right now. Down the line, we'll need to keep these in mind when we're doing snapshots and resetting snapshots because the file state will need to be restored differentially, but this is a problem for another day.
+
+## Conclusion
+The work continues on the fuzzer, I'm still having a blast implementing it, special thanks to everyone mentioned in the repository for their help! Next, we'll have to pick a fuzzing target and it get it running in Bochs. We'll have to lobotomize the system Bochs is emulating so that it runs our target program such that we can snapshot and fuzz appropriately, that should be really fun, until then!
