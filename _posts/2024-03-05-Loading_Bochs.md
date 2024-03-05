@@ -586,4 +586,197 @@ impl Mmu {
 Handling memory-management syscalls actually wasn't too difficult, there were some gotcha's early on but we managed to get something working fairly quickly.
 
 ## Handling `brk`
+[brk](https://linux.die.net/man/2/brk) is a syscall used to increase the size of the data segment in your program. So a typical pattern you'll see is that the program will call `brk(0)`, which will return the current program break address, and then if the program wants 2 pages of extra memory, it will then call `brk(base + 0x2000)`, and you can see that in the Bochs `strace` output:
+```terminal
+[devbox:~/bochs/bochs-2.7]$ strace ./bochs
+execve("./bochs", ["./bochs"], 0x7ffda7f39ad0 /* 45 vars */) = 0
+arch_prctl(ARCH_SET_FS, 0x7fd071a738a8) = 0
+set_tid_address(0x7fd071a739d0)         = 289704
+brk(NULL)                               = 0x555555d7c000
+brk(0x555555d7e000)                     = 0x555555d7e000
+```
 
+So in our syscall handler, I have the following logic for `brk`:
+```rust
+// brk
+        0xC => {
+            // Try to update the program break
+            if context.mmu.update_brk(a1).is_err() {
+                fault!(contextp, Fault::InvalidBrk);
+            }
+
+            // Return the program break
+            context.mmu.curr_brk as u64
+        },
+```
+
+This is effectively a wrapper around the `update_brk` method we've implemented for `Mmu`, so let's look at that:
+```rust
+// Logic for handling a `brk` syscall
+    pub fn update_brk(&mut self, addr: usize) -> Result<(), ()> {
+        // If addr is NULL, just return nothing to do
+        if addr == 0 { return Ok(()); }
+
+        // Check to see that the new address is in a valid range
+        let limit = self.brk_base + self.brk_size;
+        if !(self.curr_brk..limit).contains(&addr) { return Err(()); }
+
+        // So we have a valid program break address, update the current break
+        self.curr_brk = addr;
+
+        Ok(())
+    }
+```
+
+So if we get a NULL argument in `a1`, we have nothing to do, nothing in the current MMU state needs adjusting, we just simply return the current program break. If we get a non-NULL argument, we do a sanity check to make sure that our pool of `brk` memory is large enough to accomodate the request and if it is, we adjust the current program break and return that to the caller. 
+
+Remember, this is so simple because we've already pre-allocated all of the memory, so we don't need to actually do much here besides adjust what amounts to an offset indicating what memory is valid. 
+
+## Handling `mmap` and `munmap`
+[mmap](https://man7.org/linux/man-pages/man2/mmap.2.html) is a bit more involved, but still easy to track through. For `mmap` calls, theres more state we need to track because there are essentially "allocations" taking place that we need to keep in mind. Most `mmap` calls will have a NULL argument for address because they don't care where the memory mapping takes place in virtual memory, in that case, we default to our main method `do_mmap` that we've implemented for `Mmu`:
+```rust
+// If a1 is NULL, we just do a normal mmap
+            if a1 == 0 {
+                if context.mmu.do_mmap(a2, a3, a4, a5, a6).is_err() {
+                    fault!(contextp, Fault::InvalidMmap);
+                }
+
+                // Succesful regular mmap
+                return context.mmu.curr_mmap as u64;
+            }
+```
+
+```rust
+// Logic for handling a `mmap` syscall with no fixed address support
+    pub fn do_mmap(
+        &mut self,
+        len: usize,
+        prot: usize,
+        flags: usize,
+        fd: usize,
+        offset: usize
+    ) -> Result<(), ()> {
+        // Page-align the len
+        let len = (len + PAGE_SIZE - 1) & !(PAGE_SIZE - 1);
+
+        // Make sure we have capacity left to satisfy this request
+        if len + self.next_mmap > self.mmap_base + self.mmap_size { 
+            return Err(());
+        }
+
+        // Sanity-check that we don't have any weird `mmap` arguments
+        if prot as i32 != libc::PROT_READ | libc::PROT_WRITE {
+            return Err(())
+        }
+
+        if flags as i32 != libc::MAP_PRIVATE | libc::MAP_ANONYMOUS {
+            return Err(())
+        }
+
+        if fd as i64 != -1 {
+            return Err(())
+        }
+
+        if offset != 0 {
+            return Err(())
+        }
+
+        // Set current to next, and set next to current + len
+        self.curr_mmap = self.next_mmap;
+        self.next_mmap = self.curr_mmap + len;
+
+        // curr_mmap now represents the base of the new requested allocation
+        Ok(())
+    }
+```
+
+Very simply, we do some sanity checks to make sure we have enough capacity to satisfy the allocation in our `mmap` memory pool, we check to make sure the other arguments are what we're anticipating, and then we simply update the current offset and the next offset. This way we know next time where to allocate from while also being able to return the current allocation base back to the caller. 
+
+There is also a case where `mmap` will be called with a non-NULL address and `MAP_FIXED` flags meaning that the address matters to the caller and the mapping should take place at the provided virtual address. Right now, this occurs early on in the Bochs process:
+```terminal
+[devbox:~/bochs/bochs-2.7]$ strace ./bochs
+execve("./bochs", ["./bochs"], 0x7ffda7f39ad0 /* 45 vars */) = 0
+arch_prctl(ARCH_SET_FS, 0x7fd071a738a8) = 0
+set_tid_address(0x7fd071a739d0)         = 289704
+brk(NULL)                               = 0x555555d7c000
+brk(0x555555d7e000)                     = 0x555555d7e000
+mmap(0x555555d7c000, 4096, PROT_NONE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x555555d7c000
+```
+
+For this special case, there is really nothing for us to do since that address is in the `brk` pool. We already know about that memory, we've already created it, so this last `mmap` call you see above amounts to a NOP for us, there is nothing to do but return the address back to the caller. 
+
+At this time, we don't support `MAP_FIXED` calls for non-brk pool memory.
+
+For `munmap`, we also treat this operation as a NOP and return success to the user because we're not concerned with freeing or re-using memory at this time. 
+
+You can see that Bochs does quite a bit of `brk` and `mmap` calls and our fuzzer is now capable of handling them all via our MMU:
+```terminal
+...
+brk(NULL)                               = 0x555555d7c000
+brk(0x555555d7e000)                     = 0x555555d7e000
+mmap(0x555555d7c000, 4096, PROT_NONE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x555555d7c000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bde000
+mmap(NULL, 16384, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bda000
+mmap(NULL, 4194324, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd06f7ff000
+mmap(NULL, 73728, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bc8000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bc7000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bc6000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bc5000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bc4000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bc3000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bc2000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bc1000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bc0000
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bbe000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bbd000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bbc000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bbb000
+munmap(0x7fd071bbb000, 4096)            = 0
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bbb000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bba000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bb9000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bb8000
+brk(0x555555d7f000)                     = 0x555555d7f000
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bb6000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bb5000
+munmap(0x7fd071bb5000, 4096)            = 0
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bb5000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bb4000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bb3000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bb2000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bb1000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bb0000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071baf000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bae000
+munmap(0x7fd071bae000, 4096)            = 0
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bae000
+munmap(0x7fd071bae000, 4096)            = 0
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bae000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bad000
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071bab000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071baa000
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071ba8000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071ba7000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071ba6000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071ba5000
+munmap(0x7fd071ba5000, 4096)            = 0
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071ba5000
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071ba3000
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071ba1000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071ba0000
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071b9e000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071b9d000
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071b9b000
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071b99000
+munmap(0x7fd071b99000, 8192)            = 0
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071b99000
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071b97000
+mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071b96000
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071b94000
+munmap(0x7fd071b94000, 8192)            = 0
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fd071b94000
+...
+```
+
+## File I/O
+With the MMU out of the way, we needed a way to do file input and output. 
