@@ -583,5 +583,7 @@ impl Mmu {
         })
     }
 ```
+Handling memory-management syscalls actually wasn't too difficult, there were some gotcha's early on but we managed to get something working fairly quickly.
 
+## Handling `brk`
 
