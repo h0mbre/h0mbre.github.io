@@ -513,7 +513,75 @@ export CXXFLAGS
                 --with-nogui
 ```
 
-This was enough to get the Bochs binary I wanted to begin testing with. In the future we will likely need to change this configuration file, but for now this works. 
+This was enough to get the Bochs binary I wanted to begin testing with. In the future we will likely need to change this configuration file, but for now this works. The repository should have more detailed build instructions and also will include already built Bochs binary.
 
+## Implementing a Simple MMU
+Now that we are loading and executing Bochs and sandboxing it from syscalls, there are several new syscalls that we need to implement such as `brk`, `mmap`, and `munmap`. Our test program was very simple and we hadn't come across these syscalls yet. 
+
+These three syscalls all manipulate memory in some way, so I decided that we needed to implement some sort of Memory-Manager (MMU). To keep things as simple as possible, I decided that, at least for now, we will not be worrying about freeing memory, re-using memory, or unmapping memory. We will simply pre-allocate a pool of memory for both `brk` calls to use and `mmap` calls to use, so two pre-allocated pools of memory. We can also just hang the MMU structure off of the execution context so that we always have access to it during syscalls and context-switches. 
+
+So far, Bochs really only cares to map memory in that is READ/WRITE, so that works in our favor in terms of simplicity. So to pre-allocate the memory pools, we just do a fairly large `mmap` call ourselves when we set up the `MMU` as part of the execution context initialization routine:
+```rust
+// Structure to track memory usage in Bochs
+#[derive(Clone)]
+pub struct Mmu {
+    pub brk_base: usize,        // Base address of brk region, never changes
+    pub brk_size: usize,        // Size of the program break region
+    pub curr_brk: usize,        // The current program break
+    
+    pub mmap_base: usize,       // Base address of the `mmap` pool
+    pub mmap_size: usize,       // Size of the `mmap` pool
+    pub curr_mmap: usize,       // The current `mmap` page base
+    pub next_mmap: usize,       // The next allocation base address
+}
+
+impl Mmu {
+    pub fn new() -> Result<Self, LucidErr> {
+        // We don't care where it's mapped
+        let addr = std::ptr::null_mut::<libc::c_void>();
+
+        // Straight-forward
+        let length = (DEFAULT_BRK_SIZE + DEFAULT_MMAP_SIZE) as libc::size_t;
+
+        // No protections yet as it hasn't been asked for explicitly
+        let prot = libc::PROT_WRITE | libc::PROT_READ;
+
+        // This might change at some point?
+        let flags = libc::MAP_ANONYMOUS | libc::MAP_PRIVATE;
+
+        // No file backing
+        let fd = -1 as libc::c_int;
+
+        // No offset
+        let offset = 0 as libc::off_t;
+
+        // Try to `mmap` this block
+        let result = unsafe {
+            libc::mmap(
+                addr,
+                length,
+                prot,
+                flags,
+                fd,
+                offset
+            )
+        };
+
+        if result == libc::MAP_FAILED {
+            return Err(LucidErr::from("Failed `mmap` memory for MMU"));
+        }
+
+        // Create MMU
+        Ok(Mmu {
+            brk_base: result as usize,
+            brk_size: DEFAULT_BRK_SIZE,
+            curr_brk: result as usize,
+            mmap_base: result as usize + DEFAULT_BRK_SIZE,
+            mmap_size: DEFAULT_MMAP_SIZE,
+            curr_mmap: result as usize + DEFAULT_BRK_SIZE,
+            next_mmap: result as usize + DEFAULT_BRK_SIZE,
+        })
+    }
+```
 
 
