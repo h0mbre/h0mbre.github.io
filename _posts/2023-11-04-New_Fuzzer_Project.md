@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "Fuzzer Development: The Soul of a New Machine"
+title: "Fuzzer Development 1: The Soul of a New Machine"
 date: 2023-11-04
 classes: wide
 header:
