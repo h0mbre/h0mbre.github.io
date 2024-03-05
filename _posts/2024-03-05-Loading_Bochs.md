@@ -119,7 +119,7 @@ We get to use the C ABI to our advantage and maintain the semantics of how a pro
 
 During this refactoring for syscalls, I also simplified the way our context-switching calling convention would work. Instead of using 4 separate registers for the calling convention, I decided it was doable by just passing a pointer to the Lucid execution context and having the `context_switch` function itself work out how it should behave based on the context's values. In essence, we're moving complexity from the caller-side to the callee-side. This means that the complexity doesn't keep recurring throughout the codebase, it is encapsulated one time, in the `context_switch` logic itself. This does require some hacky/brittle code however, for instance we have to hardcode some struct offsets for the Lucid execution data structure, but that is a small price to pay in my opinion for drastically reduced complexity. The `context_switch` code has been changed to the following
 
-```asm
+```assembly
 extern "C" { fn context_switch(); }
 global_asm!(
     ".global context_switch",
