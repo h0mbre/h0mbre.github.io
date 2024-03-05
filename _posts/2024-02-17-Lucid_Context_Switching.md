@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "Fuzzer Development: Sandboxing Syscalls"
+title: "Fuzzer Development 2: Sandboxing Syscalls"
 date: 2024-02-17
 classes: wide
 header:
