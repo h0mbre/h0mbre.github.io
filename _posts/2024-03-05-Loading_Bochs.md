@@ -1,3 +1,18 @@
+---
+layout: single
+title: "Fuzzer Development 3: Building Bochs, MMU, and File I/0"
+date: 2024-03-05
+classes: wide
+header:
+  teaser: /assets/images/avatar.jpg
+tags:
+  - Fuzzing
+  - Fuzzer
+  - Development
+  - Emulator
+  - Bochs
+---
+
 ## Background
 
 This is the next installment in a series of blogposts detailing the development process of a snapshot fuzzer that aims to utilize Bochs as a target execution engine. You can find the fuzzer and code in the [Lucid repository](https://github.com/h0mbre/Lucid)
