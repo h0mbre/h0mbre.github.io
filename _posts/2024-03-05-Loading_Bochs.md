@@ -455,7 +455,7 @@ pub struct Tls {
 So now for example, if during a `read` syscall, we get passed a NULL buffer, we can return an error code and set `errno` appropriately *from the syscall handler in Lucid*:
 
 ```rust
-			// Now we need to make sure the buffer passed to read isn't NULL
+            // Now we need to make sure the buffer passed to read isn't NULL
             let buf_p = a2 as *mut u8;
             if buf_p.is_null() {
                 context.tls.errno = libc::EINVAL;
@@ -468,5 +468,52 @@ There may still be other accesses to `fs` and `gs` that I'm not currently sandbo
 ## Building Bochs
 
 I put off building and loading Bochs for a long time because I wanted to make sure I had the foundations of context-switching and syscall-sandboxing built. I also was worried that it would be difficult since getting vanilla Bochs built `--static-pie` was difficult for me initially. To complicate building Bochs in general, we need to build Bochs against our custom Musl. This means that we'll need to have a compiler that we can tell to ignore whatever standard C library it normally uses and use our custom Musl libc instead. This proved quite tedious and difficult for me. Once I was successful, I came to realize that wasn't enough. Bochs, being a C++ code base, also required access to standard C++ library functions. This simply could not work as I had done previously with the test program because I didn't have a C++ library that we could use that had been built against our custom Musl. 
-Luckily, there is an awesome project
+
+Luckily, there is an awesome project called the `musl-cross-make` [project](https://github.com/richfelker/musl-cross-make), which aims to help people build their own Musl toolchains from scratch. This is perfect for what we need because we require a complete toolchain. We need to support the C++ standard library and it needs to be built with our custom Musl. So to do this, we use the The GNU C++ Library, libstdc++, that is part of the `gcc` project. 
+
+`musl-cross-make` will pull down all of constituent tool-chain components and create a from scratch tool chain that will utilize a Musl libc and a libstdc++ built against that Musl. Then all we have to do for our purposes, is recompile that Musl libc with our custom patches that we make with Lucid, and then use the tool chain to compile Bochs as `--static-pie`. It really was as simple as:
+- git clone musl-cross-make
+- configure an x86_64 tool chain target
+- build the tool chain
+- go into its Musl directory, apply our Musl patches
+- configure Musl to build/install into the musl-cross-make output directory
+- re-build Musl libc
+- configure Bochs to use the new toolchain and set the `--static-pie` flag
+
+This is the Bochs configuration file that I used to build Bochs:
+```
+#!/bin/sh
+
+CC="/home/h0mbre/musl_stuff/musl-cross-make/output/bin/x86_64-linux-musl-gcc"
+CXX="/home/h0mbre/musl_stuff/musl-cross-make/output/bin/x86_64-linux-musl-g++"
+CFLAGS="-Wall --static-pie -fPIE"
+CXXFLAGS="$CFLAGS"
+
+export CC
+export CXX
+export CFLAGS
+export CXXFLAGS
+
+./configure --enable-sb16 \
+                --enable-all-optimizations \
+                --enable-long-phy-address \
+                --enable-a20-pin \
+                --enable-cpu-level=6 \
+                --enable-x86-64 \
+                --enable-vmx=2 \
+                --enable-pci \
+                --enable-usb \
+                --enable-usb-ohci \
+                --enable-usb-ehci \
+                --enable-usb-xhci \
+                --enable-busmouse \
+                --enable-e1000 \
+                --enable-show-ips \
+                --enable-avx \
+                --with-nogui
+```
+
+This was enough to get the Bochs binary I wanted to begin testing with. In the future we will likely need to change this configuration file, but for now this works. 
+
+
 
