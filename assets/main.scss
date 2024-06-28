@@ -1,0 +1,16 @@
+---
+# Only the main Sass file needs front matter (the dashes are enough)
+---
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+// Override Minima variables
+$base-font-family: 'JetBrains Mono', monospace;
+$spacing-unit: 40px !default;
+$content-width:    1000px !default;
+
+// Custom styles for syntax highlighting
+.highlight, .highlight pre, .highlight code {
+  font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+}
+
+@import "minima";
