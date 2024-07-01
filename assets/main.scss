@@ -1,16 +1,183 @@
 ---
 # Only the main Sass file needs front matter (the dashes are enough)
 ---
+@font-face {
+  font-family: 'GNU Unifont';
+  src: url('/assets/fonts/unifont-15.1.05.otf') format('opentype'); /* Adjust the path as needed */
+}
+
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
 
 // Override Minima variables
-$base-font-family: 'JetBrains Mono', monospace;
-$spacing-unit: 40px !default;
-$content-width:    1000px !default;
+$base-font-family: 'GNU Unifont', monospace;
+$heading-font-family: 'GNU Unifont', monospace;
+$content-width: 1000px !default;
+
+// Import Minima styles
+@import "minima";
+
+// Custom background color
+body {
+  font-family: $base-font-family;
+  color: #1D1E20; /* Black color for text */
+}
+
+// Custom background color for posts
+body.post-page {
+  background-color: #7B92BF; /* Windows 95 desktop teal color */
+}
+
+// Custom background color for home page
+body.home-page {
+  background-color: #008080; /* Windows 95 desktop teal color */
+}
+
+// Box around the main content
+.main-content {
+  max-width: $content-width;
+  margin: 3rem auto; /* Increased margin for shadow effect */
+  padding: 2rem;
+  background-color: #C5C9C7; /* Light grey box background */
+  box-shadow: 10px 10px 0 #666666; /* Dark grey shadow */
+  border-radius: 0; /* No rounded corners */
+}
+
+// Custom styles for the post meta
+.post-meta {
+  color: black;
+  margin-top: 0.1rem; /* Reduced space between title and date */
+  font-size: 0.875rem; /* Smaller font size for date */
+}
+
+// Custom styles for home page links
+.home-content a {
+  color: black;
+}
+
+// Adjusting header colors and sizes with more specificity
+body.post-page h1, body.home-page h1,
+body.post-page h2, body.home-page h2,
+body.post-page h3, body.home-page h3,
+body.post-page h4, body.home-page h4,
+body.post-page h5, body.home-page h5,
+body.post-page h6, body.home-page h6, 
+.post-title {
+  font-family: 'GNU Unifont', monospace;
+  color: #1D1E20; /* Black color for headings */
+}
+
+body.post-page h1, body.home-page h1 {
+  font-size: 1.2rem; /* Adjust as needed */
+}
+
+body.post-page h2, body.home-page h2 {
+  font-size: 1.1rem; /* Adjust as needed */
+}
+
+body.post-page h3, body.home-page h3 {
+  font-size: 1rem; /* Adjust as needed */
+}
+
+body.post-page h4, body.home-page h4 {
+  font-size: 0.9rem; /* Adjust as needed */
+}
+
+body.post-page h5, body.home-page h5 {
+  font-size: 0.8rem; /* Adjust as needed */
+}
+
+body.post-page h6, body.home-page h6 {
+  font-size: 0.7rem; /* Adjust as needed */
+}
+
+// Custom header styles
+.site-header {
+  background-color: #333333; /* Dark grey background for header */
+  padding: 1rem 0; /* Add padding for spacing */
+  border-bottom: 2px solid #666666; /* Border at the bottom */
+  display: flex; /* Use flexbox to arrange elements */
+  justify-content: space-between; /* Space out the elements */
+  align-items: center; /* Center the elements vertically */
+}
+
+.wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0 1rem; /* Add some padding on the sides */
+  position: relative;
+}
+
+.social-links {
+  position: absolute;
+  left: 1rem; /* Position the social links to the far left */
+  display: flex;
+  align-items: center;
+}
+
+.social-links a {
+  color: white; /* Color for social icons */
+  margin-right: 1rem; /* Spacing between icons */
+  text-decoration: none;
+}
+
+// Custom footer styles
+.site-footer {
+  background-color: #333333; /* Dark grey background for footer */
+  padding: 3rem 0; /* Add padding for spacing */
+  border-top: 2px solid #666666; /* Border at the top */
+}
+
+.site-title {
+  font-family: $heading-font-family;
+  color: #F0F0F0 !important; /* Lighter color for title */
+  font-size: 2rem; /* Increase font size */
+  text-align: center; /* Center align title */
+  display: block;
+}
+.wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
 // Custom styles for syntax highlighting
-.highlight, .highlight pre, .highlight code {
+.highlight pre, .highlight code {
+  font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+  font-size: .95em; /* Ensure the font size for code blocks is consistent */
+}
+
+// Custom styles for inline code
+p code, li code, span code {
+  font-size: .875em; /* Smaller font size for inline code */
   font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
 }
 
-@import "minima";
+.doc-icon {
+  width: 24px; /* Adjust size as needed */
+  height: auto;
+  margin-right: 0.1rem; /* Space between icon and post details */
+  vertical-align: top; /* Align icon vertically with the text */
+}
+
+.post-item {
+  margin-bottom: 1rem; /* Space between post items */
+}
+
+.post-details {
+  display: flex;
+  align-items: center;
+}
+
+.post-details .post-link {
+  margin-left: 0.5rem; /* Space between icon and title */
+  font-size: 1rem; /* Adjust font size for titles */
+  color: white; /* White color for titles */
+}
+
+.post-list .post-meta {
+  margin-left: 0.5rem; /* Reduced space between title and date */
+  font-size: 0.875rem; /* Smaller font size for date */
+  color: white;
+}

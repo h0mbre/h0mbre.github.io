@@ -1,0 +1,56 @@
+---
+layout: default
+---
+
+<div class="home-content">
+  {%- if page.title -%}
+    <h1 class="page-heading">{{ page.title }}</h1>
+  {%- endif -%}
+
+  {{ content }}
+
+  {% if site.paginate %}
+    {% assign posts = paginator.posts %}
+  {% else %}
+    {% assign posts = site.posts %}
+  {% endif %}
+
+  {%- if posts.size > 0 -%}
+    <div class="post-list">
+      {%- for post in posts -%}
+        <div class="post-item">
+          <div class="post-details">
+            <a href="{{ post.url | relative_url }}" class="doc-icon-link">
+              <img src="/assets/images/doc-icon.png" alt="Doc Icon" class="doc-icon"/>
+            </a>
+            <h3 class="post-title">
+              <a class="post-link" href="{{ post.url | relative_url }}">
+                {{ post.title | escape }}
+              </a>
+              <span class="post-meta">({{ post.date | date: "%b %d, %Y" }})</span>
+            </h3>
+          </div>
+        </div>
+      {%- endfor -%}
+    </div>
+
+    {% if site.paginate %}
+      <div class="pager">
+        <ul class="pagination">
+        {%- if paginator.previous_page %}
+          <li><a href="{{ paginator.previous_page_path | relative_url }}" class="previous-page">Previous</a></li>
+        {%- else %}
+          <li><div class="pager-edge">•</div></li>
+        {%- endif %}
+          <li><div class="current-page">{{ paginator.page }}</div></li>
+        {%- if paginator.next_page %}
+          <li><a href="{{ paginator.next_page_path | relative_url }}" class="next-page">Next</a></li>
+        {%- else %}
+          <li><div class="pager-edge">•</div></li>
+        {%- endif %}
+        </ul>
+      </div>
+    {%- endif %}
+
+  {%- endif -%}
+</div>
