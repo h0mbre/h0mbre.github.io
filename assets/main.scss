@@ -158,7 +158,7 @@ p code, li code, span code {
   width: 24px; /* Adjust size as needed */
   height: 24px;
   margin-right: 0.1rem; /* Space between icon and post details */
-  vertical-align: top; /* Align icon vertically with the text */
+  vertical-align: middle; /* Align icon vertically with the text */
 }
 
 .post-item {
@@ -210,5 +210,11 @@ p code, li code, span code {
 
   .post-item {
     margin-bottom: 1rem; /* Adjust spacing between post items on mobile */
+  }
+
+  .main-content {
+    padding: 1rem; /* Adjust padding for smaller screens */
+    margin: 1rem auto; /* Adjust margin for smaller screens */
+    width: calc(100% - 2rem); /* Ensure content box fits within the screen */
   }
 }
