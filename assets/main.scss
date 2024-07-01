@@ -156,7 +156,7 @@ p code, li code, span code {
 
 .doc-icon {
   width: 24px; /* Adjust size as needed */
-  height: 28px;
+  height: 24px;
   margin-right: 0.1rem; /* Space between icon and post details */
   vertical-align: top; /* Align icon vertically with the text */
 }
@@ -196,5 +196,19 @@ p code, li code, span code {
 
   .site-title {
     font-size: 1.5rem; /* Smaller font size for title */
+  }
+
+  .doc-icon {
+    width: 24px; /* Ensure consistent size on mobile */
+    height: 24px; /* Ensure consistent height */
+  }
+
+  .post-details {
+    display: flex;
+    align-items: center;
+  }
+
+  .post-item {
+    margin-bottom: 1rem; /* Adjust spacing between post items on mobile */
   }
 }
