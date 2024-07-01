@@ -35,11 +35,14 @@ body.home-page {
 // Box around the main content
 .main-content {
   max-width: $content-width;
-  margin: 3rem auto; /* Increased margin for shadow effect */
-  padding: 2rem;
-  background-color: #C5C9C7; /* Light grey box background */
-  box-shadow: 10px 10px 0 #666666; /* Dark grey shadow */
-  border-radius: 0; /* No rounded corners */
+  margin: 1rem auto; // Reduced margin for mobile
+  padding: 1rem; // Reduced padding for mobile
+  background-color: #C5C9C7;
+  box-shadow: 5px 5px 0 #666666; // Reduced shadow for mobile
+  border-radius: 0;
+  width: calc(100% - 2rem); // Ensure content fits within screen width
+  box-sizing: border-box; // Include padding in width calculation
+  overflow-x: hidden; // Prevent horizontal scrolling
 }
 
 // Custom styles for the post meta
@@ -155,10 +158,12 @@ p code, li code, span code {
 }
 
 .doc-icon {
-  width: 24px; /* Adjust size as needed */
+  width: 24px;
   height: 24px;
-  margin-right: 0.1rem; /* Space between icon and post details */
-  vertical-align: middle; /* Align icon vertically with the text */
+  min-width: 24px; // Add this line
+  min-height: 24px; // Add this line
+  margin-right: 0.1rem;
+  vertical-align: middle;
 }
 
 .post-item {
@@ -182,40 +187,42 @@ p code, li code, span code {
   color: white;
 }
 
+// Adjust content width for very small screens
+@media (max-width: 480px) {
+  .main-content {
+    width: calc(100% - 1rem);
+    margin: 0.5rem auto;
+    padding: 0.5rem;
+  }
+}
+
 /* Media Queries */
 @media (max-width: 768px) {
+  body {
+    font-size: 14px; // Slightly smaller base font size for mobile
+  }
+
   .site-header {
-    flex-direction: column;
-    align-items: flex-start;
+    padding: 0.5rem 0;
   }
 
-  .social-links {
-    position: static;
-    margin-bottom: 1rem;
+  .wrapper {
+    padding: 0 0.5rem;
   }
 
-  .site-title {
-    font-size: 1.5rem; /* Smaller font size for title */
+  .post-title {
+    font-size: 1.5rem; // Smaller post title for mobile
   }
 
-  .doc-icon {
-    width: 24px; /* Ensure consistent size on mobile */
-    height: 24px; /* Ensure consistent height */
-  }
-
-  .post-details {
-    display: flex;
-    align-items: center;
-  }
-
-  .post-item {
-    margin-bottom: 1rem; /* Adjust spacing between post items on mobile */
-  }
-
-  .main-content {
-    padding: 1rem; /* Adjust padding for smaller screens */
-    margin: 1rem auto; /* Adjust margin for smaller screens */
-    width: calc(100% - 2rem); /* Ensure content box fits within the screen */
-    box-sizing: border-box; /* Ensure padding is included in the width */
+  .post-content {
+    h2 {
+      font-size: 1.25rem;
+    }
+    h3 {
+      font-size: 1.1rem;
+    }
+    h4 {
+      font-size: 1rem;
+    }
   }
 }
