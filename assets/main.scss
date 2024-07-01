@@ -32,14 +32,13 @@ body.home-page {
   background-color: #008080; /* Windows 95 desktop teal color */
 }
 
-// Box around the main content
 .main-content {
   max-width: $content-width;
-  margin: 1rem auto;
+  margin: 0 auto; // Changed from 1rem auto to 0 auto
   padding: 1rem;
-  background-color: #C5C9C7; /* Light grey box background */
-  box-shadow: 5px 5px 0 #666666; /* Dark grey shadow */
-  border-radius: 0; /* No rounded corners */
+  background-color: #C5C9C7;
+  box-shadow: 5px 5px 0 #666666;
+  border-radius: 0;
   width: 100%;
   box-sizing: border-box;
 }
@@ -92,22 +91,21 @@ body.post-page h6, body.home-page h6 {
   font-size: 0.7rem; /* Adjust as needed */
 }
 
-// Custom header styles
 .site-header {
-  background-color: #333333; /* Dark grey background for header */
-  padding: 1rem 0; /* Add padding for spacing */
-  border-bottom: 2px solid #666666; /* Border at the bottom */
-  display: flex; /* Use flexbox to arrange elements */
-  justify-content: space-between; /* Space out the elements */
-  align-items: center; /* Center the elements vertically */
+  background-color: #333333;
+  padding: 1rem 0;
+  border-bottom: 2px solid #666666;
+  display: flex;
+  justify-content: center; // Changed from space-between to center
+  align-items: center;
 }
 
 .wrapper {
   display: flex;
-  justify-content: space-between;
+  justify-content: center; // Changed from space-between to center
   align-items: center;
   width: 100%;
-  padding: 0 1rem; /* Add some padding on the sides */
+  padding: 0 1rem;
   position: relative;
 }
 
@@ -196,7 +194,7 @@ p code, li code, span code {
 
   .site-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     padding: 0.5rem 0;
   }
 
@@ -207,10 +205,12 @@ p code, li code, span code {
 
   .site-title {
     font-size: 1.5rem; /* Smaller font size for title */
+    width: 100%;
+    text-align: center;
   }
 
   .wrapper {
-    padding: 0 0.5rem;
+    padding: 0;
   }
 
   .doc-icon {
@@ -228,7 +228,7 @@ p code, li code, span code {
   }
 
   .main-content {
-    margin: 0.5rem auto;
+    margin: 0;
     padding: 0.5rem;
     width: calc(100% - 1rem);
     box-shadow: 3px 3px 0 #666666;
