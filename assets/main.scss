@@ -91,6 +91,12 @@ body.post-page h6, body.home-page h6 {
   font-size: 0.7rem; /* Adjust as needed */
 }
 
+body.post-page h1, body.post-page h2,
+body.post-page h3, body.post-page h4,
+body.post-page h5, body.post-page h6 {
+  text-decoration: underline;
+}
+
 .site-header {
   background-color: #333333;
   padding: 1rem 0;
