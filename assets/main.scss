@@ -216,5 +216,6 @@ p code, li code, span code {
     padding: 1rem; /* Adjust padding for smaller screens */
     margin: 1rem auto; /* Adjust margin for smaller screens */
     width: calc(100% - 2rem); /* Ensure content box fits within the screen */
+    box-sizing: border-box; /* Ensure padding is included in the width */
   }
 }
