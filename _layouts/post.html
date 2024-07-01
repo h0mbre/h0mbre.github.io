@@ -1,9 +1,8 @@
 ---
 layout: default
 ---
-<article class="post">
-
-  <header class="post-header main-content">
+<article class="post main-content">
+  <header class="post-header">
     <h1 class="post-title">{{ page.title | escape }}</h1>
     <p class="post-meta">
       <time class="dt-published" datetime="{{ page.date | date_to_xmlschema }}" itemprop="datePublished">
@@ -15,14 +14,11 @@ layout: default
       {%- endif -%}
     </p>
   </header>
-
-  <div class="post-content main-content">
+  <div class="post-content">
     {{ content }}
   </div>
-
   {%- if site.disqus.shortname -%}
     {%- include disqus_comments.html -%}
   {%- endif -%}
-
   <a class="u-url" href="{{ page.url | relative_url }}" hidden></a>
 </article>

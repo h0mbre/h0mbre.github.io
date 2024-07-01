@@ -35,14 +35,13 @@ body.home-page {
 // Box around the main content
 .main-content {
   max-width: $content-width;
-  margin: 1rem auto; // Reduced margin for mobile
-  padding: 1rem; // Reduced padding for mobile
-  background-color: #C5C9C7;
-  box-shadow: 5px 5px 0 #666666; // Reduced shadow for mobile
-  border-radius: 0;
-  width: calc(100% - 2rem); // Ensure content fits within screen width
-  box-sizing: border-box; // Include padding in width calculation
-  overflow-x: hidden; // Prevent horizontal scrolling
+  margin: 1rem auto;
+  padding: 1rem;
+  background-color: #C5C9C7; /* Light grey box background */
+  box-shadow: 5px 5px 0 #666666; /* Dark grey shadow */
+  border-radius: 0; /* No rounded corners */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 // Custom styles for the post meta
@@ -139,11 +138,6 @@ body.post-page h6, body.home-page h6 {
   text-align: center; /* Center align title */
   display: block;
 }
-.wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
 
 // Custom styles for syntax highlighting
 .highlight pre, .highlight code {
@@ -158,12 +152,12 @@ p code, li code, span code {
 }
 
 .doc-icon {
-  width: 24px;
+  width: 24px; /* Adjust size as needed */
   height: 24px;
-  min-width: 24px; // Add this line
-  min-height: 24px; // Add this line
-  margin-right: 0.1rem;
-  vertical-align: middle;
+  min-width: 24px;
+  min-height: 24px;
+  margin-right: 0.5rem; /* Space between icon and post details */
+  vertical-align: middle; /* Align icon vertically with the text */
 }
 
 .post-item {
@@ -187,12 +181,10 @@ p code, li code, span code {
   color: white;
 }
 
-// Adjust content width for very small screens
-@media (max-width: 480px) {
-  .main-content {
-    width: calc(100% - 1rem);
-    margin: 0.5rem auto;
-    padding: 0.5rem;
+// Specific adjustments for post layout
+.post {
+  .post-header, .post-content {
+    padding: 0 1rem;
   }
 }
 
@@ -203,11 +195,55 @@ p code, li code, span code {
   }
 
   .site-header {
+    flex-direction: column;
+    align-items: flex-start;
     padding: 0.5rem 0;
+  }
+
+  .social-links {
+    position: static;
+    margin-bottom: 1rem;
+  }
+
+  .site-title {
+    font-size: 1.5rem; /* Smaller font size for title */
   }
 
   .wrapper {
     padding: 0 0.5rem;
+  }
+
+  .doc-icon {
+    width: 24px; /* Ensure consistent size on mobile */
+    height: 24px; /* Ensure consistent height */
+  }
+
+  .post-details {
+    display: flex;
+    align-items: center;
+  }
+
+  .post-item {
+    margin-bottom: 1rem; /* Adjust spacing between post items on mobile */
+  }
+
+  .main-content {
+    margin: 0.5rem auto;
+    padding: 0.5rem;
+    width: calc(100% - 1rem);
+    box-shadow: 3px 3px 0 #666666;
+  }
+
+  .post {
+    .post-header, .post-content {
+      padding: 0 0.5rem;
+    }
+  }
+
+  // Ensure text doesn't overflow
+  p, h1, h2, h3, h4, h5, h6 {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
   }
 
   .post-title {
@@ -217,6 +253,31 @@ p code, li code, span code {
   .post-content {
     h2 {
       font-size: 1.25rem;
+    }
+    h3 {
+      font-size: 1.1rem;
+    }
+    h4 {
+      font-size: 1rem;
+    }
+  }
+}
+
+// Additional adjustments for very small screens
+@media (max-width: 480px) {
+  .main-content {
+    width: calc(100% - 1rem);
+    margin: 0.5rem auto;
+    padding: 0.5rem;
+  }
+
+  .post-title {
+    font-size: 1.3rem;
+  }
+
+  .post-content {
+    h2 {
+      font-size: 1.2rem;
     }
     h3 {
       font-size: 1.1rem;
