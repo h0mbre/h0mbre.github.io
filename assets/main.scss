@@ -3,7 +3,12 @@
 ---
 @font-face {
   font-family: 'GNU Unifont';
-  src: url('/assets/fonts/unifont-15.1.05.otf') format('opentype'); /* Adjust the path as needed */
+  src: url('/assets/fonts/unifont-15.1.05.otf') format('opentype'); 
+}
+
+@font-face {
+  font-family: 'Perfect DOS VGA 437';
+  src: url('/assets/fonts/Perfect DOS VGA 437.ttf') format('truetype'); /* Adjust the path as needed */
 }
 
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
@@ -95,6 +100,11 @@ body.post-page h1, body.post-page h2,
 body.post-page h3, body.post-page h4,
 body.post-page h5, body.post-page h6 {
   text-decoration: underline;
+}
+
+// Apply Perfect DOS VGA 437 font to home page article titles
+.home-content .post-link {
+  font-family: 'Perfect DOS VGA 437', sans-serif;
 }
 
 .site-header {
