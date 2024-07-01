@@ -156,7 +156,7 @@ p code, li code, span code {
 
 .doc-icon {
   width: 24px; /* Adjust size as needed */
-  height: auto;
+  height: 28px;
   margin-right: 0.1rem; /* Space between icon and post details */
   vertical-align: top; /* Align icon vertically with the text */
 }
@@ -180,4 +180,21 @@ p code, li code, span code {
   margin-left: 0.5rem; /* Reduced space between title and date */
   font-size: 0.875rem; /* Smaller font size for date */
   color: white;
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+  .site-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .social-links {
+    position: static;
+    margin-bottom: 1rem;
+  }
+
+  .site-title {
+    font-size: 1.5rem; /* Smaller font size for title */
+  }
 }
