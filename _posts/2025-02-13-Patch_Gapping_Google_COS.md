@@ -257,7 +257,7 @@ Each node in the list would point to its neighbors, for instance, for node `D` i
 Ok so we fail this `list_del` and the PoC just dies here because when we delete class 1:3 the `list_head` that we submit for deletion at some point in the `/net/sched` is either corrupted or it was never initialized. So let's now figure out what is going on in `/net/sched` when this bug occurs to see if we can figure out what is happening. 
 
 ## Sched Bug Analysis
-Taking a deeper dive into the `/net/sched` code it became clear why the node that we were deleting was in a buggy state. In the PoC we create a class 1:1 and assign it a qdisc of type `plug`. A `plug` qdisc is meant to literally stop packets from being dequeued until its given an explicit release command or deleted, it plugs up the `qdisc` with packets as they are "enqueued". So if we send a packet to class 1:1, that packet will be enqueued in 1:1's qdisc that is a plug type, meaning those packets will sit there until we explicitly ask for them. So at this point, it's clear that for some reason, making sure packets are held in the plug qdisc is crucial to the PoC. But what about our buggy `list_head` node? It's clear that after we send a packet to class 1:1 and the plug qdisc, we send a packet to 1:3. Class 1:3 is the class that we grafted the already existing pfifo qdisc onto from 3:1 when we excercised the re-parenting bug. Let's take a look at what happens when we send a packet to a class, namely class 1:3\:
+Taking a deeper dive into the `/net/sched` code it became clear why the node that we were deleting was in a buggy state. In the PoC we create a class 1:1 and assign it a qdisc of type `plug`. A `plug` qdisc is meant to literally stop packets from being dequeued until its given an explicit release command or deleted, it plugs up the `qdisc` with packets as they are "enqueued". So if we send a packet to class 1:1, that packet will be enqueued in 1:1's qdisc that is a plug type, meaning those packets will sit there until we explicitly ask for them. So at this point, it's clear that for some reason, making sure packets are held in the plug qdisc is crucial to the PoC. But what about our buggy `list_head` node? It's clear that after we send a packet to class 1:1 and the plug qdisc, we send a packet to 1:3. Class 1:3 is the class that we grafted the already existing pfifo qdisc onto from 3:1 when we exercised the re-parenting bug. Let's take a look at what happens when we send a packet to a class, namely class 1:3\:
 ```c
 static int drr_enqueue(struct sk_buff *skb, struct Qdisc *sch,
 		       struct sk_buff **to_free)
@@ -268,7 +268,7 @@ static int drr_enqueue(struct sk_buff *skb, struct Qdisc *sch,
 	int err = 0;
 	bool first;
 
-	cl = drr_classify(skb, sch, &err);
+	cl = drr_classify(skb, sch, &err);		// [1]
 	if (cl == NULL) {
 		if (err & __NET_XMIT_BYPASS)
 			qdisc_qstats_drop(sch);
@@ -276,8 +276,8 @@ static int drr_enqueue(struct sk_buff *skb, struct Qdisc *sch,
 		return err;
 	}
 
-	first = !cl->qdisc->q.qlen;
-	err = qdisc_enqueue(skb, cl->qdisc, to_free);
+	first = !cl->qdisc->q.qlen;			// [2]
+	err = qdisc_enqueue(skb, cl->qdisc, to_free);	// [3]
 	if (unlikely(err != NET_XMIT_SUCCESS)) {
 		if (net_xmit_drop_count(err)) {
 			cl->qstats.drops++;
@@ -287,7 +287,7 @@ static int drr_enqueue(struct sk_buff *skb, struct Qdisc *sch,
 	}
 
 	if (first) {
-		list_add_tail(&cl->alist, &q->active);
+		list_add_tail(&cl->alist, &q->active);	// [4]
 		cl->deficit = cl->quantum;
 	}
 
@@ -296,6 +296,164 @@ static int drr_enqueue(struct sk_buff *skb, struct Qdisc *sch,
 	return err;
 }
 ```
+
+There's a few important things going in here. I've not yet mentioned the `drr` aspect of this which stands for "Deficit Round Robin" which is the type of algorithm used to determine how packet delivery is scheduled in this PoC. The details of the DRR algorithm are not super important, but from what I have learned at a high level it basically keeps track of what classes are currently "active", ie, have packets enqueued to them, and tries to deliver the packets based on "deficits" that are configurable. So this way we make sure that packets are distributed in a way that makes sense to us as an end-user trying to shape traffic or guarantee some quality of service. This function is invoked when the qdisc we set up in step 1 has been enqueued with a packet (at the interface level, we use loopback): 
+
+- `[1]`: In this step we have a packet, and we attempt to classify the packet into one of the existing `drr` classes that belong in the root qdisc hierarchy with the `drr_classify` function
+
+- `[2]`: If we find a class that matches for the packet, ie the priority matches a class we have setup like 1:3, we check class 1:3's qdisc and see if it has been enqueued with any packets, if it has not, the `first` flag is set to true
+
+- `[3]`: Class 1:3's qdisc is enqueued with a packet
+
+- `[4]`: If this was the class's first packet, this packet needs to be placed on the `drr` scheduler's `active` list which contains `list_head` structs for every `drr` class that has packets enqueued so that the scheduler can apply the algorithm and make sure packets are dequeued appropriately
+
+Everything in here makes sense and after printing out the class and qdisc pointer values and lining them up with allocations from the PoC when we set up the hierarchy, nothing seemed amiss here. Let's look at the backtrace from when the `list_del` `WARN()` occurs to see what function that occurred in:
+```terminal 
+[   10.602011]  ? __warn+0x81/0x100
+[   10.603979]  ? __list_del_entry_valid+0x59/0xd0
+[   10.606673]  ? report_bug+0x99/0xc0
+[   10.608785]  ? handle_bug+0x34/0x80
+[   10.610901]  ? exc_invalid_op+0x13/0x60
+[   10.613228]  ? asm_exc_invalid_op+0x16/0x20
+[   10.615710]  ? __list_del_entry_valid+0x59/0xd0
+[   10.618473]  drr_qlen_notify+0x12/0x50
+[   10.620778]  qdisc_tree_reduce_backlog+0x84/0x160
+[   10.623558]  drr_delete_class+0x104/0x210
+[   10.625959]  tc_ctl_tclass+0x488/0x5a0
+```
+
+So we land in `drr_qlen_notify` from a call to `drr_delete_class`:
+```c
+static int drr_delete_class(struct Qdisc *sch, unsigned long arg,
+			    struct netlink_ext_ack *extack)
+{
+	struct drr_sched *q = qdisc_priv(sch);
+	struct drr_class *cl = (struct drr_class *)arg;
+
+	if (cl->filter_cnt > 0)
+		return -EBUSY;
+
+	sch_tree_lock(sch);
+
+	qdisc_purge_queue(cl->qdisc);				// [1]
+	qdisc_class_hash_remove(&q->clhash, &cl->common);	// [2]
+
+	sch_tree_unlock(sch);
+
+	drr_destroy_class(sch, cl);
+	return 0;
+}
+```
+- `[1]`: In this step we purge the class's qdisc, which in our case would be our buggy qdisc that we re-parented to 1:3 from 3:1
+
+- `[2]`: Remove this class's hash from the scheduler's class hash table so that it cannot be looked up again
+
+The source doesn't quite match with the back trace, probably because of inlining, but we end up in `drr_qlen_notify` from `qdisc_purge_queue` calling `qdisc_tree_reduce_backlog` as part of the qdisc cleaning up process. This is where our buggy state reveals itself
+```c
+void qdisc_tree_reduce_backlog(struct Qdisc *sch, int n, int len)
+{
+	bool qdisc_is_offloaded = sch->flags & TCQ_F_OFFLOADED;
+	const struct Qdisc_class_ops *cops;
+	unsigned long cl;
+	u32 parentid;
+	bool notify;
+	int drops;
+
+	if (n == 0 && len == 0)
+		return;
+	drops = max_t(int, n, 0);
+	rcu_read_lock();
+	while ((parentid = sch->parent)) {				// [1]
+		if (parentid == TC_H_ROOT)
+			break;
+
+		if (sch->flags & TCQ_F_NOPARENT)
+			break;
+		/* Notify parent qdisc only if child qdisc becomes empty.
+		 *
+		 * If child was empty even before update then backlog
+		 * counter is screwed and we skip notification because
+		 * parent class is already passive.
+		 *
+		 * If the original child was offloaded then it is allowed
+		 * to be seem as empty, so the parent is notified anyway.
+		 */
+		notify = !sch->q.qlen && !WARN_ON_ONCE(!n &&
+						       !qdisc_is_offloaded);
+		/* TODO: perform the search on a per txq basis */
+		sch = qdisc_lookup(qdisc_dev(sch), TC_H_MAJ(parentid)); 
+		if (sch == NULL) {
+			WARN_ON_ONCE(parentid != TC_H_ROOT);
+			break;
+		}
+		cops = sch->ops->cl_ops;				// [2]
+		if (notify && cops->qlen_notify) {
+			cl = cops->find(sch, parentid);			// [3]
+			cops->qlen_notify(sch, cl);			// [4]
+		}
+		sch->q.qlen -= n;
+		sch->qstats.backlog -= len;
+		__qdisc_qstats_drop(sch, drops);
+	}
+	rcu_read_unlock();
+}
+```
+
+- `[1]`: We use the parentid that is derived from the qdisc. This is where the problem is, remember that one of the effects of the bug was that the qdisc itself doesn't know that it was reparented to 1:3, its parentid is still going to reference class 3:1
+
+- `[2]`: Grab a reference to the function table for the qdisc's class's `ops` member so that we do a class appropriate search, ie `drr`
+
+- `[3]`: Use the class ops to execute the `find` function `drr_search_class`
+
+- `[4]`: We set `cl` to class 3:1 because according to the buggy qdisc, that is its class parent still
+
+- `[5]`: We call the class ops `qlen_notify` function, which for `drr` is `drr_qlen_notify`
+
+```c
+static void drr_qlen_notify(struct Qdisc *csh, unsigned long arg)
+{
+	struct drr_class *cl = (struct drr_class *)arg;
+
+	list_del(&cl->alist);
+}
+```
+
+And here is the problem! We call `list_del` on class 3:1's `alist` member which is an uninitialized `list_head`. Its `list_head` is uninitialized (NULL) because it was never placed on the drr scheduler's active list because when we enqueued packets into class 1:3, it was class 1:3's `alist` that was initialized and inserted into the scheduler's active class list. This explains why we get the splat. 
+
+That's one mystery solved, but why does our PoC stop at deleting class 1:3 on a `list_del` bug and the patch mentions UAF and includes deleting class 1:1?
+
+## Shooting Myself in the Foot
+At this point I was happy to have discovered why we were encountering the list bug, but still didn't see how this bug was exploitable or could lead to UAF. I started to suspect that the PoC in the patch was just to prove there was in fact an issue and not directly expose a UAF exactly. This was a horrible assumption that led me very astray. For probably two days worth of effort, I read all of the code over and over looking for ways that I could get a UAF on the buggy qdisc object. I don't know why I assumed that the UAF must be on the buggy qdisc, but the fact that it appeared to belong to two separate classes weighed heavy in my mind. The issue I kept coming back to was: the qdisc's refcount is correct, it's 2, so how could it be the UAF object? I tried to find ways that I could free the qdisc, but still retain a reference to it via class 1:3 or class 3:1 in hopes that that would be the way to access the UAF. 
+
+After a couple of days of trying lots of different strategies and thinking about it, I realized that there was no way to free the qdisc from this buggy condition. If you delete it's real parent in 3:1 you have no way grab a handle to it again, because non-root qdiscs must have a classid. So you can't even look up the qdisc without providing a classid. If you delete 1:3, it will remove a refcount from the qdisc, but now everything is normal, it has a refcount of 1 and belongs to class 3:1. 
+
+I was very frustrated at this part and decided to start over, maybe I missed something in the patch. I fixated on the fact that in the patch they specifically say "lets trigger the UAF" and the action includes deleting 1:1. To this point, I was never able to even delete 1:1 because I get stuck panicking on the list bug. After toying with the idea of first initializing 3:1's `alist` appropriately and getting it added to the active list for the scheduler to bypass the list bug, I decided to just quickly make sure there was nothing wrong with my setup. Mind you, I've been working in this environment for 2-3 days at this point getting familiar with the bug, reading the code, debugging, brainstorming about ways to get a UAF on the qdisc, etc. 
+
+I revisited the list code we discussed above. There were those `CHECK_DATA_CORRUPTION` invocations in the `__list_del_entry_valid_or_report` function like this:
+```c
+#define CHECK_DATA_CORRUPTION(condition, addr, fmt, ...)		 \
+	check_data_corruption(({					 \
+		bool corruption = unlikely(condition);			 \
+		if (corruption) {					 \
+			if (addr)					 \
+				mem_dump_obj(addr);			 \
+			if (IS_ENABLED(CONFIG_BUG_ON_DATA_CORRUPTION)) { \
+				pr_err(fmt, ##__VA_ARGS__);		 \
+				BUG();					 \
+			} else						 \
+				WARN(1, fmt, ##__VA_ARGS__);		 \
+		}							 \
+		corruption;						 \
+	}))
+
+#endif	/* _LINUX_BUG_H */
+```
+
+Welp, this is a pretty important discovery. It looks like if you have `CONFIG_BUG_ON_DATA_CORRUPTION` enabled, you will `BUG()` on an invalid list del operation and if you don't have it enabled, you will simply receive a `WARN()`. I check my kernel config in my development environment and sure enough I have `CONFIG_BUG_ON_DATA_CORRUPTION=y`. Let's check the kCTF kernel configuration: `CONFIG_BUG_ON_DATA_CORRUPTION is not set`. Yikes! This whole time I was stuck on the list delete operation, days, was because I had the wrong kernel configuration. I felt awful about this but going forward I'll obviously make my environment more kCTF like from the beginning. 
+
+## Finally a UAF to Investigate
+
+
 
 
 
