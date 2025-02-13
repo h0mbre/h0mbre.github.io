@@ -95,3 +95,13 @@ While we could "fix" with a more complex approach there could be
 consequences to expectations so the patch takes the preventive approach of
 "disallow such config".
 ```
+
+The bug here is that a qdisc can be "re-parented" to a class that is not its original parent. This kind of logic was not intended. When you create these types of classes that can have qdiscs attached, a default qdisc is allocated and you can graft a new qdisc to the class afterwards to replace the current qdisc. So you can see that `class 1:3` is first created and then we graft a qdisc onto it in step 8. This will free the default qdisc and instantiate this one in its place and attach it to the class. 
+
+The bug however, lets you graft that qdisc (handle 4:0) onto a different class by using the same grafting mechanism that we used on 3:1 but now we're grafting the same qdisc onto two classes. The patch points out the side effects of this bug are basically this:
+1. From qdisc 4:0's point of view, it's parent is still class 3:1, that is never changed
+2. From class 3:1's perspective, qdisc 4:0 is still its child qdisc
+3. From class 1:3's perspective, qdisc 4:0 is now its child qdisc
+4. The refcount on the qdisc is now 2: 1 from the initial graft onto 3:1 and another 1 from the re-parent graft onto 1:3
+
+So those are the side effects the bug produces. At this point, I didn't know a single thing about `/net/sched`, classes, qdiscs, etc, so the learning curve during this process was steep. I had never dealt with this subsystem before in my life. But after a lot of Googling and ChatGPTing, I was able to reproduce the PoC in the patch with the `tc` utility just as the patch specifies. I went through all the steps and when I got to step 14 and it was time to trigger the UAF, I got the following splat after deleting class 1:3\:
