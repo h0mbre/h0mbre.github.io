@@ -255,3 +255,47 @@ A -> B -> C -> D -> A
 Each node in the list would point to its neighbors, for instance, for node `D` it would have the node `C` in its `prev` field and it would have node `A` in its `next` field because the list is circular. The validity check here makes sure that if you want to delete node `D` for instance, that the node `C` says it's next node is `D` and that node `A` says its previous node is `D`. Makes sense. But in our `list_del` `WARN()` banner we see that this function returns false because `list_del corruption, ffff8fdd50a008d0->next is NULL`. So we can't even check the neighboring nodes for sanity because our node `D` doesn't even have a `next` field value, it's `NULL`. 
 
 Ok so we fail this `list_del` and the PoC just dies here because when we delete class 1:3 the `list_head` that we submit for deletion at some point in the `/net/sched` is either corrupted or it was never initialized. So let's now figure out what is going on in `/net/sched` when this bug occurs to see if we can figure out what is happening. 
+
+## Sched Bug Analysis
+Taking a deeper dive into the `/net/sched` code it became clear why the node that we were deleting was in a buggy state. In the PoC we create a class 1:1 and assign it a qdisc of type `plug`. A `plug` qdisc is meant to literally stop packets from being dequeued until its given an explicit release command or deleted, it plugs up the `qdisc` with packets as they are "enqueued". So if we send a packet to class 1:1, that packet will be enqueued in 1:1's qdisc that is a plug type, meaning those packets will sit there until we explicitly ask for them. So at this point, it's clear that for some reason, making sure packets are held in the plug qdisc is crucial to the PoC. But what about our buggy `list_head` node? It's clear that after we send a packet to class 1:1 and the plug qdisc, we send a packet to 1:3. Class 1:3 is the class that we grafted the already existing pfifo qdisc onto from 3:1 when we excercised the re-parenting bug. Let's take a look at what happens when we send a packet to a class, namely class 1:3\:
+```c
+static int drr_enqueue(struct sk_buff *skb, struct Qdisc *sch,
+		       struct sk_buff **to_free)
+{
+	unsigned int len = qdisc_pkt_len(skb);
+	struct drr_sched *q = qdisc_priv(sch);
+	struct drr_class *cl;
+	int err = 0;
+	bool first;
+
+	cl = drr_classify(skb, sch, &err);
+	if (cl == NULL) {
+		if (err & __NET_XMIT_BYPASS)
+			qdisc_qstats_drop(sch);
+		__qdisc_drop(skb, to_free);
+		return err;
+	}
+
+	first = !cl->qdisc->q.qlen;
+	err = qdisc_enqueue(skb, cl->qdisc, to_free);
+	if (unlikely(err != NET_XMIT_SUCCESS)) {
+		if (net_xmit_drop_count(err)) {
+			cl->qstats.drops++;
+			qdisc_qstats_drop(sch);
+		}
+		return err;
+	}
+
+	if (first) {
+		list_add_tail(&cl->alist, &q->active);
+		cl->deficit = cl->quantum;
+	}
+
+	sch->qstats.backlog += len;
+	sch->q.qlen++;
+	return err;
+}
+```
+
+
+
