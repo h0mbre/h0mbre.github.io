@@ -170,4 +170,88 @@ So those are the side effects the bug produces. At this point, I didn't know a s
 
 At this point I was excited because I thought I had recreated the bug and caused a UAF and I'd soon be looking for ways to exploit the bug; however I was extremely wrong. All this splat is is a warning that there was an invalid `list_del` operation. In my development environment, this was enough to cause a kernel panic. I had KASAN enabled so if there was a UAF I would've seen a different splat, so now I'm very confused. On further inspection, I never even reached the step where I delete class 1:1 as in the PoC, so what is going on? Why does my PoC stop here on this `list_del` operation? Time to dig into the details. 
 
-First, why do even encounter a bad `list_del` operation? We still don't know much about this bug or subsystem yet. I had basically just recreated the PoC in the patch and had done almost zero critical thinking of my own. After a lot of `printk` debugging, I finally figured out where the invalid `list_del` comes from. 
+First, why do even encounter a bad `list_del` operation? We still don't know much about this bug or subsystem yet. I had basically just recreated the PoC in the patch and had done almost zero critical thinking of my own. After a lot of `printk` debugging, I finally figured out where the invalid `list_del` comes from.
+
+## List Bug Analysis
+First of all, why is `list_del` complaining? Well it turns out that a common kernel configuration is `CONFIG_DEBUG_LIST`, which turns the list manipulation APIs, like `list_del` into more careful versions of themselves. `list_del`'s job is to remove a `list_head` node out of a linked list. If you can visualize a linked list in the kernel, it's essentially a list of nodes. Each node contains a `prev` and a `next` pointer that reference the previous and the next node in the list respectively. So the debug list configuration has some sanity checks that make sure that when you go to remove a node from a list, there hasn't been any corruption of the node itself. When we delete class 1:3, something happens during that process and we end up here:
+```c
+static inline void __list_del_entry(struct list_head *entry)
+{
+	if (!__list_del_entry_valid(entry))
+		return;
+
+	__list_del(entry->prev, entry->next);
+}
+```
+
+Things are going awry in the `__list_del_entry_valid` check it seems:
+```c
+/*
+ * Performs list corruption checks before __list_del_entry(). Returns false if a
+ * corruption is detected, true otherwise.
+ *
+ * With CONFIG_LIST_HARDENED only, performs minimal list integrity checking
+ * inline to catch non-faulting corruptions, and only if a corruption is
+ * detected calls the reporting function __list_del_entry_valid_or_report().
+ */
+static __always_inline bool __list_del_entry_valid(struct list_head *entry)
+{
+	bool ret = true;
+
+	if (!IS_ENABLED(CONFIG_DEBUG_LIST)) {
+		struct list_head *prev = entry->prev;
+		struct list_head *next = entry->next;
+
+		/*
+		 * With the hardening version, elide checking if next and prev
+		 * are NULL, LIST_POISON1 or LIST_POISON2, since the immediate
+		 * dereference of them below would result in a fault.
+		 */
+		if (likely(prev->next == entry && next->prev == entry))
+			return true;
+		ret = false;
+	}
+
+	ret &= __list_del_entry_valid_or_report(entry);
+	return ret;
+}
+```
+
+Which in turn calls `__list_del_entry_valid_or_report` because we do indeed have `CONFIG_DEBUG_LIST` enabled:
+```c
+bool __list_del_entry_valid_or_report(struct list_head *entry)
+{
+	struct list_head *prev, *next;
+
+	prev = entry->prev;
+	next = entry->next;
+
+	if (CHECK_DATA_CORRUPTION(next == NULL,
+			"list_del corruption, %px->next is NULL\n", entry) ||
+	    CHECK_DATA_CORRUPTION(prev == NULL,
+			"list_del corruption, %px->prev is NULL\n", entry) ||
+	    CHECK_DATA_CORRUPTION(next == LIST_POISON1,
+			"list_del corruption, %px->next is LIST_POISON1 (%px)\n",
+			entry, LIST_POISON1) ||
+	    CHECK_DATA_CORRUPTION(prev == LIST_POISON2,
+			"list_del corruption, %px->prev is LIST_POISON2 (%px)\n",
+			entry, LIST_POISON2) ||
+	    CHECK_DATA_CORRUPTION(prev->next != entry,
+			"list_del corruption. prev->next should be %px, but was %px. (prev=%px)\n",
+			entry, prev->next, prev) ||
+	    CHECK_DATA_CORRUPTION(next->prev != entry,
+			"list_del corruption. next->prev should be %px, but was %px. (next=%px)\n",
+			entry, next->prev, next))
+		return false;
+
+	return true;
+}
+```
+
+So what's going on? We don't know much about the `/net/sched` code yet, but it appears that because we have `CONFIG_DEBUG_LIST`, there is a check on the node you want to remove from the list. If you had the following linked list:
+```terminal
+A -> B -> C -> D -> A
+```
+Each node in the list would point to its neighbors, for instance, for node `D` it would have the node `C` in its `prev` field and it would have node `A` in its `next` field because the list is circular. The validity check here makes sure that if you want to delete node `D` for instance, that the node `C` says it's next node is `D` and that node `A` says its previous node is `D`. Makes sense. But in our `list_del` `WARN()` banner we see that this function returns false because `list_del corruption, ffff8fdd50a008d0->next is NULL`. So we can't even check the neighboring nodes for sanity because our node `D` doesn't even have a `next` field value, it's `NULL`. 
+
+Ok so we fail this `list_del` and the PoC just dies here because when we delete class 1:3 the `list_head` that we submit for deletion at some point in the `/net/sched` is either corrupted or it was never initialized. So let's now figure out what is going on in `/net/sched` when this bug occurs to see if we can figure out what is happening. 
