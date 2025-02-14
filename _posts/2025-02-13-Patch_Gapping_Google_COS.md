@@ -425,7 +425,7 @@ That's one mystery solved, but why does our PoC stop at deleting class 1:3 on a 
 ## Shooting Myself in the Foot
 At this point I was happy to have discovered why we were encountering the list bug, but still didn't see how this bug was exploitable or could lead to UAF. I started to suspect that the PoC in the patch was just to prove there was in fact an issue and not directly expose a UAF exactly. This was a horrible assumption that led me very astray. For probably two days worth of effort, I read all of the code over and over looking for ways that I could get a UAF on the buggy qdisc object. I don't know why I assumed that the UAF must be on the buggy qdisc, but the fact that it appeared to belong to two separate classes weighed heavy in my mind. The issue I kept coming back to was: the qdisc's refcount is correct, it's 2, so how could it be the UAF object? I tried to find ways that I could free the qdisc, but still retain a reference to it via class 1:3 or class 3:1 in hopes that that would be the way to access the UAF. 
 
-After a couple of days of trying lots of different strategies and thinking about it, I realized that there was no way to free the qdisc from this buggy condition. If you delete it's real parent in 3:1 you have no way grab a handle to it again, because non-root qdiscs must have a classid. So you can't even look up the qdisc without providing a classid. If you delete 1:3, it will remove a refcount from the qdisc, but now everything is normal, it has a refcount of 1 and belongs to class 3:1. 
+After a couple of days of trying lots of different strategies and thinking about it, I realized that there was no way to free the qdisc from this buggy condition. If you delete its real parent in 3:1 you have no way grab a handle to it again, because non-root qdiscs must have a classid. So you can't even look up the qdisc without providing a classid. If you delete 1:3, it will remove a refcount from the qdisc, but now everything is normal, it has a refcount of 1 and belongs to class 3:1. 
 
 I was very frustrated at this part and decided to start over, maybe I missed something in the patch. I fixated on the fact that in the patch they specifically say "lets trigger the UAF" and the action includes deleting 1:1. To this point, I was never able to even delete 1:1 because I get stuck panicking on the list bug. After toying with the idea of first initializing 3:1's `alist` appropriately and getting it added to the active list for the scheduler to bypass the list bug, I decided to just quickly make sure there was nothing wrong with my setup. Mind you, I've been working in this environment for 2-3 days at this point getting familiar with the bug, reading the code, debugging, brainstorming about ways to get a UAF on the qdisc, etc. 
 
@@ -452,7 +452,98 @@ I revisited the list code we discussed above. There were those `CHECK_DATA_CORRU
 Welp, this is a pretty important discovery. It looks like if you have `CONFIG_BUG_ON_DATA_CORRUPTION` enabled, you will `BUG()` on an invalid list del operation and if you don't have it enabled, you will simply receive a `WARN()`. I check my kernel config in my development environment and sure enough I have `CONFIG_BUG_ON_DATA_CORRUPTION=y`. Let's check the kCTF kernel configuration: `CONFIG_BUG_ON_DATA_CORRUPTION is not set`. Yikes! This whole time I was stuck on the list delete operation, days, was because I had the wrong kernel configuration. I felt awful about this but going forward I'll obviously make my environment more kCTF like from the beginning. 
 
 ## Finally a UAF to Investigate
+Once I had the right kernel configuration, I re-ran the PoC and behold:
+```terminal
+[   26.091921] ==================================================================
+[   26.093519] BUG: KASAN: slab-use-after-free in __list_del_entry_valid+0x7a/0x140
+[   26.095252] Read of size 8 at addr ffff8880134c0558 by task tc.bin/816
+[   26.096631] 
+[   26.097090] CPU: 0 PID: 816 Comm: tc.bin Tainted: G        W          6.5.13 #92
+[   26.098817] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.13.0-1ubuntu1.1 04/01/2014
+[   26.100720] Call Trace:
+[   26.101297]  <TASK>
+[   26.101771]  dump_stack_lvl+0x48/0x60
+[   26.102612]  print_report+0xc2/0x600
+[   26.103384]  ? __virt_addr_valid+0xc7/0x140
+[   26.104294]  ? __list_del_entry_valid+0x7a/0x140
+[   26.105306]  kasan_report+0xb6/0xf0
+[   26.106059]  ? __list_del_entry_valid+0x7a/0x140
+[   26.107056]  __list_del_entry_valid+0x7a/0x140
+[   26.108001]  drr_qlen_notify+0x60/0xd0
+[   26.108812]  qdisc_tree_reduce_backlog+0xf6/0x1f0
+[   26.109827]  drr_delete_class+0x16e/0x2a0
+```
 
+We finally have a UAF and it happens when you go to delete class 1:1. So the PoC was entirely correct the whole time, and it was my bad kernel config and my assumptions about what must be happening (an impossible UAF on the qdisc) that led me astray for so long. As you can see from the backtrace, we know this code path well. This is the exact code path that leads to the initial list del bug we encountered when we were deleting class 1:3. 
+
+So now everything clicked for me. When we delete class 1:1 it is trying to unlink its `alist` `list_head` from the drr scheduler's `active` list and when it does its `list_del` sanity checks, it's accessing the freed 1:3 class's `list_head` that remains in the `active` list even though we destroyed class 1:3. This is because we never removed it from the active list, the `list_del` we attempted tried to unlink class 3:1's `list_head` instead. So this is where the UAF access comes from. 
+
+So how can we reason about how to exploit the UAF. The PoC was very helpful in demonstrating the UAF, but probably isn't showing us an exploitation vector necessarily, this was my take anyways. From here, I created a similar PoC in my exploit just to make sure I had the right constituent parts but was able to reduce the complexity a bit because in hindsight, the bug is quite simple once you understand all of the moving parts. There are aspects of my exploit setup that are not strictly required, but keeping it relatively close to the PoC helped me initially and then I just left the code in there. 
+
+Here are the steps I followed to trigger the bug:
+1. Create a root qdisc for the loopback interface that is of type drr
+2. Create class 1:1 of type drr
+3. Create class 1:3 of type drr
+4. Assign a plug qdisc to class 1:1
+5. Assign a pfifo (default type) qdisc to 1:3, this will be our reparented buggy qdisc later
+6. Create class 1:2 of type drr and reparent 1:3's qdisc to 1:2, triggering the bug
+7. Enqueue packets in 1:1 and 1:2, this will place 1:1 and 1:2 class `alist` `list_head` nodes in the scheduler's active list
+8. Delete class 1:1, I do this first because it will require sane `list_head` values for class 1:2 when it removes itself from the active list
+9. Delete class 1:2, this will fail to remove 1:2's `list_head` from the active list but will free the class
+10. ?? Profit
+
+So now we have to find out how the active list is used so that we can see how we can access our freed class that has a reference cached in the active list. A quick grep for `active` in `sch_drr.c` will lead you to `drr_dequeue`:
+```c
+static struct sk_buff *drr_dequeue(struct Qdisc *sch)
+{
+	struct drr_sched *q = qdisc_priv(sch);
+	struct drr_class *cl;
+	struct sk_buff *skb;
+	unsigned int len;
+
+	if (list_empty(&q->active))	// [1]
+		goto out;
+	while (1) {
+		cl = list_first_entry(&q->active, struct drr_class, alist); // [2]
+		skb = cl->qdisc->ops->peek(cl->qdisc); // [3]
+		if (skb == NULL) {
+			qdisc_warn_nonwc(__func__, cl->qdisc);
+			goto out;
+		}
+
+		len = qdisc_pkt_len(skb);
+		if (len <= cl->deficit) {
+			cl->deficit -= len;
+			skb = qdisc_dequeue_peeked(cl->qdisc);
+			if (unlikely(skb == NULL))
+				goto out;
+			if (cl->qdisc->q.qlen == 0)
+				list_del(&cl->alist);
+
+			bstats_update(&cl->bstats, skb);
+			qdisc_bstats_update(sch, skb);
+			qdisc_qstats_backlog_dec(sch, skb);
+			sch->q.qlen--;
+			return skb;
+		}
+
+		cl->deficit += cl->quantum;
+		list_move_tail(&cl->alist, &q->active);
+	}
+out:
+	return NULL;
+}
+```
+
+- `[1]`: This function gets invoked whenever a packet is received on the root drr qdisc's interface and the way the drr algorithm works is it looks through its active packet flows and tries to dequeue packets based on the requirements of each active class. It first checks to make sure there are actually active classes on the scheduler's active list
+
+- `[2]`: In a while loop, we first get a handle to the first `struct drr_class` on the active list. Since we deleted class 1:1 who had packets enqueued in its plug qdisc first, this first class should be our UAF class
+
+- `[3]`: This is is what caught my eye, since we have a UAF on `cl`, we potentially can hijack RIP here since we can possibly control the entirety of `cl->qdisc->ops->peek()` and replace `peek()` with a function of our choice
+
+Now it was time to develop an exploit plan.
+
+## Exploit Plan
 
 
 
