@@ -544,7 +544,44 @@ out:
 Now it was time to develop an exploit plan.
 
 ## Exploit Plan
+Seeing that we invoke `cl->qdisc->ops->peek()`, I was confident that I could hijack execution. This turned out to be entirely true, at this point I told some friends that all I had to do was some ROP and I'd be on my way to capturing the flag. This turned out to be entirely false and completing the exploit was a lot more difficult than I anticipated. The main issue I had trying to ROP was that I couldn't find a stack-pivot gadget that worked with our register control at the time that we hijack execution in order for us to start ROP'ing:
+```terminal
+$rax   : 0xffffffff81356310					// [1]
+$rbx   : 0xffff88800f295bd0					// [2]
+$rcx   : 0x20000           
+$rdx   : 0x0               
+$rsp   : 0xffffc9000188baf0
+$rbp   : 0xffff888006d19e00
+$rsi   : 0x0               
+$rdi   : 0xffffffff84267b88					// [3]
+$rip   : 0xffffffff81d71bd8
+$r8    : 0x1               
+$r9    : 0xffffc9000188bb90
+$r10   : 0xffff88800f2719e0
+$r11   : 0xffff888006b6a660
+$r12   : 0xffff888006d19f40
+$r13   : 0x0               
+$r14   : 0xffff888006d19e00
+$r15   : 0xffff888006d19e00
+$eflags: [zero CARRY parity adjust SIGN trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x10 $ss: 0x18 $ds: 0x00 $es: 0x00 $fs: 0x00 $gs: 0x00 
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0xffffffff81d71bcc <drr_dequeue+44> mov    rdi, QWORD PTR [rbx+0x10]
+   0xffffffff81d71bd0 <drr_dequeue+48> mov    rax, QWORD PTR [rdi+0x18]
+   0xffffffff81d71bd4 <drr_dequeue+52> mov    rax, QWORD PTR [rax+0x38]
+ → 0xffffffff81d71bd8 <drr_dequeue+56> call   rax
+```
 
+Here I'm showing you the GDB output when we we're about to `call rax` which is when we call the `peek` that we hijack. We have the following register control:
+- `[1]`: `rax` ends up being the function address we want to call, so any ROP stack pivot that utilizes `rax` would be self-referential in a way that made it difficult to find an appropriate gadget
 
+- `[2]`: `rbx` ends up being an address inside our UAF class. This is great for us as this could represent a way to stack-pivot since we control the contents around this address; however, I was unable to find any stack pivot gadgets that help us here
 
+- `[3]`: `rdi` ends up being the address of the UAF class's qdisc. Again, this would great for us because we control this memory but I was unable to find an appropriate stack pivot gadget
+
+To be quite honest, I didn't spend too much time trying to make ROP work, there were perhaps gadgets or strategies that I didn't think of or consider that would've enabled me to use ROP but I gave up pretty quickly, probably a couple hours or so of looking. I figured with our precise control over `rdi` and the fact that we have what amounts to an arbitrary function call primitive, I felt like there *had* to be gadgets (single function calls) we could leverage to capture the flag. 
+
+First thing is first, I knew from other entries and players that I didn't really have to worry about KASLR as a barrier, because I could always just use the [Entrybleed](https://www.willsroot.io/2022/12/entrybleed.html) side-channel, so I didn't invest any time in trying to think of other ways to defeat KASLR. There was also the possibility that we use the `WARN()` splat from the invalid `list_del` which ends up showing us register values containing heap pointers, our PID (on COS instances we spawn inside a namespace jail and we don't know our real pid), and a kernel text pointer that could be used to defeat KASLR. I thought this was sort of inelegant but never crossed it off my list of possibilities. Luckily I was able to complete the exploit without resorting to this. 
+
+With 
 
