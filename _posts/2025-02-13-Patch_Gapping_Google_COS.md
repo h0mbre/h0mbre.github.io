@@ -759,18 +759,18 @@ static struct sk_buff *drr_dequeue(struct Qdisc *sch)
 		goto out;
 	while (1) {
 		cl = list_first_entry(&q->active, struct drr_class, alist);
-		skb = cl->qdisc->ops->peek(cl->qdisc);				// [1]
+		skb = cl->qdisc->ops->peek(cl->qdisc);				
 		if (skb == NULL) {
 			qdisc_warn_nonwc(__func__, cl->qdisc);
 			goto out;
 		}
 
-		len = qdisc_pkt_len(skb);					// [2]
-		if (len <= cl->deficit) {					// [3]
-			cl->deficit -= len;					// [4]
-			skb = qdisc_dequeue_peeked(cl->qdisc);			// [5]
+		len = qdisc_pkt_len(skb);					// [1]
+		if (len <= cl->deficit) {					// [2]
+			cl->deficit -= len;					// [3]
+			skb = qdisc_dequeue_peeked(cl->qdisc);			
 			if (unlikely(skb == NULL))
-				goto out;					// [6]
+				goto out;					
 			if (cl->qdisc->q.qlen == 0)
 				list_del(&cl->alist);
 
@@ -778,13 +778,16 @@ static struct sk_buff *drr_dequeue(struct Qdisc *sch)
 			qdisc_bstats_update(sch, skb);
 			qdisc_qstats_backlog_dec(sch, skb);
 			sch->q.qlen--;
-			return skb;						// [7]
+			return skb;						
 		}
 
 		cl->deficit += cl->quantum;
-		list_move_tail(&cl->alist, &q->active);				// [8]
+		list_move_tail(&cl->alist, &q->active);				
 	}
 out:
 	return NULL;
 }
 ```
+
+To execute this code path over and over, we need to make sure we *always* enter the if statement body. So we always need `len <= cl->deficit` to be true. Remember that `len` is derived from reading a value at some offset in the kernel text next to our arbitrary write gadget address, so we have 0 control over this value that is returned. But we do control `cl->deficit` with our `nft_table->udata`, so we can make sure that is always `0xffffffff`. Awesome, we're good to go. Nope, at `[3]` that value is decremented in place by `len`, so that memory is access and written to. This is a big problem for me, `nft_table->udata` is immutable, I have no way of updating that value to reset it. 
+
