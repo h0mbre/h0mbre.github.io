@@ -478,7 +478,7 @@ We finally have a UAF and it happens when you go to delete class 1:1. So the PoC
 
 So now everything clicked for me. When we delete class 1:1 it is trying to unlink its `alist` `list_head` from the drr scheduler's `active` list and when it does its `list_del` sanity checks, it's accessing the freed 1:3 class's `list_head` that remains in the `active` list even though we destroyed class 1:3. This is because we never removed it from the active list, the `list_del` we attempted tried to unlink class 3:1's `list_head` instead. So this is where the UAF access comes from. 
 
-So now can we reason about how to exploit the UAF. The PoC was very helpful in demonstrating the UAF, but probably isn't showing us an exploitation vector necessarily, this was my take anyways. From here, I created a similar PoC in my exploit just to make sure I had the right constituent parts but was able to reduce the complexity a bit because in hindsight, the bug is quite simple once you understand all of the moving parts. There are aspects of my exploit setup that are not strictly required, but keeping it relatively close to the PoC helped me initially and then I just left the code in there. 
+So now can we reason about how to exploit the UAF. From here, I created a similar PoC in my exploit just to make sure I had the right constituent parts but was able to reduce the complexity a bit because in hindsight, the bug is quite simple once you understand all of the moving parts. There are aspects of my exploit setup that are not strictly required, but keeping it relatively close to the PoC helped me initially and then I just left the code in there. 
 
 Here are the steps I followed to trigger the bug:
 1. Create a root qdisc for the loopback interface that is of type drr
@@ -535,7 +535,7 @@ out:
 }
 ```
 
-- `[1]`: This function gets invoked whenever a packet is received on the root drr qdisc's interface and the way the drr algorithm works is it looks through its active packet flows and tries to dequeue packets based on the requirements of each active class. It first checks to make sure there are actually active classes on the scheduler's active list
+- `[1]`: This function gets invoked whenever a packet is received on the root drr qdisc's interface and the way the drr algorithm works is it looks through its active packet flows and tries to dequeue packets based on the requirements of each active class. It first checks to make sure there are actually active classes on the scheduler's active list. Our buggy class is on the active list thankfully because of class 1:1 making sure that no packets are dequeued by virtue of its plug qdisc. So tip of the cap to the patch author and Lion Ackermann, thank you! 
 
 - `[2]`: In a while loop, we first get a handle to the first `struct drr_class` on the active list. Since we deleted class 1:1 who had packets enqueued in its plug qdisc first, this first class should be our UAF class
 
