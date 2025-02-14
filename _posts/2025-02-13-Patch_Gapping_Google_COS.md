@@ -693,4 +693,30 @@ void function(struct foo *obj) {
 }
 ```
 
-This would be easy, we control the entirety of the memory pointed to by `struct foo *` and we can just simply read a field that returns 0. But then I remembered that I can't really have NULL values in my `kernfs_pr_cont_buf` because its interpreted as a path name when it's sent. So I skipped this idea. I eventually landed on the idea of just finding functions that return 
+This would be easy, we control the entirety of the memory pointed to by `struct foo *` and we can just simply read a field that returns 0. But then I remembered that I can't really have NULL values in my `kernfs_pr_cont_buf` because its interpreted as a path name when it's sent. So I skipped this idea. What would be even better is a function like this:
+```c
+void function(struct foo *obj) {
+	return obj->field->val;
+}
+```
+
+This would be perfect, we could just have field point to something that is guaranteed to be 0, such as the end of our `kernfs_pr_cont_buf` where a NULL value is no issue. I found just that in this function:
+```c
+static unsigned int
+sch_frag_dst_get_mtu(const struct dst_entry *dst)
+{
+	return dst->dev->mtu;
+}
+```
+
+So now we have our "return NULL gadget" and it was time to find our "do something useful gadget". I played around with the idea for a long time of using this first hijack spot to perform an arbitrary free to upgrade our limited class UAF to something more useful, a more generalized UAF. I would need something like this probably:
+```c
+void function(struct foo *obj) {
+	kfree(obj->ptr);
+	return;
+}
+```
+
+I quickly abandoned this idea though because I didn't have a leaked heap pointer to point the `kfree` at, I didn't want to resort to using leaked pointers from our `WARN()` splat because it felt like cheating. So then I became determined to find an arbitrary write gadget. With the arbitrary write gadget, I would be able to overwrite `modprobe_path` to point to a file I control and read the flag from the container host. This has been done in numerous wasy in the kCTF program so I knew it was feasible. Now began the hard work of finding a write gadget. 
+
+## Finding an Arbitrary Write Function
