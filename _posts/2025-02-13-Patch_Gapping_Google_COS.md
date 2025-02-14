@@ -720,3 +720,71 @@ void function(struct foo *obj) {
 I quickly abandoned this idea though because I didn't have a leaked heap pointer to point the `kfree` at, I didn't want to resort to using leaked pointers from our `WARN()` splat because it felt like cheating. So then I became determined to find an arbitrary write gadget. With the arbitrary write gadget, I would be able to overwrite `modprobe_path` to point to a file I control and read the flag from the container host. This has been done in numerous wasy in the kCTF program so I knew it was feasible. Now began the hard work of finding a write gadget. 
 
 ## Finding an Arbitrary Write Function
+Finding the write function took me a very long time. I was looking for a function that took a single pointer argument and derived a write from its contents, I was looking for something like this:
+```c
+void function(struct foo *obj) {
+	u64 *location = foo->field;
+	*location = foo->value;
+}
+```
+
+This would derive both the "what" and the "where" in the write from `rdi` which we control as our fake qdisc. To start searching I just started thinking about what data structures in the kernel are humongous and often self-contained logic-wise, ie, likely to passed to a function by themselves. I narrowed my search down to the following structure types: socket buffers, files, directory entries, inodes, and a few others. Cycling through these subsystems and grepping for patterns, I eventually found this function:
+```c
+void clear_nlink(struct inode *inode)
+{
+	if (inode->i_nlink) {
+		inode->__i_nlink = 0;
+		atomic_long_inc(&inode->i_sb->s_remove_count);
+	}
+}
+```
+
+This fits our needs perfectly, if a field in the passed in `inode` is not NULL, which we prefer, then increment the value at `inode->i_sb->s_remove_count` as if its a u64 value. An increment is a type of limited write primitive, we're able to target a single byte at a time with this primitive and increment it until it reaches a desired value and then we can move onto the next byte. So my goal became:
+1. Use the increment primitive to increment the first character of `/sbin/modprobe` in kernel memory 
+2. Use the return NULL hijack to exit gracefully from `drr_dequeue`
+3. Send another packet to repeat until `/sbin/modprobe` is overwritten to something we control 
+
+One iteration of this worked perfect, and I was able to check after the iteration and see that `/sbin/modprobe` had become `0sbin/modprobe` in memory. So the concept worked, but now we have other problems, we need to execute this code path dozens of times because we need to do a lot of incrementing. We want `/sbin/modprobe` to become something like `/proc/500/fd/3` where pid 500 is a pid of ours and fd 3 is a privilege escalation script that gets executed when the kernel tries to invoke the `modprobe_path`. 
+
+So let's revisit `drr_dequeue` and identify the spots that cause problems:
+```c
+static struct sk_buff *drr_dequeue(struct Qdisc *sch)
+{
+	struct drr_sched *q = qdisc_priv(sch);
+	struct drr_class *cl;
+	struct sk_buff *skb;
+	unsigned int len;
+
+	if (list_empty(&q->active))
+		goto out;
+	while (1) {
+		cl = list_first_entry(&q->active, struct drr_class, alist);
+		skb = cl->qdisc->ops->peek(cl->qdisc);				// [1]
+		if (skb == NULL) {
+			qdisc_warn_nonwc(__func__, cl->qdisc);
+			goto out;
+		}
+
+		len = qdisc_pkt_len(skb);					// [2]
+		if (len <= cl->deficit) {					// [3]
+			cl->deficit -= len;					// [4]
+			skb = qdisc_dequeue_peeked(cl->qdisc);			// [5]
+			if (unlikely(skb == NULL))
+				goto out;					// [6]
+			if (cl->qdisc->q.qlen == 0)
+				list_del(&cl->alist);
+
+			bstats_update(&cl->bstats, skb);
+			qdisc_bstats_update(sch, skb);
+			qdisc_qstats_backlog_dec(sch, skb);
+			sch->q.qlen--;
+			return skb;						// [7]
+		}
+
+		cl->deficit += cl->quantum;
+		list_move_tail(&cl->alist, &q->active);				// [8]
+	}
+out:
+	return NULL;
+}
+```
