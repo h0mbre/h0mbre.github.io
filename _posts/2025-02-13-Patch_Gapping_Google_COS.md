@@ -587,5 +587,110 @@ With that settled, I moved onto what we should do to refill the freed class so t
 
 With this refill object, we can now fake 100% of the UAF class, which is obviously helpful. The problem is that due to the multiple pointer dereferences in the indirect call to `cl->qdisc->ops->peek`, we also need to control data at a *known* location from the kernel base. I first looked for an opportunity to use [RetSpill](https://dl.acm.org/doi/10.1145/3576915.3623220) to smuggle user controlled values into my kernel stack, but we end up in our gadget via a `sendto` syscall which unfortunately doesn't happen to spill any user values onto the kernel stack, at least from what I could tell. Next I settled on using the [`kernfs_pr_cont_buf`](https://elixir.bootlin.com/linux/v5.15.173/source/fs/kernfs/dir.c#L30), which I learned about in the kCTF Discord from [@roddux](https://x.com/roddux). They had read this [writeup](https://github.com/zerozenxlabs/ZDI-24-020) which contained the details. Basically, if your kernel has `CONFIG_NETFILTER_XT_MATCH_CGROUP`, which kCTF instances do, then you can store up to `PATH_MAX` user controlled data a known offset from the kernel base. This is insane actually and makes exploitation so much easier. The best part is the data there is very mutable, you can just keep resetting its contents. You can accomplish this by establishing an `iptables` match rule on a cgroup file path, and the file path gets stored as data in the buffer. The only *catch* is that the buffer is meant to store a path name, thus, any NULL could terminate your data buffer. So this is something I had to account for in my exploit.
 
-Now we seemingly had everything we needed to explore what function to call. We had our fake class which was in `nft_table->udata` and our fake qdisc and its ops table at a known address in `kernfs_pr_cont_buf`. 
+Now we seemingly had everything we needed to explore what function to call. We had our fake class which was in `nft_table->udata` and our fake qdisc and its ops table at a known address in `kernfs_pr_cont_buf`. The next thing I wanted to accomplish at this point was to determine what side-effects hijacking execution here brought with it. So I used our function call primitive to just call a `ret` gadget, and see where we end up. We immediately blow up in `drr_dequeue` for a few reasons:
+```c
+static struct sk_buff *drr_dequeue(struct Qdisc *sch)
+{
+	struct drr_sched *q = qdisc_priv(sch);
+	struct drr_class *cl;
+	struct sk_buff *skb;
+	unsigned int len;
 
+	if (list_empty(&q->active))
+		goto out;
+	while (1) {
+		cl = list_first_entry(&q->active, struct drr_class, alist);
+		skb = cl->qdisc->ops->peek(cl->qdisc);				// [1]
+		if (skb == NULL) {
+			qdisc_warn_nonwc(__func__, cl->qdisc);
+			goto out;
+		}
+
+		len = qdisc_pkt_len(skb);					// [2]
+		if (len <= cl->deficit) {					// [3]
+			cl->deficit -= len;					// [4]
+			skb = qdisc_dequeue_peeked(cl->qdisc);			// [5]
+			if (unlikely(skb == NULL))
+				goto out;					// [6]
+			if (cl->qdisc->q.qlen == 0)
+				list_del(&cl->alist);
+
+			bstats_update(&cl->bstats, skb);
+			qdisc_bstats_update(sch, skb);
+			qdisc_qstats_backlog_dec(sch, skb);
+			sch->q.qlen--;
+			return skb;						// [7]
+		}
+
+		cl->deficit += cl->quantum;
+		list_move_tail(&cl->alist, &q->active);				// [8]
+	}
+out:
+	return NULL;
+}
+```
+
+Once we call our simple `ret` gadget during our experiment we return to `[1]` where the return value is interpreted as a pointer to a `sk_buff`. This could be a problem for us because whatever gadget we use could do something with the return value that is supposed to be stored in `rax`. In our experiment, our function doesn't touch `rax`, we just return, so `rax` still points to a function address. So it definitely isn't NULL. Since it's not NULL we progress to `[2]`, this ends up being something like a read of `skb` field value, like a `skb->len`, so this will return a value from reading executable text in our case, because `rax` is a function address. At `[3]` we see that if that value it reads from the kernel text is less than or equal to our fake class deficit value, we enter this if statement body at `[4]`. Here, we are actually decrementing a value in our fake class, so this will write to our `nft_table->udata` refill object. That is notable because that is an immutable refill object, once we refill (allocate it) we have no way of resetting/changing its contents. We then see a call to `qdisc_deqeueue_peeked` in `[5]`, which we will get into in a second, and if that returns NULL, we can escape this hell-hole of a function at `[6]`. Separately, if we make it to `[7]`, which would incur several memory accesses to our fake qdisc, we return a non-NULL pointer value. My goal from the start was that if we were to restore execution gracefully and as simply as possible, we would be required to return NULL from this function so that the calling function had nothing to do with the results of our hijacked execution. We can see even more list manipulation at `[8]` so I wanted to avoid this at all costs. 
+
+Let's then go check on the call to `qdisc_dequeue_peeked` which takes a pointer to our fake qdisc as its argument in `[5]`:
+```c
+/* use instead of qdisc->dequeue() for all qdiscs queried with ->peek() */
+static inline struct sk_buff *qdisc_dequeue_peeked(struct Qdisc *sch)
+{
+	struct sk_buff *skb = skb_peek(&sch->gso_skb);			// [1]
+
+	if (skb) {							// [2]
+		skb = __skb_dequeue(&sch->gso_skb);
+		if (qdisc_is_percpu_stats(sch)) {
+			qdisc_qstats_cpu_backlog_dec(sch, skb);
+			qdisc_qstats_cpu_qlen_dec(sch);
+		} else {
+			qdisc_qstats_backlog_dec(sch, skb);
+			sch->q.qlen--;
+		}
+	} else {
+		skb = sch->dequeue(sch);				// [3]
+	}
+
+	return skb;
+}
+```
+
+We see that we get a pointer to another `sk_buff` by calling `skb_peek()` on the `gso_skb` field of our fake qdisc. This is good news for us, because that means that this outcome is *probably somewhat* controllable for us since we control the entirety of the fake qdisc. We'll examine `skb_peek()` in a second. If we return a non-NULL socket buffer from `skb_peek`, we then go on to call `__skb_dequeue` with the pointer to `gso_skb` and it goes on to do more list manipulation and memory accesses on the fake qdisc. This looked very unattractive to me compared to yet another indirect function call in `sch->deuque(sch)` which we should be able to again hijack because we control the fake qdisc. So at this point I'm thinking:
+1. We hijack execution in two places: once in `drr_dequeue` and once in `qdisc_dequeue_peeked`
+2. We can use the first hijacking to do *something useful*
+3. We can use the second hijacking to restore execution in some way gracefully
+
+So the first thing I tried was killing my task in the first hijacking spot just to make sure it was possible to do. I tried a few tricks that other players have used and ended up trying use [`do_exit`](https://elixir.bootlin.com/linux/v5.15.173/source/kernel/exit.c#L776) as the way to kill my task which is whatever task I use to send a packet to the loopback interface which triggers the call to `drr_dequeue`. The problem is that I hit this code block:
+```c
+if (unlikely(in_interrupt()))
+		panic("Aiee, killing interrupt handler!");
+```
+
+This means that we hijack execution in an interrupt context, likely from the interrupt caused by the loopback interface receiving a packet. So these types of tricks that typically apply to a normal process context don't apply here, and I don't have powerful enough primitives (we're just limimted to two function calls, not a full ROP chain) to remove my task from an interrupt context. So my plan was to just exit the dequeue function normally by returning NULL if possible. 
+
+To see if this is feasible, we need to see where and how we can reach the `sch->dequeue` inside of `qdisc_dequeue_peeked` which is our 2nd hijack spot. We need `skb_peek(&sch->gso_skb)` to return NULL:
+```c
+static inline struct sk_buff *skb_peek(const struct sk_buff_head *list_)
+{
+	struct sk_buff *skb = list_->next;
+
+	if (skb == (struct sk_buff *)list_)
+		skb = NULL;
+	return skb;
+}
+```
+
+Turns out this is just a simple check to see if a list head element points to itself, indicating that the list is empty. We can actually do this because we control the fake qdisc. So as long as at the offset for `&sch->gso_skb` the value there points its own address, we can return a NULL from this function. That lands us right into `sch->dequeue`, our 2nd hijack spot. Our goal is to have `qdisc_dequeue_peeked` return NULL, so we need this arbitrary function call to return NULL or 0. So now we need two gadgets or function calls:
+1. A function call that does something *useful* with our control over `rdi`
+2. A function call that simply returns NULL or 0 to restore execution gracefully within `drr_dequeue`
+
+## Gadget Hunting
+I assumed finding the 2nd gadget would be easy, a function call that simply returns 0 or NULL; however, it still took me some time to find. The first thought I had was let's just find a function like this:
+```c
+void function(struct foo *obj) {
+	return obj->field;
+}
+```
+
+This would be easy, we control the entirety of the memory pointed to by `struct foo *` and we can just simply read a field that returns 0. But then I remembered that I can't really have NULL values in my `kernfs_pr_cont_buf` because its interpreted as a path name when it's sent. So I skipped this idea. I eventually landed on the idea of just finding functions that return 
