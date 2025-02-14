@@ -723,8 +723,8 @@ I quickly abandoned this idea though because I didn't have a leaked heap pointer
 Finding the write function took me a very long time. I was looking for a function that took a single pointer argument and derived a write from its contents, I was looking for something like this:
 ```c
 void function(struct foo *obj) {
-	u64 *location = foo->field;
-	*location = foo->value;
+	u64 *location = obj->field;
+	*location = obj->value;
 }
 ```
 
