@@ -2,20 +2,17 @@
 # Only the main Sass file needs front matter (the dashes are enough)
 ---
 @font-face {
-  font-family: 'GNU Unifont';
-  src: url('/assets/fonts/unifont-15.1.05.otf') format('opentype'); 
-}
-
-@font-face {
   font-family: 'Perfect DOS VGA 437';
   src: url('/assets/fonts/Perfect DOS VGA 437.ttf') format('truetype'); /* Adjust the path as needed */
 }
 
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap');
+
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
 
 // Override Minima variables
-$base-font-family: 'GNU Unifont', monospace;
-$heading-font-family: 'GNU Unifont', monospace;
+$base-font-family: 'IBM Plex Mono', monospace;
+$heading-font-family: 'IBM Plex Mono', monospace;
 $content-width: 1000px !default;
 
 // Import Minima styles
@@ -68,7 +65,7 @@ body.post-page h4, body.home-page h4,
 body.post-page h5, body.home-page h5,
 body.post-page h6, body.home-page h6, 
 .post-title {
-  font-family: 'GNU Unifont', monospace;
+  font-family: 'IBM Plex Mono', monospace;
   color: #1D1E20; /* Black color for headings */
 }
 
