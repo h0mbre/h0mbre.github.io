@@ -361,6 +361,7 @@ We basically were only doing Redqueen analysis for the entire fuzzing run of 14 
 
 That is not surprising. However, I found that there were *several* problems with the Redqueen implementation itself.
 
+### Issue-1
 The Redqueen paper also pointed out that sometimes input data is *transformed or encoded* before being compared. For instance, maybe input data is originally a `u64` value but is cast as an `i32` before being compared. If that were the case, we would never find the compare operand value for the `i32` in our input, so we would instead need to precompute a handful of common encodings and instead search for them. If we found the compare operand -> encoding value, we'd then replace it with the same encoding of the other operand value. This makes sense. However, I had a logic bug in my implementation that attempted to solve the compare by generating *all possible encodings* for the found operand value instead of the single matching encoding. This increased the number of input patches to try by 15-20x.
 
 The Redqueen paper also discovered that substituting the operand value but doing arithmetic to -1 or +1 the value was helpful in passing less/greater than comparisons. Remember we only hook compare operations that might set CPU flags and we don't know what the program does with that information afterwards so this helps us bypass those checks as well. So in my erroneous implementation, that will 3x the number of patches we attempt which was already 15-20x too many, so that's now around 45-60x too many patches to test.
@@ -371,10 +372,13 @@ So here's a concrete example of what I was doing:
 3. If I found an encoding variant of 0x1337, say zero-extended to a `u32`, so 0x00001337 in the input, what I should be doing is applying that same encoding scheme to its partner value and creating 0x0000dead. Then I would replace 0x00001337 in the input with 0x0000dead.
 4. Instead, I was replacing 0x00001337 with *every possible similarly sized encoding of 0xdead*
 
+### Issue-2
 But wait, it gets worse! I was also not deduplicating operands based on the `RIP` value of the `cmp` instruction. Now normally, this can be ok because it allows you to potentially pass more dynamic comparisons where maybe both operand values are everchanging based on your input, say a checksum for example. However, with our throughput issues, and just wanting to do the bare-minimum here and defeat classic magic number comparisons, we can whittle down the number of input patches to try significantly by ignoring operands collected from `RIP` values we've already collected. We will rely on human-in-the-loop intervention if we ever need to defeat checksum type comparisons. 
 
+### Issue-3
 To cap everything off, I was *creating all of the patched inputs* before trying them all serially. So I would pre-compute the patched inputs and stuff them in an input queue that Lucid would then prioritize over normal mutations. This led to my fuzzers being `SIGKILL` by the kernel as they started holding too many inputs in memory overnight. That is actually what ended this stage of experimentation. So this fuzzing stage was an abject disaster and we end up making a ton of improvement in the next iteration. 
 
+### Issue-4
 *Minor Note*: The Redqueen paper also employed a technique it called "colorization" wherein the input would be "colored" with random bytes up until the coloring changed the execution path of the input. So it would overwrite input data with random bytes and check to see if that affected the execution path. It started with the largest amount of randomization possible and then using something like binary search, would continue to shrink the portions of the input that would be colorized until its execution trace matched the original. The purpose of this is to make finding operand values in the input easier. Instead of an input being full of 0x0 values for instance, it now contains random data and when you capture the compare operand values, that random data in the capture is easier to spot in the input and you don't run the risk of duplicating candidate insertions. This is actually genius. Lucid has this feature too, but I found that I was spending **dozens of seconds** colorizing large inputs. This is because we simply are so slow. I decided that the juice wasn't the squeeze and made it such that in order to use colorization now, you have to pass a command line flag to opt into it. 
 
 ## Stage 4: Fixing Redqueen
@@ -487,8 +491,7 @@ I also made sure that when the mutator was choosing mutation strategies that it 
 
 Lastly, I keep a constant defined in the netlink mutator that is supposed to represent the percentage of inputs that we generate from scratch. It had previously been set at 5% and I lowered it to 1% now that we have seeds. I figured this would stop us from sending so much garbage while still allowing us to do something very random that still reaches some never before reached error handling paths. In addition to the rate change, I also refactored the random generation function to produce Netlink message-like inputs instead of random blobs of data of varying lengths. Now when we generate messages from scratch, they are at least shaped like valid Netlink messages. 
 
-### Misc
-#### Hitcount Change
+### Hitcount Change
 Some of the previous runs had absolutely exploded the corpus size, for instance in Stage 2 we had accumulated over 300k inputs in the corpus. I wanted to try and cut down on this bloat where possible because my intuition was that we were saving too many inputs. By default, Lucid would save an input if it discovered what it considered a new edge pair, eg a new basic block transition and it would save an input if it reached an edge pair a record number of times, called a hitcount. I bucket the hitcounts like AFL++ does:
 ```rust
 /// After a fuzzing iteration, Bochs will have updated the curr_map with
@@ -518,10 +521,10 @@ So, if we move from a hitcount record on an edge pair of 4 and an input achieves
 
 What I moved to was a model where I only considered new hitcount records if we were "starved" for new coverage. I created the command line option to set a "starved" for coverage threshold in wall-clock time, so once you reach that, the fuzzer starts saving hitcount record inputs to the corpus. During our longest fuzzing iteration, we reached the starved state of an hour multiple times and it seemed beneficial to the fuzzing campaign at that point to save these types of inputs as they soon after found new coverage. 
 
-#### Corpus Sampling
+### Corpus Sampling
 In another effort to avoid corpus bloat, I moved from a model where every fuzzer gets every other fuzzer's entire corpus every sync-interval (tunable at runtime via command line), every fuzzer would instead ranomdly sample inputs from other fuzzers for the entirety of the sync-interval before it would put them all back on disk and randomly pick more to sample. For my longest campaign I set this sync interval to 1 hour. 
 
-#### Corpus Biasing
+### Corpus Biasing
 Lastly, I decided to play with how the corpus would provide inputs to the mutator. I implemented a couple of methods: `get_input_uniform` and `get_input_bias_new`. The former would just randomly select an input from the corpus with uniform distribution (including the sampled inputs) and the latter would bias the newer inputs in the corpus by a tunable rate. For my longest campaign I made it to where around 67% of the time, we'd pick a new input. Sampled inputs from other fuzzers were considered "new" as well in this due to the way I implemented the sampling. I have to say, I don't think this made a bit of difference in our progress. I think in a long enough time horizon it probably doesnt matter much. 
 
 We ended up setting a substantial edge-finding record in just 15h of wall-clock time and under 2 million iterations. 
