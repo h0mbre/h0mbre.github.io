@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Lucid Dreams I: Lucid's First Time Fuzzing"
-date: 2025-09-27
+date: 2025-10-04
 classes: wide
 header:
   teaser: /assets/images/avatar.jpg
@@ -26,7 +26,7 @@ We want to be able to scale Lucid linearly as we bring more cores online for fuz
 
 What I ended up doing is marking all of the writable pages that we load for Bochs as having no write permissions (strictly `PROT_READ`). This way, when Bochs tries to write to a page, it will cause a page-fault. On Linux, your process gets a signal delivered whenever this happens and you can invoke a function to handle signals. So I patched Bochs to handle these page faults and in the signal handler function Bochs marks the faulting address as a dirty page in a data structure that both Bochs and Lucid have access to. So now, we've logged a page that was dirtied and we then make that page permanently writable and we restore that page on snapshot reset every time now. This design boils snapshot restoration down to a series of `memcpy` calls from the snapshot memory to the dirty memory. Now we've achieved differential restoration and everything is done purely in userspace via `memcpy`, no syscalls are invoked in the hot path to restore the snapshot. This seems to scale perfectly and we're pretty close to the one-to-one scaling factor we're after. The fuzzers spend 100% of their time in userland when they're executing the hot fuzzing loops. 
 
-```terminal
+```text
 ┌──────────────────────────────────────────────┐
 │ [1] Fuzzcase Begins                          │◀─┐
 │ Lucid starts executing target code in Bochs. │  │
