@@ -66,7 +66,7 @@ I also was able to implement Redqueen by instrumenting compare instructions in B
 ## Harness Development
 With that out of the way, we need something to fuzz! For this, I wanted to do something very broad and shallow, so I homed in on looking at Linux kernel subsystems that accessible via Netlink. Netlink is a network/communication protocol that allows userspace to communicate with the kernel over sockets, vs. something like a driver or a syscall. A lot of the bugs that have been exploited in public the last 5 years, have been bugs in subsystems that have Netlink plumbing, things like: netfilter, the packet scheduler, etc. Because these subsystems are designed to just receive bytes of Netlink buffer data, I thought this would be a great first thing to get fuzzing on. 
 
-Since we want to fuzz multiple subsystems (broad, shallow), we first have to figure out how Netlink communications normally function. The typical workflow of a userspace program or utility that wants to communicate with the kernel over Netlink is to open a Netlink socket of a specific type of Netlink protocol, something like the following that use in the harness: `NETLINK_ROUTE`, `NETLINK_XFRM`, `NETLINK_NETFILTER`, and `NETLINK_CRYPTO`. For example:
+Since we want to fuzz multiple subsystems (broad, shallow), we first have to figure out how Netlink communications normally function. The typical workflow of a userspace program or utility that wants to communicate with the kernel over Netlink is to open a Netlink socket of a specific type of Netlink protocol, something like the following that are used in the harness: `NETLINK_ROUTE`, `NETLINK_XFRM`, `NETLINK_NETFILTER`, and `NETLINK_CRYPTO`. For example:
 
 ```c
 socket(AF_NETLINK, SOCK_RAW, NETLINK_NETFILTER)
