@@ -93,7 +93,7 @@ struct lf_msg {
 ```
 So the entire input structure is described by `struct lf_input` which tells us the total length of the messages it contains and the number of messages followed by all of the messages stuffed together. An individual message is described by `struct lf_msg` which contains a `protocol` member corresponding to one of the NETLINK protocols we listed earlier (`NETLINK_ROUTE`, `NETLINK_XFRM`, `NETLINK_NETFILTER`, and `NETLINK_CRYPTO`) and then the message's length `msg_len` and the message's data thereafter.
 
-```terminal
+```text
 lf_input {
   total_len: 4 bytes
   num_msgs:  4 bytes
@@ -277,7 +277,7 @@ struct nlmsghdr {
 Since we're sending random bytes, we rarely have a `nlmsg_len` that makes sense for our random message array of bytes. So it took a while for the fuzzer to generate the right type of input to solve early message parsing to actually reach code behind that sanity check. We had to generate an input that had the right length.
 
 Here are the results I achieved with this simple mutator and our aforementioned harness in a short time:
-```terminal
+```text
 [lucid stats (start time: 2025-09-19 08:57:11)]
 globals: uptime: 0d 22h 26m 28s | fuzzers: 8 | crashes: 0 | timeouts: 0
 perf: iters: 88.266M | iters/s: 206.81 | iters/s/f: 25.85
@@ -306,7 +306,7 @@ I added the following mutation strategies:
 - `PatchHeaderFlags`: Randomly create somewhat logically sane `nlmsghdr->nlmsg_flags` values
 
 This step helped us quite a bit, it basically improved our efficiency by 2x:
-```terminal
+```text
 [lucid stats (start time: 2025-09-20 16:24:38)]
 globals: uptime: 0d 14h 8m 35s | fuzzers: 8 | crashes: 0 | timeouts: 0
 perf: iters: 2.821M | iters/s: 31.18 | iters/s/f: 3.90
@@ -343,7 +343,7 @@ This isn't really a fair overview of the technique, but this conveys the gist. P
 We can implement this in our fuzzer because we have access to all compare instructions of all sizes for free in Bochs. So now, what I do is, when I find a new input, I toggle something in the shared execution context data structure between Lucid and Bochs called the "CPU mode" and this tells Bochs what kind of emulation we're doing. Once we find a new input, I replay the input but with the CPU mode set to `Cmplog`. This will cause Bochs to report all of the operand values that it sees in the compare instructions, the instruction pointer value, and the size of the operands back to Lucid. Lucid can now create a data base of values and try the Redqueen strategy for more coverage. 
 
 However, we ran into a huge problem, check out the statistics from the Redqueen enabled run:
-```terminal
+```text
 [lucid stats (start time: 2025-09-21 20:13:29)]
 globals: uptime: 0d 14h 18m 23s | fuzzers: 8 | crashes: 0 | timeouts: 0
 perf: iters: 369.79K | iters/s: 0.10 | iters/s/f: 0.01
@@ -383,7 +383,7 @@ Additionally, I stopped collecting compare operands for values that weren't at l
 I also capped the number of Redqueen inputs you can put in the fuzzer's test queue at 500. In my testing, we never even really approached 500 inputs in the test queue with the fixed encoding search, deduping `RIP`, and removing < 32-byte compares. Previously, in the broken impelmentation, some fuzzers were carrying up to 1 million inputs to test!
 
 Fixing the bugs and adding these two new things to the Redqueen code helped immensely and we achieved the following fuzzing run:
-```terminal
+```text
 [lucid stats (start time: 2025-09-22 11:47:27)]
 globals: uptime: 0d 5h 49m 26s | fuzzers: 8 | crashes: 0 | timeouts: 0
 perf: iters: 738.01K | iters/s: 34.30 | iters/s/f: 4.29
@@ -397,7 +397,7 @@ As you can see, we doubled the throughput in half of the wall-clock time. We als
 
 ### Redqueen Success Example
 Redqueen proved to be extremely helpful at finding new edges once we got away from the first 30 minutes or so of fuzzing. This was an awesome example I have to share:
-```terminal
+```text
 [lucid stats (start time: 2025-09-24 15:23:35)]
 globals: uptime: 0d 0h 56m 54s | fuzzers: 8 | crashes: 0 | timeouts: 0
 perf: iters: 96.08K | iters/s: 18.05 | iters/s/f: 2.26
@@ -420,7 +420,7 @@ fuzzer-4: Redqueen increased edge count 19784 -> 20925 (+1141)
 In this stage, the focus was mainly on creating seed inputs that would start the fuzzing campaign off with a lot of coverage. Up to this point, the most edges we ever discovered for this fuzzing target/harness was around 17.5k which we saw with our improved mutator but without compare coverage and running for around 14 hours. Now, that doesn't mean that compare coverage is a hinderence to edge discovery, it just means that early on it's not as effective at finding new edges as the normal fuzzing strategies were. With seeds, I was hoping to see a dramatic increase in the number of edges discovered because we'd be spoon feeding the mutator some of the complex inputs it needs to generate. 
 
 To create seed inputs, I actually just created an `LD_PRELOAD` shared object that hijacked the `sendmsg` libc invocation found in several command line utilities that normally come packaged in Ubuntu to interact with these subystems. I'm talking about `tc` for setting up qdiscs or the network scheduler for `NETLINK_ROUTE`, or `nft` to interact with `nf_tables` for `NETLINK_NETFILTER` etc. I simply hook the `sendmsg` libc function and have it dump the message contents to the terminal in hex. Here is an example:
-```terminal
+```text
 root@luciddev:/home/h0mbre/netlink_fuzzing# LD_PRELOAD=./hexdump_netlink.so tc qdisc add dev dummy0 root pfifo_fast
 echo "3400000024000506fa2cd46800000000000000000700000000000000ffffffff000000000f000100706669666f5f666173740000"
 ```
@@ -523,7 +523,7 @@ In another effort to avoid corpus bloat, I moved from a model where every fuzzer
 Lastly, I decided to play with how the corpus would provide inputs to the mutator. I implemented a couple of methods: `get_input_uniform` and `get_input_bias_new`. The former would just randomly select an input from the corpus with uniform distribution (including the sampled inputs) and the latter would bias the newer inputs in the corpus by a tunable rate. For my longest campaign I made it to where around 67% of the time, we'd pick a new input. Sampled inputs from other fuzzers were considered "new" as well in this due to the way I implemented the sampling. I have to say, I don't think this made a bit of difference in our progress. I think in a long enough time horizon it probably doesnt matter much. 
 
 We ended up setting a substantial edge-finding record in just 15h of wall-clock time and under 2 million iterations. 
-```terminal
+```text
 [lucid stats (start time: 2025-09-25 21:22:08)]
 globals: uptime: 0d 15h 47m 18s | fuzzers: 8 | crashes: 0 | timeouts: 0
 perf: iters: 1.923M | iters/s: 27.05 | iters/s/f: 3.38
