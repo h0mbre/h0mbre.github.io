@@ -91,9 +91,10 @@ struct lf_msg {
 	u8 data[];
 };
 ```
-So the entire input structure is described by `struct lf_input` which tells us the total length of the messages it contains and the number of messages followed by all of the messages stuffed together. An individual message is described by `struct lf_msg` which contains a `protocol` member corresponding to one of the NETLINK protocols we listed earlier (`NETLINK_ROUTE`, `NETLINK_XFRM`, `NETLINK_NETFILTER`, and `NETLINK_CRYPTO`) and then the message's length `msg_len` and the message's data thereafter.
+So the entire input structure is described by `struct lf_input` which tells us the total length of the messages it contains and the number of messages followed by all of the messages stuffed together. An individual message is described by `struct lf_msg` which contains a `protocol` member corresponding to one of the NETLINK protocols we listed earlier (`NETLINK_ROUTE`, `NETLINK_XFRM`, `NETLINK_NETFILTER`, and `NETLINK_CRYPTO`) and then the message's length `msg_len` and the message's data thereafter:
 
 ```text
+============================= LUCID INPUT STRUCTURE =============================
 lf_input {
   total_len: 4 bytes
   num_msgs:  4 bytes
