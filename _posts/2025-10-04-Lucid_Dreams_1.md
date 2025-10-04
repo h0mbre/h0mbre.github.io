@@ -563,3 +563,6 @@ So with all of the improvements over time we were able to go from 17k edges in 9
 - Ideally I would've created line graphs documenting coverage for each stage, but I didn't have the presence of mind to do that, I apologize
 
 ## What's Next?
+Now with the first fuzzing journey out of the way and some of the core features improved/fixed, we can move onto more earnest bug hunting. Next blog series we will pick a single target (instead of 4 like in this episode) and iterate on a purpose-built mutator again hoping to find bugs. We will do all of the things you do when you're fuzzing for bugs: create good seeds, visualize coverage, find roadblocks, iterate on mutator, scale the fuzzing workload to many cores, etc.
+
+Repo-wise I hope to clean up my local version this weekend and then find a way to standardize the build process of the entire thing, maybe we'll Dockerize it I'm not sure yet. 
