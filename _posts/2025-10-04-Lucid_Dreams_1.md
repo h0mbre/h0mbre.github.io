@@ -28,34 +28,34 @@ What I ended up doing is marking all of the writable pages that we load for Boch
 
 ```text
 ┌──────────────────────────────────────────────┐
-│ [1] Fuzzcase Begins                          │◀─┐
-│ Lucid starts executing target code in Bochs. │  │
-└──────────────────────────────┬───────────────┘  │
-                               │                  │
-                               ▼                  │
-┌──────────────────────────────────────────────┐  │
-│ [2] Bochs Writes to Page                     │  │
-│ Attempted write → page is PROT_READ only.    │  │
-└──────────────────────────────┬───────────────┘  │
-                               │                  │
-                               ▼                  │
-┌──────────────────────────────────────────────┐  │
-│ [3] Page Fault Handler                       │  │
-│ Fault occurs → handler adds page to dirty    │  │
-│ list and sets protection to PROT_WRITE.      │  │
-└──────────────────────────────┬───────────────┘  │
-                               │                  │
-                               ▼                  │
-┌──────────────────────────────────────────────┐  │
-│ [4] Fuzzcase Ends                            │  │
-│ Execution completes                          │  │
-└──────────────────────────────┬───────────────┘  │
-                               │                  │
-                               ▼                  │
-┌──────────────────────────────────────────────┐  │
-│ [5] Snapshot Restore                         │  │
-│ Lucid iterates dirty list → memcpy snapshot  │  │
-│ contents back into those pages.              ├──┘
+│ [1] Fuzzcase Begins                          │◀───────────────┐
+│ Lucid starts executing target code in Bochs. │                │
+└──────────────────────────────┬───────────────┘                │
+                               │                                │
+                               ▼                                │
+┌──────────────────────────────────────────────┐                │
+│ [2] Bochs Writes to Page                     │                │
+│ Attempted write → page is PROT_READ only.    │                │
+└──────────────────────────────┬───────────────┘                │
+                               │                                │
+                               ▼                                │
+┌──────────────────────────────────────────────┐                │
+│ [3] Page Fault Handler                       │                │
+│ Fault occurs → handler adds page to dirty    │                │
+│ list and sets protection to PROT_WRITE.      │                │
+└──────────────────────────────┬───────────────┘                │
+                               │                                │
+                               ▼                                │
+┌──────────────────────────────────────────────┐                │
+│ [4] Fuzzcase Ends                            │                │
+│ Execution completes                          │                │
+└──────────────────────────────┬───────────────┘                │
+                               │                                │
+                               ▼                                │
+┌──────────────────────────────────────────────┐                │
+│ [5] Snapshot Restore                         │                │
+│ Lucid iterates dirty list → memcpy snapshot  │                │
+│ contents back into those pages.              ├────────────────┘
 │ (No syscalls, all user-space.)               │
 └──────────────────────────────────────────────┘
 ```
