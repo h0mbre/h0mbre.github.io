@@ -54,7 +54,7 @@ asmlinkage long sys_getegid16(void);
 asmlinkage long sys_lucid_fuzz(const void __user *data, size_t len);
 ```
 
-Because we want to fuzz `nftables`, I decided to implement the syscall itself in a new file called `lucid_fuzz.c` and placed that inside `linux_version/net/netfilter` folde:
+Because we want to fuzz `nftables`, I decided to implement the syscall itself in a new file called `lucid_fuzz.c` and placed that inside `linux_version/net/netfilter` folder:
 ```c
 #include <linux/kernel.h>
 #include <linux/syscalls.h>
@@ -230,6 +230,10 @@ struct lf_envelope {
 
 This is very similar to our [last blogpost](https://h0mbre.github.io/Lucid_Dreams_1/), but with some key changes to the `envelope` structure. So in practice, an input will always have a single `struct lf_input` structure at its beginning describing the input in its entirety, and then, up to the max number of envelopes, a series of `struct lf_envelope` structures containing the actual Netlink messages for `nftables` in its `data` member. So an input may look like:
 ```text
-[[lf_input: total_len=4096, num_msgs=2][lf_envelope: len=2048, <data>][lf_envelope: len=2048, <data>]]
+[
+	[lf_input: total_len=4096, num_msgs=2]
+		[lf_envelope: len=2048, <data>]
+		[lf_envelope: len=2048, <data>]
+]
 ```
 
