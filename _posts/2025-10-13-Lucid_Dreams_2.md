@@ -196,3 +196,40 @@ root@syzkaller:~#
 So everything works with the syscall, now it's time to make it an actual fuzzing harness. 
 
 ## Deciding Input Format
+We want to be able to create stateful inputs for `nftables`. This obviously means we need enough runway initially in our inputs to *build up complex state*! This seems obvious and simple, but I think it's hard to actually implement correctly. We have to consider various things like:
+- Not all "state" is "good state": Just because an input can create 4096 `nft_table` data structures, doesn't mean that that's interesting from a vulnerability research perspective
+- Short inputs are not likely go create complex state: We need to have somewhat long inputs in order to build up state
+- Extremely large inputs may be meaningless: There may not be any meaningful difference between short and long inputs when the short input is *long enough* to create "good state" and we may end up spending tons of CPU cycles doing nothing interesting and working on enormous inputs
+
+With these things in mind, let's first take a cautious approach and make sure we can generate long inputs *some* of the time, but most of the time focus on relatively normal sized inputs. 
+
+### `nftables` Messages
+`nftables` expects Netlink messages that are formatted a certain way. It has two modes of messaging as far as I can tell: standalone messages, which are simple messages like "object getters" and batched messages, which are for object creation/modification/deletion. They have gone with a design where anything that can modify state is subject to batching and everything that is read-only can be a standalone message. In the batch mode of operation, `nftables` will have something like a "staging" phase, where it parses the messages in the batch and validates them. While it's validating each individual batched message, it makes sure that the resources being created/manipulated are sane and actually exist and are modifiable. `nftables` will stage all the changes and then if a single message fails in the batch, will attempt to roll back all of those staged changes. If batch message parsing succeeds however, it moves into a "commit" phase and makes the changes. 
+
+So basically, our input generator will need to be capable of sending batches of `nftables` requests with some simple read-only requests sprinkled in rarely. I decided to follow a high level input shape that is very similar to our last blogpost for this purpose. We will do the following:
+1. Have Lucid inject a buffer of bytes at a location in Bochs' memory. This is standard and how you want to separate duties between Lucid the fuzzing engine and Lucid's mutators/generators. Let Lucid the fuzzing engine inject a byte blog, let the harness/mutator/generator make sense of the blob. 
+2. We will pre-allocate socket buffer structures `skb(s)` in the kernel so that we don't do any large allocations in the fuzzing loop
+3. The harness will parse the byte blob, and package each input series from the mutator in an `skb` and ship the `skb` off to `nftables` for parsing
+4. We will separate series of `nftables` messages into what we'll call "envelopes". Last blogpost we called them "messages" but because Netlink also operates on "messages" this nomenclature is confusing.
+
+Our input then will contain two different data structures as the harness sees things:
+```c
+// An input structure
+struct lf_input {
+	u32 total_len;
+	u32 num_msgs;
+	u8 data[];
+};
+
+// An envelope structure
+struct lf_envelope {
+	u32 len;
+	u8 data[];
+};
+```
+
+This is very similar to our [last blogpost](https://h0mbre.github.io/Lucid_Dreams_1/), but with some key changes to the `envelope` structure. So in practice, an input will always have a single `struct lf_input` structure at its beginning describing the input in its entirety, and then, up to the max number of envelopes, a series of `struct lf_envelope` structures containing the actual Netlink messages for `nftables` in its `data` member. So an input may look like:
+```text
+[[lf_input: total_len=4096, num_msgs=2][lf_envelope: len=2048, <data>][lf_envelope: len=2048, <data>]]
+```
+
