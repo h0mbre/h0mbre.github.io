@@ -429,3 +429,17 @@ done:
 This should initialize all of the structures we need to start actually parsing inputs and dispatching them in the main harness function. 
 
 ## Main Parsing Routine
+We've reached the point now where the input buffer global is loaded with data and we know the address of the function to invoke to dispatch the data to Netfilter. We've also initialized the socket buffers we're going to use to do the transportation. We need to describe what an input looks like, so let's define our input structures. 
+```c
+// Define our input structures
+struct lf_input {
+	u32 total_len;
+	u32 num_envs;
+	u8 data[];
+};
+
+struct lf_envelope {
+	u32 len;
+	u8 data[];
+};
+```
