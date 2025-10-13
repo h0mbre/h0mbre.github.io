@@ -217,7 +217,7 @@ Our input then will contain two different data structures as the harness sees th
 // An input structure
 struct lf_input {
 	u32 total_len;
-	u32 num_msgs;
+	u32 num_envs;
 	u8 data[];
 };
 
@@ -237,3 +237,9 @@ This is very similar to our [last blogpost](https://h0mbre.github.io/Lucid_Dream
 ]
 ```
 
+Remember: the core Lucid components know nothing about this structure, Lucid is only responsible for injecting the input and its length into the target at a location in memory. It's up to the mutator and the harness to make sense of the structure. 
+
+So now let's implement the harness with this in mind. It will need to receive the bytes, parse them, wrap each envelope's data in an `skb` and send the `skb` to `nftables`. 
+
+## Reaching `nftables`
+The normal path user input takes to `nftables` is via the `sendmsg` syscall, we can see that when we write a 
