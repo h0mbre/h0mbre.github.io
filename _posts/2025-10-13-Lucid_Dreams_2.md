@@ -9,7 +9,7 @@ tags:
   - Fuzzing
   - Linux
   - Kernel
-  - Netlink
+  - Nftables
 ---
 
 ## Background
