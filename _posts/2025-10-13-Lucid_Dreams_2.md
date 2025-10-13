@@ -242,4 +242,56 @@ Remember: the core Lucid components know nothing about this structure, Lucid is 
 So now let's implement the harness with this in mind. It will need to receive the bytes, parse them, wrap each envelope's data in an `skb` and send the `skb` to `nftables`. 
 
 ## Reaching `nftables`
-The normal path user input takes to `nftables` is via the `sendmsg` syscall, we can see that when we write a 
+The normal path user input takes to `nftables` is something like:
+1. userland process creates an `NETLINK_NETFILTER` Netlink socket
+2. userland process sends request via `sendmsg` syscall or similar (maybe `sendto`) via the Netlink socket
+3. those bytes get wrapped in an `skb` in `netlink_sendmsg`
+4. based on the socket's protocol type, `netlink_sendmsg` will find the Netfilter's registered kernel socket that was initialized at kernel boot, the socket has a callback attached to it called `.input` that is to be invoked when there is data ready for it
+5. The callback, which points to `nfnetlink_rcv`, is invoked and receives the `skb` holding our data from userland
+
+We can do similar things, but make it more direct since we know the destination in our harness is `nftables`. We can:
+1. Pre-allocate `skb` structures to hold our envelopes
+2. Parse the `lf_input`, and by included `lf_envelope`:
+3. Stuff the envelope's data into an `skb`
+4. Send the `skb` directly to `nfnetlink_rcv`
+5. Repeat, go back to the 3
+
+## Harness Init Code
+Let's go ahead and fill out the logic for the initialization routine of our custom syscall, this is code that will be invoked *once* before we start fuzzing and will not occur in the fuzzing loop. This is code that is meant to set up everything we need for the harness to work appropriately. This is where we will setup the `skbs` and to do so, we'll need to define some constants that describe maximum input shapes. The first constant we need to set is the `MAX_NUM_ENVELOPES`, this is going to tell us how many `struct lf_envelope` structures can exist in an `struct lf_input`. We'll also need to know the `MAX_ENVELOPE_LEN` which will obviously describe how big these envelopes' data payload can be. Finally, as a byproduct of both the maximum number of envelope structures and their maximum length, we'll deduce the `MAX_INPUT_LEN`, which is the largest possible size we can achieve for the `lf_input->total_len` value. 
+
+For now, let's go ahead and say that we can have up to 24 envelopes, and each one can be up to 8192 bytes. In the mutator, well define min/max thresholds where we mostly uniformly distribute size selection between those two thresholds with a small possibility of going lower or higher than them. So most of the time we'll do at least 8 envelopes and less than or exactly 16 envelopes. Something like that. We'll make 1-7 and 17-24 very rare. Same with the sizes, well try not to send an insane amount of `nftables` messages per envelope and approach the 8k max. But this is for a later blogpost on the mutator. 
+
+With the constants in mind we can build. We can do all of this in `af_netlink.c` in `/net/netlink` because it has all of the things we need access to and makes everything easy. So we'll implement `lf_init` in there, which means we need access to `lucid_init` in our `lucid_fuzz.c` stand alone source file, so we'll change that to:
+```c
+#include <linux/kernel.h>
+#include <linux/syscalls.h>
+#include <linux/uaccess.h>
+
+// These will be defined in /include/net/lucid_fuzz.h
+extern int lucid_init(const void __user *data, size_t len);
+
+SYSCALL_DEFINE2(lucid_fuzz, const void __user *, data, size_t, len)
+{
+    int ret = 0;
+
+    printk("Inside lucid fuzz!\n");
+    printk("Calling lucid_init...\n");
+    ret = lucid_init(data, len);
+    if (ret)
+        goto done;
+
+done:
+	return ret;
+}
+```
+
+Now we'll need to create that header file in `/include/net/lucid_fuzz.h`:
+```c
+/* SPDX-License-Identifier: GPL-2.0 */
+#ifndef _NET_LUCID_FUZZ_H
+#define _NET_LUCID_FUZZ_H
+
+int lucid_init(const void __user *data, size_t len);
+
+#endif /* _NET_LUCID_FUZZ_H */
+```
