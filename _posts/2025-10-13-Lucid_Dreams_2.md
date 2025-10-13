@@ -268,15 +268,15 @@ With the constants in mind we can build. We can do all of this in `af_netlink.c`
 #include <linux/uaccess.h>
 
 // These will be defined in /include/net/lucid_fuzz.h
-extern int lucid_init(const void __user *data, size_t len);
+extern int lucid_fuzz_init(const void __user *data, size_t len);
 
 SYSCALL_DEFINE2(lucid_fuzz, const void __user *, data, size_t, len)
 {
     int ret = 0;
 
     printk("Inside lucid fuzz!\n");
-    printk("Calling lucid_init...\n");
-    ret = lucid_init(data, len);
+    printk("Calling lucid_fuzz_init...\n");
+    ret = lucid_fuzz_init(data, len);
     if (ret)
         goto done;
 
@@ -291,7 +291,141 @@ Now we'll need to create that header file in `/include/net/lucid_fuzz.h`:
 #ifndef _NET_LUCID_FUZZ_H
 #define _NET_LUCID_FUZZ_H
 
-int lucid_init(const void __user *data, size_t len);
+int lucid_fuzz_init(const void __user *data, size_t len);
 
 #endif /* _NET_LUCID_FUZZ_H */
 ```
+
+Now we can include that header in `af_netlink.c`. And we get started in that source file with our defines of our constants we discussed:
+```c
+/*************** Start of Lucid Fuzzing Harness *****************************/
+#define LF_MAX_NUM_ENVS 24UL // Number of envelopes in an input
+#define LF_MAX_ENV_LEN 8192UL // Number of bytes in an envelope payload 
+#define LF_INPUT_HDR_SIZE (sizeof(u32) * 2) // lf_input->total_len, num_envs
+#define LF_ENV_HDR_SIZE (sizeof(u32)) // lf_envelope->len
+#define LF_MAX_TOTAL_ENV ((LF_MAX_ENV_LEN + LF_ENV_HDR_SIZE) * LF_MAX_NUM_ENVS)
+#define LF_MAX_INPUT_LEN (LF_MAX_TOTAL_ENV + LF_INPUT_HDR_SIZE)
+```
+
+Next, I defined the `LUCID_SIGNATURE` that Lucid scans for when trying to decide where to inject inputs. It knows the layout of the `struct lf_fuzzcase` so it knows that directly after the signature portion it has a length field and then the variable length data field where it inserts the raw bytes:
+```c
+// Structure that describes an input as Lucid sees it
+struct lf_fuzzcase {
+	unsigned char signature[16];
+	size_t input_len;
+	u8 input[LF_MAX_INPUT_LEN];
+};
+
+// Create instance of the struct
+struct lf_fuzzcase fc = {
+	.signature = LUCID_SIGNATURE,
+	.input_len = 0,
+	.input = { 0 }	/* Where Lucid injects an input */
+};
+```
+
+Then we define some globals that we need to initialize:
+-`handler`: This is a function pointer basically to the `nfnetlink_rcv` function that we look up by protocol in the `init` namespace
+-`kern_sock`: This is the `struct sock` that is registered during kernel boot for the Netfilter subsystem to receive data from userland (and I guess kernel threads?)
+- `skbs`: Just a flat buffer of the `skb` structures we'll need to use to wrap our envelope data, the harness exchanges envelopes by `skb` structures
+
+Finally the initialization routine is thus:
+```c
+// The function pointer we send the skbs to, the netlink rcv handler for
+// netfilter nfnetlink_rcv
+void *handler = NULL;
+
+// The kernel-registered socket waiting for input from us
+struct sock *kern_sock = NULL;
+
+// Pool of skbs we use to store data in envelopes
+struct sk_buff *skbs[LF_MAX_NUM_ENVS] = { 0 }; 
+
+// Our initialization function, called before we do any fuzzing
+int lucid_fuzz_init(const void __user *data, size_t len) {
+	int err = 0;
+	int i = 0;
+	struct sk_buff *skb = NULL;
+
+	printk("Hello from lucid_fuzz_init\n");
+	printk("LF_MAX_INPUT_LEN is: %lu\n", LF_MAX_INPUT_LEN);
+
+	// Copy the user data over to the fuzzcase instance if there is any
+	if (len > 0 && len <= LF_MAX_INPUT_LEN) {
+		if (copy_from_user(
+			fc.input, data, len
+		))
+		{
+			err = -EFAULT;
+			goto done;
+		}
+		fc.input_len = len;
+	}
+
+	// Doing this how other kernel code does it, lock the global table
+	netlink_table_grab();
+
+	// Pre-set the err as if we failed to find the handler for NETFILTER
+	err = -ENOENT;
+
+	// Check to see if the handler is registered
+	if (!nl_table[NETLINK_NETFILTER].registered) {
+		netlink_table_ungrab();
+		goto done;
+	}
+
+	// Grab the kernel socket
+	kern_sock = netlink_lookup(&init_net, NETLINK_NETFILTER, 0);
+	if (!kern_sock) {
+		netlink_table_ungrab();
+		goto done;
+	}
+
+	// Grab that .input handler
+	handler = nlk_sk(kern_sock)->netlink_rcv;
+	if (!handler) {
+		netlink_table_ungrab();
+		goto done;
+	}
+
+	// Ungrab the table we're done with it
+	netlink_table_ungrab();
+
+	// Pre-set
+	err = -ENOMEM;
+
+	// Create all of the socket buffers we need and store them
+	for (i = 0; i < LF_MAX_NUM_ENVS; i++) {
+		skb = alloc_skb(LF_MAX_ENV_LEN, GFP_KERNEL);
+		// If we failed, unroll all the previous allocations
+		if (!skb) {
+			while (--i >= 0) {
+				kfree_skb(skbs[i]);
+				skbs[i] = NULL;
+			}
+			goto done;
+		}
+
+		// Initialize what we need to look legit
+		skb->pkt_type = PACKET_HOST;
+        skb->sk = kern_sock;
+        NETLINK_CB(skb).portid = 0x1337;
+        NETLINK_CB(skb).dst_group = 0;
+        NETLINK_CB(skb).creds.uid = GLOBAL_ROOT_UID;
+        NETLINK_CB(skb).creds.gid = GLOBAL_ROOT_GID;
+
+		// Store the skb
+		skbs[i] = skb;
+	}
+
+	// We are so done dude, it worked
+	err = 0;
+
+done:
+	return err;
+}
+```
+
+This should initialize all of the structures we need to start actually parsing inputs and dispatching them in the main harness function. 
+
+## Main Parsing Routine
