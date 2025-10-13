@@ -443,3 +443,34 @@ struct lf_envelope {
 	u8 data[];
 };
 ```
+
+Now the main loop has the layout information it needs to make sense of the byte buffer in the fuzzcase global instance. The first thing we do in the main loop is take the snapshot that Bochs will save to disk. The Lucid workflow is something like:
+1. develop environment, harness
+2. put a special NOP operation in the harness where you want to snapshot fuzz from (`xchg dx, dx`)
+3. run the environment/harness in the `gui-bochs`. This is relatively normal Bochs binary built with GUI support that is supposed to be user-friendly and allow you to dump this Bochs snapshot to disk
+4. the Rust fuzzer binary, `lucid-fuzz` can then take that Bochs snapshot on disk, and resume its execution with a purpose-built `lucid-bochs` binary. This will call into the Lucid fuzzer before it emulates the first instruction and create a new kind of snapshot that Lucid can understand and restore every fuzzing iteration. 
+
+Below is the code I've added to Bochs to save the Bochs snapshot to disk when we encounter the `xchg dx, dx` NOP:
+```c++
+#if BX_SNAPSHOT
+  // Check for take snapshot instruction `xchg dx, dx`
+  if ((i->src() == i->dst()) && (i->src() == 2)) {
+    BX_COMMIT_INSTRUCTION(i);
+    if (BX_CPU_THIS_PTR async_event)
+      return;
+    ++i;
+    char save_dir[] = "/tmp/lucid_snapshot";
+    mkdir(save_dir, 0777);
+    printf("Saving Lucid snapshot to '%s'...\n", save_dir);
+    if (SIM->save_state(save_dir)) {
+      printf("Successfully saved snapshot\n");
+      sleep(2);
+      exit(0);
+    }
+    else {
+      printf("Failed to save snapshot\n");
+    }
+    BX_EXECUTE_INSTRUCTION(i);
+  }
+#endif
+```
