@@ -868,11 +868,8 @@ int lucid_fuzz_handle_input(void) {
 	struct sk_buff *fuzz_skb = NULL;
 	u32 remaining = 0;
 	u32 offset = 0;
-	struct sock *blegh = NULL;
 
 	printk("Hello from lucid_fuzz_handle_input\n");
-	blegh = kern_sock;
-	printk("kern_sock->net: %p\n", sock_net(kern_sock));
 
 	/** LUCID TAKES SNAPSHOT HERE **/
 	// This special NOP instruction, when interpreted by Bochs will cause
