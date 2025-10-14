@@ -476,7 +476,7 @@ Below is the code I've added to Bochs to save the Bochs snapshot to disk when we
 #endif
 ```
 
-Then we get around to making sure we have enough bytes to form the metadata structure (`lf_input`) and sanity check its values before moving on to the nested envelopes. You'll notice that all error paths are `return 1;`, those early return error handlers will make sense later:
+Then we get around to making sure we have enough bytes to form the metadata structure (`lf_input`) and sanity check its values before moving on to the nested envelopes. You'll notice that all error paths are `return 1;`, this is so that during fuzzing and mutator development, we skip over the snapshot restore NOP instruction at the end of the main fuzzing loop in the harness. This cascade of timeouts will let us know that we have a bug in our mutator. Here is the main loop:
 ```c
 // Main input processing logic
 int lucid_fuzz_handle_input(void) {
@@ -673,6 +673,295 @@ We can now pipe that to `base64` and then pipe that to the harness for testing:
 ```terminal
 [devbox:~/nft_fuzzing]$ python3 wrapper.py | base64
 XAAAAAEAAABQAAAAFAAAABAAAQAAAAAAAAAAAAAACgAoAAAAAAoBAAEAAAAAAAAAAQAAAAkAAQBmdXp6AAAAAAgAAgAAAAAAFAAAABEAAQACAAAAAAAAAAAACgA=
+```
 
-...
+Then when we run `echo "<base64>" | harness` on the `qemu-system` running our custom kernel, we get the following kernel logs:
+```terminal
+[   23.347957] Inside lucid fuzz!TC 2025 on ttyS0
+[   23.349015] Calling lucid_fuzz_init...
+[   23.350233] Hello from lucid_fuzz_init
+[   23.351399] LF_MAX_INPUT_LEN is: 196712
+[   23.355266] Hello from lucid_fuzz_handle_input
+[   23.359789] Calling lucid_fuzz_cleanup...
+lucid_fuzz returned 0
+```
 
+So the harness works! 
+
+## Conclusion
+Hopefully this helps you understand how to write a harness for Lucid. We needed to:
+1 - identify a way to inject raw input bytes into kernel memory
+2 - take a snapshot with our special NOP instruction
+3 - implement a custom protocol that our harness can understand so that it can parse the raw input bytes into something that can be sent to the target
+4 - reset the snapshot with our special NOP instruction
+5 - cleanup all the resources in the harness so we can use it for debugging as well. 
+
+I've pasted the full harness code that I added in `af_netlink.c` below, cheers:
+```c
+/*************** Start of Lucid Fuzzing Harness *****************************/
+#define LF_MAX_NUM_ENVS 24UL // Number of envelopes in an input
+#define LF_MAX_ENV_LEN 8192UL // Number of bytes in an envelope payload 
+#define LF_INPUT_HDR_SIZE (sizeof(u32) * 2) // lf_input->total_len, num_envs
+#define LF_ENV_HDR_SIZE (sizeof(u32)) // lf_envelope->len
+#define LF_MAX_TOTAL_ENV ((LF_MAX_ENV_LEN + LF_ENV_HDR_SIZE) * LF_MAX_NUM_ENVS)
+#define LF_MAX_INPUT_LEN (LF_MAX_TOTAL_ENV + LF_INPUT_HDR_SIZE)
+
+// Used by Lucid when scanning for where to inject the input 
+#define LUCID_SIGNATURE { 0x13, 0x37, 0x13, 0x37, 0x13, 0x37, 0x13, 0x37, \
+                          0x13, 0x38, 0x13, 0x38, 0x13, 0x38, 0x13, 0x38 }
+
+// Structure that describes an input as Lucid sees it
+struct lf_fuzzcase {
+	unsigned char signature[16];
+	size_t input_len;
+	u8 input[LF_MAX_INPUT_LEN];
+};
+
+// Create instance of the struct
+struct lf_fuzzcase fc = {
+	.signature = LUCID_SIGNATURE,
+	.input_len = 0,
+	.input = { 0 }	/* Where Lucid injects an input */
+};
+
+// The function pointer we send the skbs to, the netlink rcv handler for
+// netfilter nfnetlink_rcv
+void *handler = NULL;
+
+// The kernel-registered socket waiting for input from us
+struct sock *kern_sock = NULL;
+
+// Pool of skbs we use to store data in envelopes
+struct sk_buff *skbs[LF_MAX_NUM_ENVS] = { 0 }; 
+
+// Our initialization function, called before we do any fuzzing
+int lucid_fuzz_init(const void __user *data, size_t len) {
+	int err = 0;
+	int i = 0;
+	struct sk_buff *skb = NULL;
+
+	printk("Hello from lucid_fuzz_init\n");
+	printk("LF_MAX_INPUT_LEN is: %lu\n", LF_MAX_INPUT_LEN);
+
+	// Copy the user data over to the fuzzcase instance if there is any
+	if (len > 0 && len <= LF_MAX_INPUT_LEN) {
+		if (copy_from_user(
+			fc.input, data, len
+		))
+		{
+			err = -EFAULT;
+			goto done;
+		}
+		fc.input_len = len;
+	}
+
+	// Doing this how other kernel code does it, lock the global table
+	netlink_table_grab();
+
+	// Pre-set the err as if we failed to find the handler for NETFILTER
+	err = -ENOENT;
+
+	// Check to see if the handler is registered
+	if (!nl_table[NETLINK_NETFILTER].registered) {
+		netlink_table_ungrab();
+		goto done;
+	}
+
+	// Grab the kernel socket
+	kern_sock = netlink_lookup(&init_net, NETLINK_NETFILTER, 0);
+	if (!kern_sock) {
+		netlink_table_ungrab();
+		goto done;
+	}
+
+	// Grab that .input handler
+	handler = nlk_sk(kern_sock)->netlink_rcv;
+	if (!handler) {
+		netlink_table_ungrab();
+		goto done;
+	}
+
+	// Ungrab the table we're done with it
+	netlink_table_ungrab();
+
+	// Pre-set
+	err = -ENOMEM;
+
+	// Create all of the socket buffers we need and store them
+	for (i = 0; i < LF_MAX_NUM_ENVS; i++) {
+		skb = alloc_skb(LF_MAX_ENV_LEN, GFP_KERNEL);
+		// If we failed, unroll all the previous allocations
+		if (!skb) {
+			while (--i >= 0) {
+				kfree_skb(skbs[i]);
+				skbs[i] = NULL;
+			}
+			goto done;
+		}
+
+		// Initialize what we need to look legit
+		skb->pkt_type = PACKET_HOST;
+        skb->sk = kern_sock;
+        NETLINK_CB(skb).portid = 0x1337;
+        NETLINK_CB(skb).dst_group = 0;
+        NETLINK_CB(skb).creds.uid = GLOBAL_ROOT_UID;
+        NETLINK_CB(skb).creds.gid = GLOBAL_ROOT_GID;
+		NETLINK_CB(skb).flags = NETLINK_SKB_DST;
+
+		// Store the skb
+		skbs[i] = skb;
+	}
+
+	// We are so done dude, it worked
+	err = 0;
+
+done:
+	return err;
+}
+
+// Define our input structures
+struct lf_input {
+	u32 total_len;
+	u32 num_envs;
+	u8 data[];
+};
+
+struct lf_envelope {
+	u32 len;
+	u8 data[];
+};
+
+// Creates a socket buffer filled with fuzz message
+static struct sk_buff *create_fuzz_skb(struct lf_envelope *env, int idx) {
+	struct sk_buff *skb = NULL;
+
+	// Sanity check
+	if (idx >= LF_MAX_NUM_ENVS)
+		return NULL;
+
+	// Grab socket buffer from global buf
+	skb = skbs[idx];
+
+	// Set the socket buffer's sock to the kernel sock for Netfilter
+	skb->sk = kern_sock;
+
+	// Inject fuzz data and set sizes
+	memcpy(skb_put(skb, env->len), env->data, env->len);
+
+	return skb;
+}
+
+// Dispatches the skb to the appropriate netlink recv handler
+static void dispatch_skb(struct sk_buff *skb) {
+	// Create function pointer, msg->protocol already sane
+	void (*rcv)(struct sk_buff *) = handler;
+
+	// Dispatch!
+	rcv(skb);
+}
+
+// Main input processing logic
+int lucid_fuzz_handle_input(void) {
+	int i = 0;
+	struct lf_input *input = NULL;
+	struct lf_envelope *env = NULL;
+	struct sk_buff *fuzz_skb = NULL;
+	u32 remaining = 0;
+	u32 offset = 0;
+	struct sock *blegh = NULL;
+
+	printk("Hello from lucid_fuzz_handle_input\n");
+	blegh = kern_sock;
+	printk("kern_sock->net: %p\n", sock_net(kern_sock));
+
+	/** LUCID TAKES SNAPSHOT HERE **/
+	// This special NOP instruction, when interpreted by Bochs will cause
+	// Bochs to save a snapshot of its state to disk that Lucid will be able
+	// to resume in its purposbe built version of Bochs called `lucid_bochs`
+	asm volatile("xchgw %dx, %dx");
+
+	// Make sure we enough bytes to construct the input metadata
+	if (fc.input_len < sizeof(struct lf_input))
+		return 1;
+
+	// Cast the data to our metadata struct
+	input = (struct lf_input *)fc.input;
+
+	// Sanity check the values
+	if (input->total_len != fc.input_len || input->total_len > LF_MAX_INPUT_LEN)
+		return 1;
+
+	// Sanity check the number of messages
+	if (input->num_envs > LF_MAX_NUM_ENVS || input->num_envs == 0)
+		return 1;
+
+	// Check how many remaining bytes we have, and subtract what we already
+	// consumed with the input metadata
+	remaining = input->total_len;
+	remaining -= LF_INPUT_HDR_SIZE;
+
+	// Start tracking an offset into the byte buffer where we're reading from
+	offset = LF_INPUT_HDR_SIZE;
+
+	// Iterate through the envelopes and parse each one
+	for (i = 0; i < input->num_envs; i++) {
+		// Make sure we have enough data remaining to parse an envelope metadata
+		if (remaining < LF_ENV_HDR_SIZE)
+			return 1;
+
+		// We can at least read the length field, and sanity check it
+		env = (struct lf_envelope *)(fc.input + offset);
+		if (env->len > LF_MAX_ENV_LEN || env->len == 0)
+			return 1;
+
+		// Consume those bytes
+		remaining -= LF_ENV_HDR_SIZE;
+
+		// Make sure we can read that much data
+		if (remaining < env->len)
+			return 1;
+
+		// We have enough data left, create the skb for this envelope
+		fuzz_skb = create_fuzz_skb(env, i);
+		if (!fuzz_skb)
+			return 1;
+
+		// Dispatch the fuzz_skb to nftables!
+		dispatch_skb(fuzz_skb);
+
+		// Update our offset
+		offset += (LF_ENV_HDR_SIZE + env->len);
+
+		// Update remaining
+		remaining -= env->len;
+	}
+
+	// Done parsing envelopes, check if we have remaining bytes
+	if (remaining)
+		return 1;
+
+	/** LUCID RESTORES SNAPSHOT **/
+	asm volatile("xchgw %bx, %bx");
+
+	// Finally done
+	return 0;
+}
+
+// Cleanup resources from lf_init(), not used when fuzzing but good for harness
+// dev/testing
+void lucid_fuzz_cleanup(void) {
+	int i = 0;
+
+	for (i = 0; i < LF_MAX_NUM_ENVS; i++) {
+		kfree_skb(skbs[i]);
+		skbs[i] = NULL;
+	}
+
+	// NULL the globals
+	kern_sock = NULL;
+	handler = NULL;
+
+	// Set input size to 0
+	fc.input_len = 0;
+}
+```
