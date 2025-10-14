@@ -408,7 +408,7 @@ int lucid_fuzz_init(const void __user *data, size_t len) {
 
 		// Initialize what we need to look legit
 		skb->pkt_type = PACKET_HOST;
-        skb->sk = kern_sock;
+		skb->sk = kern_sock;
 		NETLINK_CB(skb).portid = 0x1337;
 		NETLINK_CB(skb).dst_group = 0;
 		NETLINK_CB(skb).creds.uid = GLOBAL_ROOT_UID;
