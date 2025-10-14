@@ -690,11 +690,11 @@ So the harness works!
 
 ## Conclusion
 Hopefully this helps you understand how to write a harness for Lucid. We needed to:
-1 - identify a way to inject raw input bytes into kernel memory
-2 - take a snapshot with our special NOP instruction
-3 - implement a custom protocol that our harness can understand so that it can parse the raw input bytes into something that can be sent to the target
-4 - reset the snapshot with our special NOP instruction
-5 - cleanup all the resources in the harness so we can use it for debugging as well. 
+1. identify a way to inject raw input bytes into kernel memory
+2. take a snapshot with our special NOP instruction
+3. implement a custom protocol that our harness can understand so that it can parse the raw input bytes into something that can be sent to the target
+4. reset the snapshot with our special NOP instruction
+5. cleanup all the resources in the harness so we can use it for debugging as well. 
 
 I've pasted the full harness code that I added in `af_netlink.c` below, cheers:
 ```c
