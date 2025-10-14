@@ -677,7 +677,7 @@ XAAAAAEAAABQAAAAFAAAABAAAQAAAAAAAAAAAAAACgAoAAAAAAoBAAEAAAAAAAAAAQAAAAkAAQBmdXp6
 
 Then when we run `echo "<base64>" | harness` on the `qemu-system` running our custom kernel, we get the following kernel logs:
 ```terminal
-[   23.347957] Inside lucid fuzz!TC 2025 on ttyS0
+[   23.347957] Inside lucid fuzz!
 [   23.349015] Calling lucid_fuzz_init...
 [   23.350233] Hello from lucid_fuzz_init
 [   23.351399] LF_MAX_INPUT_LEN is: 196712
