@@ -491,7 +491,7 @@ int lucid_fuzz_handle_input(void) {
 	/** LUCID TAKES SNAPSHOT HERE **/
 	// This special NOP instruction, when interpreted by Bochs will cause
 	// Bochs to save a snapshot of its state to disk that Lucid will be able
-	// to resume in its purposbe built version of Bochs called `lucid_bochs`
+	// to resume in its purpose built version of Bochs called `lucid_bochs`
 	asm volatile("xchgw %dx, %dx");
 
 	// Make sure we enough bytes to construct the input metadata
