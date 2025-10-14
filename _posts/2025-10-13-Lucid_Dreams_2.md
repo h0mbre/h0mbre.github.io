@@ -409,10 +409,11 @@ int lucid_fuzz_init(const void __user *data, size_t len) {
 		// Initialize what we need to look legit
 		skb->pkt_type = PACKET_HOST;
         skb->sk = kern_sock;
-        NETLINK_CB(skb).portid = 0x1337;
-        NETLINK_CB(skb).dst_group = 0;
-        NETLINK_CB(skb).creds.uid = GLOBAL_ROOT_UID;
-        NETLINK_CB(skb).creds.gid = GLOBAL_ROOT_GID;
+		NETLINK_CB(skb).portid = 0x1337;
+		NETLINK_CB(skb).dst_group = 0;
+		NETLINK_CB(skb).creds.uid = GLOBAL_ROOT_UID;
+		NETLINK_CB(skb).creds.gid = GLOBAL_ROOT_GID;
+		NETLINK_CB(skb).flags = NETLINK_SKB_DST;
 
 		// Store the skb
 		skbs[i] = skb;
@@ -444,13 +445,13 @@ struct lf_envelope {
 };
 ```
 
-Now the main loop has the layout information it needs to make sense of the byte buffer in the fuzzcase global instance. The first thing we do in the main loop is take the snapshot that Bochs will save to disk. The Lucid workflow is something like:
+The first thing we do in the main loop is take the snapshot that Bochs will save to disk. The Lucid workflow is something like:
 1. develop environment, harness
 2. put a special NOP operation in the harness where you want to snapshot fuzz from (`xchg dx, dx`)
 3. run the environment/harness in the `gui-bochs`. This is relatively normal Bochs binary built with GUI support that is supposed to be user-friendly and allow you to dump this Bochs snapshot to disk
 4. the Rust fuzzer binary, `lucid-fuzz` can then take that Bochs snapshot on disk, and resume its execution with a purpose-built `lucid-bochs` binary. This will call into the Lucid fuzzer before it emulates the first instruction and create a new kind of snapshot that Lucid can understand and restore every fuzzing iteration. 
 
-Below is the code I've added to Bochs to save the Bochs snapshot to disk when we encounter the `xchg dx, dx` NOP:
+Below is the code I've added to Bochs to save the Bochs snapshot to disk when we encounter the `xchg dx, dx` NOP, where `i` is a variable name for the instruction structure:
 ```c++
 #if BX_SNAPSHOT
   // Check for take snapshot instruction `xchg dx, dx`
@@ -474,3 +475,204 @@ Below is the code I've added to Bochs to save the Bochs snapshot to disk when we
   }
 #endif
 ```
+
+Then we get around to making sure we have enough bytes to form the metadata structure (`lf_input`) and sanity check its values before moving on to the nested envelopes. You'll notice that all error paths are `return 1;`, those early return error handlers will make sense later:
+```c
+// Main input processing logic
+int lucid_fuzz_handle_input(void) {
+	struct lf_input *input = NULL;
+	struct lf_envelope *env = NULL;
+	struct sk_buff *fuzz_skb = NULL;
+	u32 remaining = 0;
+	u32 offset = 0;
+
+	printk("Hello from lucid_fuzz_handle_input\n");
+
+	/** LUCID TAKES SNAPSHOT HERE **/
+	// This special NOP instruction, when interpreted by Bochs will cause
+	// Bochs to save a snapshot of its state to disk that Lucid will be able
+	// to resume in its purposbe built version of Bochs called `lucid_bochs`
+	asm volatile("xchgw %dx, %dx");
+
+	// Make sure we enough bytes to construct the input metadata
+	if (fc.input_len < sizeof(lf_input))
+		return 1;
+
+	// Cast the data to our metadata struct
+	input = (struct lf_input *)fc.input;
+
+	// Sanity check the values
+	if (input->total_len != fc.input_len || input->total_len > LF_MAX_INPUT_SIZE)
+		return 1;
+
+	// Sanity check the number of messages
+	if (input->num_msgs > LF_MAX_NUM_ENVS || input->num_msgs == 0)
+		return 1;
+
+	// Check how many remaining bytes we have, and subtract what we already
+	// consumed with the input metadata
+	remaining = input->total_len;
+	remaining -= LF_INPUT_HDR_SIZE;
+
+	// Start tracking an offset into the byte buffer where we're reading from
+	offset = LF_INPUT_HDR_SIZE;
+```
+
+Then we can start iterating through envelopes and parsing them. Each successfully parsed envelope gets turned into an `skb` and dispatched to `nftables`:
+```c
+// Iterate through the envelopes and parse each one
+	for (i = 0; i < input->num_envs; i++) {
+		// Make sure we have enough data remaining to parse an envelope metadata
+		if (remaining < LF_ENV_HDR_SIZE)
+			return 1;
+
+		// We can at least read the length field, and sanity check it
+		env = (struct lf_envelope *)(fc.input + offset);
+		if (env->len > LF_MAX_MSG_SIZE || env->len == 0)
+			return 1;
+
+		// Consume those bytes
+		remaining -= LF_ENV_HDR_SIZE;
+
+		// Make sure we can read that much data
+		if (remaining < env->len)
+			return 1;
+
+		// We have enough data left, create the skb for this envelope
+		fuzz_skb = create_fuzz_skb(env, i);
+		if (!fuzz_skb)
+			return 1;
+
+		// Dispatch the fuzz_skb to nftables!
+		dispatch_skb(fuzz_skb);
+
+		// Update our offset
+		offset += (LF_ENV_HDR_SIZE + env->len);
+
+		// Update remaining
+		remaining -= env->len;
+
+	}
+```
+
+We initialize the `fuzz_skb` in this function. This is where we set the socket buffer up with all the information we need to successfully get received and parsed by `nftables`. We exchange the "envelope" wrapper for the socket buffer wrapper instead:
+```c
+// Creates a socket buffer filled with fuzz message
+static struct sk_buff *create_fuzz_skb(struct lf_envelope *env, int idx) {
+	struct sk_buff *skb = NULL;
+
+	// Sanity check
+	if (idx >= LF_MAX_NUM_ENVS)
+		return NULL;
+
+	// Grab socket buffer from global buf
+	skb = skbs[idx];
+
+	// Set the socket buffer's sock to the kernel sock for Netfilter
+	skb->sk = kern_sock;
+
+	// Inject fuzz data and set sizes
+	memcpy(skb_put(skb, env->len), env->data, env->len);
+
+	return skb;
+}
+```
+
+The dispatching of the `skb` is simple, we just cast the `handler` to the right function pointer signature and then invoke it with the skb:
+```c
+// Dispatches the skb to the appropriate netlink recv handler
+static void dispatch_skb(struct sk_buff *skb) {
+	// Create function pointer, msg->protocol already sane
+	void (*rcv)(struct sk_buff *) = handler;
+
+	// Dispatch!
+	rcv(skb);
+}
+```
+
+The main fuzzing loop then of course restores the snapshot after we're done parsing envelopes:
+```c
+// Done parsing envelopes, check if we have remaining bytes
+	if (remaining)
+		return 1;
+
+	/** LUCID RESTORES SNAPSHOT **/
+	asm_volatile("xchgw %bx, %bx");
+
+	// Finally done
+	return 0;
+```
+
+We'll save the rest of the snippets for the source files I'll post at the end. 
+
+## Testing Harness
+Everything is wired up, so now we can send inputs via the `harness` userland binary we compiled. Let's check out `strace` on the `nft` userland utility and see where the Netlink message to create an `nft_table` is sent over the Netlink socket. Our `nft` command is: `nft add table inet fuzz`:
+```terminal
+// Create the Netlink socket of the protocol type NETLINK_NETFILTER
+socket(AF_NETLINK, SOCK_RAW, NETLINK_NETFILTER) = 3
+
+// Send the Netlink message to create a table over that socket fd we just created
+sendto(3, [{nlmsg_len=20, nlmsg_type=NFNL_SUBSYS_NFTABLES<<8|NFT_MSG_GETGEN, nlmsg_flags=NLM_F_REQUEST, nlmsg_seq=0, nlmsg_pid=0}, {nfgen_family=AF_UNSPEC, version=NFNETLINK_V0, res_id=htons(0)}], 20, 0, {sa_family=AF_NETLINK, nl_pid=0, nl_groups=00000000}, 12) = 20
+recvmsg(3, {msg_name={sa_family=AF_NETLINK, nl_pid=0, nl_groups=00000000}, msg_namelen=12, msg_iov=[{iov_base=[{nlmsg_len=44, nlmsg_type=NFNL_SUBSYS_NFTABLES<<8|NFT_MSG_NEWGEN, nlmsg_flags=0, nlmsg_seq=0, nlmsg_pid=125392}, {nfgen_family=AF_UNSPEC, version=NFNETLINK_V0, res_id=htons(103)}, [[{nla_len=8, nla_type=0x1}, "\x00\x00\x00\x67"], [{nla_len=8, nla_type=0x2}, "\x00\x01\xe9\xd0"], [{nla_len=8, nla_type=0x3}, "\x6e\x66\x74\x00"]]], iov_len=69631}], msg_iovlen=1, msg_controllen=0, msg_flags=0}, 0) = 44
+```
+
+So it happens during `sendmsg` syscall, so what I did was just write an `LD_PRELOAD` shared object to hexdump the iovec data sent over `sendmsg`. So now I can get a `hexdump -C` style output for the `nft` message:
+```terminal
+LD_PRELOAD=$PWD/hexdump_netlink.so nft add table inet fuzz
+00000000  14 00 00 00 10 00 01 00  00 00 00 00 00 00 00 00 |................|
+00000010  00 00 0a 00 28 00 00 00  00 0a 01 00 01 00 00 00 |....(...........|
+00000020  00 00 00 00 01 00 00 00  09 00 01 00 66 75 7a 7a |............fuzz|
+00000030  00 00 00 00 08 00 02 00  00 00 00 00 14 00 00 00 |................|
+00000040  11 00 01 00 02 00 00 00  00 00 00 00 00 00 0a 00 |................|
+```
+
+Now we know what a legit `nftables` message looks like and we can wrap it in our `lf_input` and `lf_envelope` structures and test the harness! I took that output and just hardcoded it into a janky Python script to dump the binary to the terminal:
+```python
+import struct
+import sys
+
+# Dumped message
+msg_str = [
+    "00000000  14 00 00 00 10 00 01 00  00 00 00 00 00 00 00 00 |................|",
+    "00000010  00 00 0a 00 28 00 00 00  00 0a 01 00 01 00 00 00 |....(...........|",
+    "00000020  00 00 00 00 01 00 00 00  09 00 01 00 66 75 7a 7a |............fuzz|",
+    "00000030  00 00 00 00 08 00 02 00  00 00 00 00 14 00 00 00 |................|",
+    "00000040  11 00 01 00 02 00 00 00  00 00 00 00 00 00 0a 00 |................|"
+]
+
+# Byte string we'll fill
+all_bytes = b''
+for line in msg_str:
+    # Skip the offset stuff
+    hex_start = line[10:]
+
+    # Cut off the back ascii stuff
+    hex_str = hex_start[:len(hex_start) - 18]
+
+    # Remove the spaces
+    hex_str = hex_str.replace(" ", "")
+
+    # Start appending
+    all_bytes += bytes.fromhex(hex_str)
+
+# Now with bytes, wrap that in envelope
+envelope_len = len(all_bytes)
+envelope = struct.pack('<I', envelope_len) + all_bytes
+
+# Now wrap that in an lf_input
+num_envs = 1
+total_len = 8 # Metadata for lf_input
+total_len += len(envelope)
+lf_input = struct.pack('<II', total_len, num_envs) + envelope
+
+# Write that to stdout
+sys.stdout.buffer.write(lf_input)
+```
+
+We can now pipe that to `base64` and then pipe that to the harness for testing:
+```terminal
+[devbox:~/nft_fuzzing]$ python3 wrapper.py | base64
+XAAAAAEAAABQAAAAFAAAABAAAQAAAAAAAAAAAAAACgAoAAAAAAoBAAEAAAAAAAAAAQAAAAkAAQBmdXp6AAAAAAgAAgAAAAAAFAAAABEAAQACAAAAAAAAAAAACgA=
+
+...
+
