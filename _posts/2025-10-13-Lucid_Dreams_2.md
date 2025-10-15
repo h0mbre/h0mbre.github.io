@@ -325,8 +325,8 @@ struct lf_fuzzcase fc = {
 ```
 
 Then we define some globals that we need to initialize:
--`handler`: This is a function pointer basically to the `nfnetlink_rcv` function that we look up by protocol in the `init` namespace
--`kern_sock`: This is the `struct sock` that is registered during kernel boot for the Netfilter subsystem to receive data from userland (and I guess kernel threads?)
+- `handler`: This is a function pointer basically to the `nfnetlink_rcv` function that we look up by protocol in the `init` namespace
+- `kern_sock`: This is the `struct sock` that is registered during kernel boot for the Netfilter subsystem to receive data from userland (and I guess kernel threads?)
 - `skbs`: Just a flat buffer of the `skb` structures we'll need to use to wrap our envelope data, the harness exchanges envelopes by `skb` structures
 
 Finally the initialization routine is thus:
