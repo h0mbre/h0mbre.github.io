@@ -198,7 +198,7 @@ So everything works with the syscall, now it's time to make it an actual fuzzing
 ## Deciding Input Format
 We want to be able to create stateful inputs for `nftables`. This obviously means we need enough runway initially in our inputs to *build up complex state*! This seems obvious and simple, but I think it's hard to actually implement correctly. We have to consider various things like:
 - Not all "state" is "good state": Just because an input can create 4096 `nft_table` data structures, doesn't mean that that's interesting from a vulnerability research perspective
-- Short inputs are not likely go create complex state: We need to have somewhat long inputs in order to build up state
+- Short inputs are not likely going to create complex state: We need to have somewhat long inputs in order to build up state
 - Extremely large inputs may be meaningless: There may not be any meaningful difference between short and long inputs when the short input is *long enough* to create "good state" and we may end up spending tons of CPU cycles doing nothing interesting and working on enormous inputs
 
 With these things in mind, let's first take a cautious approach and make sure we can generate long inputs *some* of the time, but most of the time focus on relatively normal sized inputs. 
